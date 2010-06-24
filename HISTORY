@@ -1,0 +1,150 @@
+
+= History of the project =
+
+
+
+== Before this repository ==
+
+This was one file called 'custom_ast.ml' in the 'c_code_gen' directory
+of my 'misc' repository. Here is the log:
+
+commit a6671d7605f57e5d42431636ccfc838861abe853
+Author: Sebastien Mondet <smondet@dmms-lab22.ifi.uio.no>
+Date:   Thu Jun 24 15:50:28 2010 +0200
+
+    c_code_gen: Continuing with Meta_packet.C_parsing.
+
+commit 90d2d5d8e27633b9dce160d2860971fa195f6e0f
+Author: Sebastien Mondet <smondet@dmms-lab22.ifi.uio.no>
+Date:   Wed Jun 23 17:56:54 2010 +0200
+
+    c_code_gen: Started to draft the new C_parsing module.
+
+commit d52e47c699bba32711ae6a1f8c4d70f60d58b552
+Author: Sebastien Mondet <smondet@dmms-lab22.ifi.uio.no>
+Date:   Wed Jun 23 16:52:49 2010 +0200
+
+    c_code_gen: Started to simplification/improvement of the packet format.
+
+commit 23b126f5141557a7916489fa17c6d16d47ec6e4a
+Author: Sebastien Mondet <smondet@dmms-lab22.ifi.uio.no>
+Date:   Wed Jun 23 15:16:11 2010 +0200
+
+    c_code_gen: Added `comment's to the AST.
+    
+    There is for now no sanitization of comments, escape-from-comment can
+    be used for low-level dirty hacking.
+
+commit f600e41731dfe6caed4b2bf5128a6ccb8c80cda9
+Author: Sebastien Mondet <smondet@dmms-lab22.ifi.uio.no>
+Date:   Wed Jun 23 14:41:51 2010 +0200
+
+    c_code_gen: Depolymorphisation of Meta_packet.Packet_structure.
+    
+    Commented C_Parsing, and adapted Standard_packets.
+
+commit 6818c0aefb5868b62ad08179299d57ccb1b7691e
+Author: Sebastien Mondet <smondet@dmms-lab22.ifi.uio.no>
+Date:   Tue Jun 22 19:01:36 2010 +0200
+
+    c_code_gen: Implemented a test of PCAP + Ethernet parsing.
+
+commit 44b906701dce7545becbb1cff20ac9e3edd85c39
+Author: Sebastien Mondet <smondet@dmms-lab22.ifi.uio.no>
+Date:   Tue Jun 22 18:33:32 2010 +0200
+
+    c_code_gen: A lot of coding for the parsing generation.
+
+commit 3097ec02bc9a9cf73e724de3d359315b1828613e
+Author: Sebastien Mondet <smondet@dmms-lab22.ifi.uio.no>
+Date:   Mon Jun 21 18:49:10 2010 +0200
+
+    c_code_gen: Started drafting the packet parsing primitives.
+
+commit 212322121cddebe728bb5678977deb978202589f
+Author: Sebastien Mondet <smondet@dmms-lab22.ifi.uio.no>
+Date:   Fri Jun 18 15:14:56 2010 +0200
+
+    c_code_gen: Improved the `assignment, and tested.
+    
+    Now the generated C file counts the packets on pcap; the first
+    milestone can be considered done.
+
+commit c4d04f8c76074410113db527fc6f1c62920f8c5c
+Author: Sebastien Mondet <smondet@dmms-lab22.ifi.uio.no>
+Date:   Fri Jun 18 12:31:32 2010 +0200
+
+    c_code_gen: Cleaning.
+
+commit 0dff8a2633ecd159108fc01dd7d64ac6c650233d
+Author: Sebastien Mondet <smondet@dmms-lab22.ifi.uio.no>
+Date:   Fri Jun 18 12:21:31 2010 +0200
+
+    c_code_gen: solved the multiple dimension arrays.
+
+commit 4ffeee5372e447d8326c91649917d42cf8f941f0
+Author: Sebastien Mondet <smondet@dmms-lab22.ifi.uio.no>
+Date:   Fri Jun 18 12:10:35 2010 +0200
+
+    c_code_gen: Cleaning and improving.
+
+commit cbe81f58a653ef204432e51030ebeed16456a619
+Author: Sebastien Mondet <smondet@dmms-lab22.ifi.uio.no>
+Date:   Thu Jun 17 18:09:47 2010 +0200
+
+    c_code_gen: Much more improvements (pcap generation tested).
+
+commit 614106feb9e27684ea1cb579aaa721ad8e971a6b
+Author: Sebastien Mondet <smondet@dmms-lab22.ifi.uio.no>
+Date:   Thu Jun 17 12:32:46 2010 +0200
+
+    c_code_gen: Fixes and improvements.
+
+commit 5863a8fa95adffc7f977bc34803f205ecfeef8c6
+Author: Sebastien Mondet <smondet@dmms-lab22.ifi.uio.no>
+Date:   Wed Jun 16 17:50:49 2010 +0200
+
+    c_code_gen: commenting.
+
+commit f59a8d54b501b1a51d8ce189e5344361aca81131
+Author: Sebastien Mondet <smondet@dmms-lab22.ifi.uio.no>
+Date:   Tue Jun 15 17:13:05 2010 +0200
+
+    c_code_gen: slow start of the Pcap module.
+
+commit a3cfebe65f04180fae5a40d57164695c4f6d9e16
+Author: Sebastien Mondet <smondet@dmms-lab22.ifi.uio.no>
+Date:   Fri Jun 11 19:53:22 2010 +0200
+
+    c_code_gen: More fixes and testing.
+
+commit bf1c3ba991f5cea1aa83a630b244dde0ce9797a8
+Author: Sebastien Mondet <smondet@dmms-lab22.ifi.uio.no>
+Date:   Fri Jun 11 18:11:43 2010 +0200
+
+    c_code_gen: Bug fixes and testing.
+
+commit 7d74c362450d53a405a6f338ec0e0f0238163f68
+Author: Sebastien Mondet <smondet@dmms-lab22.ifi.uio.no>
+Date:   Fri Jun 11 17:40:55 2010 +0200
+
+    c_code_gen: Big implementation step.
+
+commit 4ad46a25fd44d5695e437e1ae4fd6ecf5db6c2a1
+Author: Sebastien Mondet <smondet@dmms-lab22.ifi.uio.no>
+Date:   Thu Jun 10 19:53:02 2010 +0200
+
+    c_code_gen: Started hacking my own C language backend.
+
+commit 97bfd062422854b9959adee1a797e8212082fa35
+Author: Sebastien Mondet <smondet@dmms-lab22.ifi.uio.no>
+Date:   Thu Jun 10 17:45:37 2010 +0200
+
+    test_cil/ becomes c_code_gen/.
+
+commit 897af36e67e3aac00252373dd6cc89b27395a9c7
+Author: Sebastien Mondet <smondet@dmms-lab22.ifi.uio.no>
+Date:   Thu Jun 10 17:41:20 2010 +0200
+
+    test_cil: Some examples of code generation.
+

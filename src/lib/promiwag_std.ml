@@ -13,7 +13,7 @@ module Ls = struct
         try Some (List.find f l) with Not_found -> None
 
 end
-let (@) = ExtList.List.concat
+let (@) = ExtList.List.append
 
 
 module Opt = Option
@@ -43,3 +43,13 @@ module Io = struct
 end
 
 
+module Unique = struct
+
+  let var_count = ref 0
+
+  let name n = 
+    incr var_count;
+    Printf.sprintf "%s_%d" n !var_count
+
+end
+  
