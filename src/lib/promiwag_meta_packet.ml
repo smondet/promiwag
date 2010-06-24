@@ -110,6 +110,7 @@ module C_parsing = struct
   open Promiwag_c_backend
 
   exception Field_not_found
+  exception Max_dependency_depth_reached of int
 
   module Internal = struct 
 
@@ -193,11 +194,14 @@ module C_parsing = struct
       (f [] field_name packet_format)
 
         
-    let resolve_dependencies packet_format first_set_of_deps =
+    let resolve_dependencies max_depth packet_format first_set_of_deps =
       let computable_variables = Hashtbl.create 42 in
-      let rec resolve_dependencies = function
+      let die_on_max_depth d =
+        if d > max_depth then raise (Max_dependency_depth_reached d); in
+      let rec go_deeper ?(depth=0) = function
         | [] -> (* Done! *) ()
         | Depend_on_value_of f :: l ->
+          die_on_max_depth depth;
           begin match Hashtbl.find_all computable_variables (`value f) with
           | [] ->
             let (final_comp, final_deps) as final, computes =
@@ -205,24 +209,25 @@ module C_parsing = struct
             let deps = 
               final_deps @ 
                 (List.flatten (List.map (fun (_, d) -> d) computes)) in
-            resolve_dependencies deps;
+            go_deeper ~depth:(depth + 1) deps;
             Hashtbl.add computable_variables (`value f) (final, computes);
-            resolve_dependencies l;
+            go_deeper ~depth:(depth + 1) l;
           | one :: [] -> ()
           | more -> 
             failwith (sprintf "field %s added %d times to \
                                  computable_variables" f (List.length more))
           end
         | Depend_on_offset_of f :: l -> 
+          die_on_max_depth depth;
           begin match Hashtbl.find_all computable_variables (`offset f) with
           | [] ->
             let (final_comp, final_deps) as final, computes =
               find_field_in_packet packet_format f in
             let deps = 
               (List.flatten (List.map (fun (_, d) -> d) computes)) in
-            resolve_dependencies deps;
+            go_deeper ~depth:(depth + 1) deps;
             Hashtbl.add computable_variables (`offset f) (final, computes);
-            resolve_dependencies l;
+            go_deeper ~depth:(depth + 1) l;
           | one :: [] -> ()
           | more -> 
             failwith (sprintf "field %s added %d times to \
@@ -231,7 +236,7 @@ module C_parsing = struct
         | Depend_on_unknown :: _ ->
           failwith "Depends on something Unknown/Uncomputable"
       in
-      resolve_dependencies first_set_of_deps;
+      go_deeper first_set_of_deps;
       computable_variables
   end
 
@@ -255,7 +260,7 @@ module C_parsing = struct
         Internal.depend_on_value f) request_list in
     
     let computables = 
-      Internal.resolve_dependencies packet_format request_as_dependencies in
+      Internal.resolve_dependencies 42 packet_format request_as_dependencies in
     printf "Hash table\n";
     Hashtbl.iter (fun f thing ->
       match f with
