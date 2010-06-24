@@ -1,0 +1,5 @@
+
+OCAML_LIBS += ../lib/promiwag
+OCAMLINCLUDES += ../lib/
+
+.DEFAULT: $(OCamlProgram promiwag_test, main_test)

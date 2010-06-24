@@ -1,0 +1,27 @@
+
+LIB_MODULES[] =
+    promiwag_Yaboon_PolyComp
+    promiwag_std
+
+
+LIB_NAME = promiwag
+
+.DEFAULT: $(OCamlLibrary $(LIB_NAME), $(LIB_MODULES))
+
+
+LIB_TO_INSTALL= $(LIB_NAME).cma $(if $(NATIVE_ENABLED),  $(LIB_NAME).cmxa $(LIB_NAME).a)
+
+install_library:  $(LIB_TO_INSTALL) META
+    ocamlfind install $(LIB_NAME) META *.cm[iox] $(LIB_TO_INSTALL)
+
+uninstall_library:
+    ocamlfind remove $(LIB_NAME)
+reinstall_library:  $(LIB_TO_INSTALL) META
+    ocamlfind remove $(LIB_NAME)
+    ocamlfind install $(LIB_NAME) META *.cm[iox] $(LIB_TO_INSTALL)
+
+index.html: $(LIB_NAME).cma 
+    ocamlfind ocamldoc -package extlib \
+      -d . -t "Promiwag Library"   -html -colorize-code *.ml -sort -I .
+
+doc_library: index.html

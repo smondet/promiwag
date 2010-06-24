@@ -1,0 +1,5 @@
+*~
+.omake*
+*.omc
+_build/*
+promiwag_test

@@ -1,0 +1,56 @@
+
+
+
+.PHONY: clean update_externals \
+ install_library reinstall_library uninstall_library \
+ doc_site doc_library web_site
+
+USE_OCAMLFIND = true
+
+OCAMLPACKS[] =
+   extlib
+#   pcre
+#   sexplib.core
+
+if $(not $(OCAMLFIND_EXISTS))
+   eprintln(This project requires ocamlfind, but is was not found.)
+   eprintln(You need to install ocamlfind and run "omake --configure".)
+   exit 1
+
+NATIVE_ENABLED = $(OCAMLOPT_EXISTS)
+BYTE_ENABLED = true #$(not $(OCAMLOPT_EXISTS))
+
+OCAMLFLAGS    +=
+OCAMLCFLAGS   +=
+OCAMLOPTFLAGS +=
+OCAML_LINK_FLAGS +=
+OCAML_BYTE_LINK_FLAGS +=
+OCAML_NATIVE_LINK_FLAGS +=
+OCAMLFINDFLAGS +=
+
+
+clean:
+    rm -fr _build OMakefile.omc OMakeroot.omc .omakedb .omakedb.lock
+
+update_externals: # Go for the last version
+    svn export http\://yaboon.googlecode.com/svn/trunk/PolyComp/PolyComp.ml src/lib/promiwag_Yaboon_PolyComp.ml
+
+
+if $(not $(file-exists _build/))
+    mkdir -p _build/lib _build/app _build/doc
+
+vmount(-l, src/lib, _build/lib)
+vmount(-l, src/app, _build/app)
+vmount(-l, doc, _build/doc)
+
+
+.SUBDIRS: _build/lib _build/app # _build/doc/
+
+#WEB_DIR=website
+#web_site: doc_site doc_library
+#    rm -fr $(WEB_DIR)
+#    mkdir -p $(WEB_DIR)/doclib
+#    cp -f _build/doc/*.html _build/doc/*.css $(WEB_DIR)/
+#    cp -f _build/lib/*.html _build/lib/*.css $(WEB_DIR)/doclib/
+
+
