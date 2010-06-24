@@ -109,6 +109,8 @@ module C_parsing = struct
   module Cons = Promiwag_c_backend.Construct
   open Promiwag_c_backend
 
+  type request = [ `field of string ]
+
   exception Field_not_found
   exception Max_dependency_depth_reached of int
 
@@ -138,8 +140,6 @@ module C_parsing = struct
       | Depend_on_value_of of string
       | Depend_on_offset_of of string
       | Depend_on_unknown
-
-    let depend_on_value v = Depend_on_value_of v
 
     let dependencies_of_size sz =
       let rec tree_descent deps = function
@@ -194,7 +194,9 @@ module C_parsing = struct
       (f [] field_name packet_format)
 
         
-    let resolve_dependencies max_depth packet_format first_set_of_deps =
+    let resolve_dependencies max_depth packet_format (request:request list) =
+      let request_as_dependencies =
+        List.map (function `field f -> Depend_on_value_of f) request in
       let computable_variables = Hashtbl.create 42 in
       let die_on_max_depth d =
         if d > max_depth then raise (Max_dependency_depth_reached d); in
@@ -210,12 +212,13 @@ module C_parsing = struct
               final_deps @ 
                 (List.flatten (List.map (fun (_, d) -> d) computes)) in
             go_deeper ~depth:(depth + 1) deps;
-            Hashtbl.add computable_variables (`value f) (final, computes);
+            Hashtbl.add computable_variables (`value f) (final, computes, deps);
             go_deeper ~depth:(depth + 1) l;
           | one :: [] -> ()
           | more -> 
             failwith (sprintf "field %s added %d times to \
-                                 computable_variables" f (List.length more))
+                                 computable_variables as `value"
+                        f (List.length more))
           end
         | Depend_on_offset_of f :: l -> 
           die_on_max_depth depth;
@@ -226,24 +229,109 @@ module C_parsing = struct
             let deps = 
               (List.flatten (List.map (fun (_, d) -> d) computes)) in
             go_deeper ~depth:(depth + 1) deps;
-            Hashtbl.add computable_variables (`offset f) (final, computes);
+            Hashtbl.add computable_variables (`offset f) (final, computes, deps);
             go_deeper ~depth:(depth + 1) l;
           | one :: [] -> ()
           | more -> 
             failwith (sprintf "field %s added %d times to \
-                                 computable_variables" f (List.length more))
+                                 computable_variables as `offset"
+                        f (List.length more))
           end
         | Depend_on_unknown :: _ ->
           failwith "Depends on something Unknown/Uncomputable"
       in
-      go_deeper first_set_of_deps;
+      go_deeper request_as_dependencies;
       computable_variables
+
+    type compiled_chunk = 
+      | Compiled_value_expression of Typed_expression.t
+      | Compiled_offset_expression of Typed_expression.t
+      | Compiled_value_variable of Variable.t * Typed_expression.t
+      | Compiled_offset_variable of Variable.t * Typed_expression.t
+
+    let caml_op_of_size_op = function
+      | Op_add -> (+)
+      | Op_sub -> (-)
+      | Op_mul -> ( * )
+      | Op_div -> (/)
+
+    let rec propagate_constants_in_size = function
+      | Size_fixed s -> Size_fixed s
+      | Size_variable v -> Size_variable v
+      | Size_binary_expression (op, size_a, size_b) ->
+        let propagated_a = propagate_constants_in_size size_a in
+        let propagated_b = propagate_constants_in_size size_b in
+        begin match propagated_a, propagated_b with
+        | Size_fixed a, Size_fixed b ->
+          Size_fixed (caml_op_of_size_op op a b)
+        | sa, sb ->
+          Size_binary_expression (op, sa, sb)
+        end
+      | Size_alignment (i, s) ->
+        begin match propagate_constants_in_size s with
+        | Size_fixed s -> Size_fixed (s + (s mod i))
+        | other -> other
+        end
+      | Size_offset_of v -> Size_offset_of v
+      | Size_unknown -> Size_unknown
+
+    let compile_computations computations = 
+      let byte_offset, bit_offset =
+        let f (prev_byte, prev_bit) = function
+          | Compute_byte_offset s ->
+            (Size_binary_expression (Op_add, prev_byte, s), prev_bit)
+          | Compute_bit_offset s ->
+            (prev_byte, Size_binary_expression (Op_add, prev_bit, s)) in
+        Ls.fold_left ~f computations ~init:(Size_fixed 0, Size_fixed 0) in
+      let propagated_byte_ofs = propagate_constants_in_size byte_offset in
+      begin match propagate_constants_in_size bit_offset with
+          | Size_fixed bits as propagated_bit_ofs -> 
+            if bits / 8 = 0 then 
+              (propagated_byte_ofs, propagated_bit_ofs)
+            else
+              begin match propagated_byte_ofs with
+              | Size_fixed bytes ->
+                (Size_fixed (bytes + (bits / 8)), Size_fixed (bits mod 8))
+              | any ->   (propagated_byte_ofs, propagated_bit_ofs)
+              end
+          | bits ->
+            to_do "Non-constant bit ofset"
+      end
+
+    let compile_offset already_compiled final computes name =
+      assert (final = (Finally_get_pointer, []));
+      printf "Offset of %s\n" name
+
+    let compile_value already_compiled final compute name =
+      printf "Value of %s\n" name
+
+    let compile computables_ht request =
+      let compiled_chunks = Ht.create 42 in
+      Ht.iter (fun f  (final, computes, deps) ->
+        match f with
+        | `offset s -> compile_offset compiled_chunks final computes s
+        | `value s -> compile_value compiled_chunks final computes s
+      ) computables_ht;
+
+      let f = function 
+        | `field field ->
+          begin match Ht.find_opt compiled_chunks field with
+          | Some (Compiled_value_expression e) -> e
+          | Some (Compiled_value_variable (v, e)) -> Variable.typed_expression v
+          | Some (Compiled_offset_expression _)  
+          | None
+          | Some (Compiled_offset_variable _) ->
+            failwith (sprintf "Field %s should have been compiled!" field)
+          end
+      in
+      Ls.map request ~f
+
   end
 
 
   let informed_block
       ~(packet_format:Packet_structure.format)
-      ~(request_list: [`field of string] list)
+      ~(request_list: request list)
       ~(packet_expression: Typed_expression.t)
       (* ?(packet_size: Typed_expression.t option)  TODO: maybe something else? *)
       ~(make_user_block: Typed_expression.t list -> C.block) =
@@ -255,19 +343,12 @@ module C_parsing = struct
         - for dependencies which are needed more than once create local variable
         - generate C code for every computation
       *)
-    let request_as_dependencies =
-      List.map (function `field f -> 
-        Internal.depend_on_value f) request_list in
     
     let computables = 
-      Internal.resolve_dependencies 42 packet_format request_as_dependencies in
-    printf "Hash table\n";
-    Hashtbl.iter (fun f thing ->
-      match f with
-      | `offset s | `value s ->
-        printf "Field: %s\n" s;
-    ) computables;
+      Internal.resolve_dependencies 42 packet_format request_list in
 
+    let compiled_c = Internal.compile computables request_list in
+    ignore compiled_c;
 
     let user_decl, user_stms = make_user_block [] in
     (user_decl, user_stms)
