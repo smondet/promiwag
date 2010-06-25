@@ -152,19 +152,26 @@ let test_pcap_basic () =
 let test_packet_parsing () =
   let module C = Promiwag.C_backend in
 
-  let paths =
-    ExtList.List.init 11 (fun i -> `field ("Test", sprintf "field_%02d" i)) in
-
+  let request_list =
+    ExtList.List.init 14 (fun i -> `field (sprintf "field_%02d" i)) in
   let packet_var =
     C.Variable.create ~unique:false ~name:"user_packet"
       ~c_type:(`pointer `unsigned_char) () in
-  let packet = ("Test", C.Variable.typed_expression packet_var) in
-  let format_db = Promiwag.Standard_packets.whole_database in
-(*  let block = Meta_packet.C_parsing.get_fields ~paths ~packet ~format_db in
+  let packet_expression = C.Variable.typed_expression packet_var in
+  let packet_format = snd Promiwag.Standard_packets.test in
 
-  String_tree.print (C2StrTree.block block);*)
+  let block =
+    Promiwag.Meta_packet.C_parsing.informed_block
+      ~packet_format ~packet_expression ~request_list
+      ~make_user_block:(fun te_list ->
+        ([], Ls.map2 request_list te_list
+          ~f:(fun req expr ->
+            let `field s = req in
+            `assignment (`variable ("the_" ^ s),
+                         C.Typed_expression.expression expr))))
+  in
+  String_tree.print (C2StrTree.block block);
 
-  ignore (paths, packet_var, packet, format_db);
   ()
 
 (* ocamlfind ocamlc -package "extlib" -linkpkg -g custom_ast.ml && ./a.out mp *)
@@ -271,11 +278,3 @@ let () =
   );
   printf "\nDone.\n";
   ()
-
-let test  = 
-  let module C = Promiwag.C_backend in
-  Promiwag.Meta_packet.C_parsing.informed_block
-    ~packet_format:(snd Promiwag.Standard_packets.ipv4)
-    ~request_list:[`field "dest"; `field "ip_payload" ]
-    ~packet_expression:(C.Typed_expression.create ())
-    ~make_user_block:(fun _ -> C.Construct.block ())

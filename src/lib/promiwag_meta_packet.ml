@@ -8,6 +8,9 @@ module Packet_structure = struct
     | Op_mul
     | Op_div
 
+  let caml_op_of_size_op = function
+    | Op_add -> (+) | Op_sub -> (-) | Op_mul -> ( * ) | Op_div -> (/)
+
   type size =
     | Size_fixed of int
     | Size_variable of string
@@ -28,6 +31,7 @@ module Packet_structure = struct
     | `div (a, b) -> Size_binary_expression (Op_div, parse_size a, parse_size b)
     | `align (i, e) -> Size_alignment (i, parse_size e)
     | `offset v -> Size_offset_of v
+    | `size s -> s
 
   let size = parse_size
 
@@ -47,30 +51,14 @@ module Packet_structure = struct
   let fixed_string i = Type_string (Size_fixed i)
   let variable_string v = Type_string (Size_variable v)
 
-
-    (*    type content_value =
-          | Value_unsigned_integer of int
-          | Value_range of content_value * content_value
-    *)  
-
   type content_item =
     | Item_field of string * content_type
-    (* | Item_switch of string * (content_value * content_item list) list *)
-    (* | Item_payload of size option * string option *)
-
 
   let field name the_type = Item_field (name, the_type)
   let fixed_int_field name size =
     Item_field (name, Type_unsigned_integer (Size_fixed size))
   let string_field name size = Item_field (name,  Type_string size)
 
-    (* let switch name cases = Item_switch (name, cases) *)
-    
-    (*    let case_uint i fields = (Value_unsigned_integer i, fields)
-          let case_range i j fields = 
-          (Value_range (Value_unsigned_integer i, Value_unsigned_integer j),
-          fields)
-    *)
 
   let payload ?size ?(name="payload") () =
     let actual_size = 
@@ -113,6 +101,7 @@ module C_parsing = struct
 
   exception Field_not_found
   exception Max_dependency_depth_reached of int
+  exception Error_compile_unknown_size
 
   module Internal = struct 
 
@@ -120,22 +109,10 @@ module C_parsing = struct
 
     let cmp_str a b = (String.compare a b) = 0
     let to_do s =
+      printf "%!";
       failwith (sprintf "Meta_packet.C_parsing.Internal: \
                            %s: NOT IMPLEMENTED" s)
         
-      (*      type int_computation_item =
-              | ICI_Constant of int
-              | 
-
-              let computation_of_size = function
-              | Size_fixed s -> ICI_Constant s
-              | Size_variable vof string
-              | Size_binary_expression of int_operator * size * size
-              | Size_alignment of int * size
-              | Size_offset_of of string
-              | Size_unknown
-      *)
-
     type dependency =
       | Depend_on_value_of of string
       | Depend_on_offset_of of string
@@ -243,18 +220,6 @@ module C_parsing = struct
       go_deeper request_as_dependencies;
       computable_variables
 
-    type compiled_chunk = 
-      | Compiled_value_expression of Typed_expression.t
-      | Compiled_offset_expression of Typed_expression.t
-      | Compiled_value_variable of Variable.t * Typed_expression.t
-      | Compiled_offset_variable of Variable.t * Typed_expression.t
-
-    let caml_op_of_size_op = function
-      | Op_add -> (+)
-      | Op_sub -> (-)
-      | Op_mul -> ( * )
-      | Op_div -> (/)
-
     let rec propagate_constants_in_size = function
       | Size_fixed s -> Size_fixed s
       | Size_variable v -> Size_variable v
@@ -275,7 +240,7 @@ module C_parsing = struct
       | Size_offset_of v -> Size_offset_of v
       | Size_unknown -> Size_unknown
 
-    let compile_computations computations = 
+    let aggregate_computations computations = 
       let byte_offset, bit_offset =
         let f (prev_byte, prev_bit) = function
           | Compute_byte_offset s ->
@@ -283,41 +248,171 @@ module C_parsing = struct
           | Compute_bit_offset s ->
             (prev_byte, Size_binary_expression (Op_add, prev_bit, s)) in
         Ls.fold_left ~f computations ~init:(Size_fixed 0, Size_fixed 0) in
-      let propagated_byte_ofs = propagate_constants_in_size byte_offset in
-      begin match propagate_constants_in_size bit_offset with
-          | Size_fixed bits as propagated_bit_ofs -> 
-            if bits / 8 = 0 then 
-              (propagated_byte_ofs, propagated_bit_ofs)
-            else
-              begin match propagated_byte_ofs with
-              | Size_fixed bytes ->
-                (Size_fixed (bytes + (bits / 8)), Size_fixed (bits mod 8))
-              | any ->   (propagated_byte_ofs, propagated_bit_ofs)
-              end
-          | bits ->
-            to_do "Non-constant bit ofset"
+      let total_byte_offset, in_byte_bit_offset =
+        size (`add (`size byte_offset, `div (`size bit_offset, `int 8))),
+        size (`sub (`size bit_offset,
+                    `mul (`int 8, `div (`size bit_offset, `int 8))))
+      in
+      let propagated_byte_ofs, propagated_bit_ofs =
+        propagate_constants_in_size total_byte_offset,
+        propagate_constants_in_size in_byte_bit_offset in
+      (propagated_byte_ofs, propagated_bit_ofs)
+
+    (* ** Generic / C limit ** *)
+    let c_op_of_size_op = function
+      | Op_add -> `bin_add
+      | Op_sub -> `bin_sub
+      | Op_mul -> `bin_mul
+      | Op_div -> `bin_div
+
+    let rec compile_size = function
+      | Size_fixed s -> `literal_int s
+      | Size_variable v -> `variable v
+      | Size_binary_expression (op, size_a, size_b) ->
+        let compiled_a, compiled_b = compile_size size_a, compile_size size_b in
+        `binary (c_op_of_size_op op, compiled_a, compiled_b)
+      | Size_alignment (i, s) ->
+        to_do "Size alignment"
+      | Size_offset_of v ->
+        (`unary (`unary_addrof, `variable v))
+      | Size_unknown -> 
+        raise Error_compile_unknown_size
+
+    let c_offset_of_packet packet byte_offset =
+      let packet_as_buffer = 
+        `cast (`pointer `unsigned_char, Typed_expression.expression packet) in
+      let the_address_at_offset =
+        `binary (`bin_add, packet_as_buffer, compile_size byte_offset) in
+      Typed_expression.create ~expression:the_address_at_offset
+        ~c_type:(`pointer `void) ()
+
+    let c_value_of_offset_pointer pointer bit_offset final =
+      match final with
+      | Finally_get_pointer -> (* and the bit_offset? *)
+        (Typed_expression.create ~expression:pointer ~c_type:(`pointer `void) (),
+         Typed_expression.create ~expression:pointer ~c_type:(`pointer `void) ())
+      | Finally_get_integer (endianism, signedism, sz) ->
+      (* [`big | `little] * [`signed | `unsigned] * size *)
+        let endianise e =
+          match endianism with
+          | `big -> `call (`variable "ntohl", [e])
+          | `little -> to_do "Little endian integers" in
+        let c_type, cast =
+          match signedism with
+          | `unsigned -> 
+            (`unsigned_int,
+             fun e -> `cast (`unsigned_int, `unary (`unary_memof, e)))
+          | `signed ->
+            (* emit a warning? *) 
+            (`signed_int, fun e -> `cast (`signed_int, `unary (`unary_memof, e)))
+        in
+        let propagated_size = propagate_constants_in_size sz in
+        let the_bits =
+          match bit_offset, propagated_size with
+          | Size_fixed bofs, Size_fixed psz ->
+            begin match bofs + psz with
+            | 0 -> `literal_int 0
+            | s when 1 <= s && s <= 32 ->
+              let aligned =
+                `binary (`bin_shr, endianise (cast pointer),
+                         `literal_int (32 - bofs - psz)) in
+              `binary (`bin_band, aligned, Construct.ones_int_literal psz)
+            | s ->
+              to_do (sprintf "Integer's offset + size = %d (>= 32)" s)
+            end
+          | _, _ ->
+            to_do "Integer's offset or size not resolved to constants"
+        in
+        (Typed_expression.create ~expression:the_bits ~c_type (),
+         Typed_expression.create ~expression:pointer ~c_type:(`pointer `void) ())
+          
+
+    type compiled_chunk = 
+      | Compiled_value_expression of 
+          Typed_expression.t * Typed_expression.t
+      | Compiled_offset_expression of Typed_expression.t
+      | Compiled_value_variable of
+          Variable.t * Typed_expression.t * Typed_expression.t
+      | Compiled_offset_variable of Variable.t * Typed_expression.t
+        
+    let compile_offset already_compiled final computes name packet =
+      (* assert (final = (Finally_get_pointer, [])); *)
+      let computations = List.map fst computes in
+      printf "Offset of %s " name;
+      begin match Ht.find_opt already_compiled name with
+      | Some _ -> printf "is already compiled somewhere\n";
+      | None ->
+        let byte_ofs, bit_ofs = aggregate_computations computations in
+        if bit_ofs <> Size_fixed 0 then (
+          to_do "Bit offset of a pointer in [1 .. 7]";
+        ) else (
+          let expr = c_offset_of_packet packet byte_ofs in
+          Ht.add already_compiled name (Compiled_offset_expression expr);
+          printf "will be: %s\n" (C_to_str.expression 
+                                    (Typed_expression.expression expr));
+        );
       end
 
-    let compile_offset already_compiled final computes name =
-      assert (final = (Finally_get_pointer, []));
-      printf "Offset of %s\n" name
+    let compile_value already_compiled final computes name packet =
+      printf "Value of %s" name;
+      let value_and_offset_expressions expr = 
+        let computations = List.map fst computes in
+        let byte_ofs, bit_ofs = aggregate_computations computations in
+        c_value_of_offset_pointer expr bit_ofs (fst final) in
+      begin match Ht.find_opt already_compiled name with
+      | Some (Compiled_value_variable _)
+      | Some (Compiled_value_expression _) ->
+        printf "is already compiled somewhere\n";
+      | Some (Compiled_offset_variable (v, e)) ->
+        printf " has an offset variable \"%s = %s\","
+          (C_to_str.expression (Variable.expression v))
+          (C_to_str.expression (Typed_expression.expression e));
+        let val_expr, ofs_expr =
+          value_and_offset_expressions (Variable.expression v) in
+        printf " so, its value is \"%s\"" 
+          (C_to_str.expression (Typed_expression.expression val_expr));
+        Ht.add already_compiled name 
+          (Compiled_value_expression (val_expr, ofs_expr))
+      | Some (Compiled_offset_expression e) ->
+        printf " has an offset expression \"%s\","
+          (C_to_str.expression (Typed_expression.expression e));
+        let val_expr, ofs_expr =
+          value_and_offset_expressions (Typed_expression.expression e) in
+        printf " hance, its value is \"%s\"" 
+          (C_to_str.expression (Typed_expression.expression val_expr));
+        Ht.add already_compiled name 
+          (Compiled_value_expression (val_expr, ofs_expr))
+      | None ->
+        printf " has to be compiled from scratch,";
+        let computations = List.map fst computes in
+        let byte_ofs, bit_ofs = aggregate_computations computations in
+        let expr = c_offset_of_packet packet byte_ofs in
+        printf " so its offset will be \"%s\""
+          (C_to_str.expression (Typed_expression.expression expr));
+        let val_expr, ofs_expr =
+          value_and_offset_expressions (Typed_expression.expression expr) in
+        printf " therefore its value is \"%s\"" 
+          (C_to_str.expression (Typed_expression.expression val_expr));
+        Ht.add already_compiled name 
+          (Compiled_value_expression (val_expr, ofs_expr))
+      end;
+      (printf "\n")
 
-    let compile_value already_compiled final compute name =
-      printf "Value of %s\n" name
-
-    let compile computables_ht request =
+    let compile computables_ht request packet_expression =
       let compiled_chunks = Ht.create 42 in
       Ht.iter (fun f  (final, computes, deps) ->
         match f with
-        | `offset s -> compile_offset compiled_chunks final computes s
-        | `value s -> compile_value compiled_chunks final computes s
+        | `offset s ->
+          compile_offset compiled_chunks final computes s packet_expression
+        | `value s -> 
+          compile_value compiled_chunks final computes s packet_expression
       ) computables_ht;
 
       let f = function 
         | `field field ->
           begin match Ht.find_opt compiled_chunks field with
-          | Some (Compiled_value_expression e) -> e
-          | Some (Compiled_value_variable (v, e)) -> Variable.typed_expression v
+          | Some (Compiled_value_expression (e, _)) -> e
+          | Some (Compiled_value_variable (v, e, _)) -> Variable.typed_expression v
           | Some (Compiled_offset_expression _)  
           | None
           | Some (Compiled_offset_variable _) ->
@@ -347,10 +442,10 @@ module C_parsing = struct
     let computables = 
       Internal.resolve_dependencies 42 packet_format request_list in
 
-    let compiled_c = Internal.compile computables request_list in
-    ignore compiled_c;
+    let compiled_c_expressions = 
+      Internal.compile computables request_list packet_expression in
 
-    let user_decl, user_stms = make_user_block [] in
+    let user_decl, user_stms = make_user_block compiled_c_expressions in
     (user_decl, user_stms)
 
 
@@ -358,71 +453,4 @@ module C_parsing = struct
 end
 
 
-(*
 
-
-  let rec compile_final_computation
-  ?(network_order=true) bit_offset expression = 
-  function
-  | `get_integer size ->
-  begin match size + bit_offset with
-  | 0 -> `literal_int 0
-  | s when 1 <= s && s <= 8 ->
-  let aligned =
-  `binary (`bin_shr, expression,
-  `literal_int (8 - bit_offset - size)) in
-  `binary (`bin_band, aligned, Cons.ones_int_literal size)
-  | s when 9 <= s && s <= 32 ->
-  let the_uint =
-  `cast (`unsigned_int, `call (`variable "ntohl", [expression])) in
-  let aligned =
-  `binary (`bin_shr, the_uint, `literal_int (32 - size - bit_offset))
-  in
-  `binary (`bin_band, aligned, Cons.ones_int_literal size)
-  | _ ->
-  failwith "compile_final_computation: size + bit_offset > 32;\
-  NOT IMPLEMENTED"
-  end
-  | `get_pointer ->
-  if bit_offset <> 0 then
-  failwith
-  "Error: Attempting to get a pointer with non-zero bit-offset."
-  else
-  (`unary (`unary_addrof, expression))
-  | `little_endian fc ->
-  compile_final_computation 
-  ~network_order:false bit_offset expression fc
-
-
-    let compile_computation c_expression (final_one, computation) =
-      let byte_offset = ref 0 in
-      let bit_offset = ref 0 in
-      List.iter (function
-        | `byte_offset o -> byte_offset := !byte_offset + o
-        | `bit_offset o -> bit_offset := !bit_offset + o
-      ) computation;
-      let more_bytes = !bit_offset / 8 in
-      byte_offset := !byte_offset + more_bytes;
-      bit_offset := !bit_offset - (more_bytes * 8);
-      let expr_as_buffer = `cast (`pointer `unsigned_char, c_expression) in
-      let the_byte = `array_index (expr_as_buffer, `literal_int !byte_offset) in
-      (* let expr_as_buffer = `cast (`pointer `unsigned_char, expression) in *)
-      (compile_final_computation !bit_offset the_byte final_one : C.expression)
-
-
-    let get_fields ~paths ~packet ~format_db =
-      let computations =
-        List.map (find_computation ~packet ~format_db) paths in
-      let expressions = 
-        let expr =
-          let _, te = packet in
-          Typed_expression.expression te in
-        List.map (compile_computation expr) computations in
-
-      let statements =
-        List.map2 (fun e (`field (_, p)) -> `assignment (`variable p, e))
-          expressions paths in
-      Construct.block ~statements ()
-
-  end
-*)

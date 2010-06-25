@@ -81,15 +81,18 @@ let test =
   MPS.packet_format "Test" [
     MPS.field "field_00" (MPS.fixed_string 8);
     MPS.field "field_01" (MPS.fixed_string 6);
-    MPS.field "field_02" (MPS.fixed_string 6);
+    MPS.field "field_02" (MPS.fixed_string 6); (* 20 bytes *)
     MPS.field "field_03" (MPS.fixed_int 8);
     MPS.field "field_04" (MPS.fixed_int 3);
     MPS.field "field_05" (MPS.fixed_int 4);
     MPS.field "field_06" (MPS.fixed_int 1);
-    MPS.field "field_07" (MPS.fixed_int 16);
+    MPS.field "field_07" (MPS.fixed_int 16); (* 32 bits *)
     MPS.field "field_08" (MPS.fixed_int 16);
     MPS.field "field_09" (MPS.fixed_int 3);
     MPS.field "field_10" (MPS.fixed_int 12);
+    MPS.field "field_11" (MPS.fixed_int 1); (* 32 bits, 28 bytes whole *)
+    MPS.string_field "field_12" (MPS.size (`var "field_03"));
+    MPS.fixed_int_field "field_13" 32;
   ]
 
 let whole_database =
