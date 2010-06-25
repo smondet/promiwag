@@ -3,3 +3,5 @@ To do:
 
 * use Promiwag_std's modules (Ls, ...)
 * start using PolyComp
+* Promiwag_meta_packet.C_parsing: need a (string, Variable.t) Ht.t
+* Promiwag_std.debug and let ($) f a = f a and C_To_Str adapted
