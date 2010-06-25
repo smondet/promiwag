@@ -264,24 +264,35 @@ module C_parsing = struct
       | Op_mul -> `bin_mul
       | Op_div -> `bin_div
 
-    let rec compile_size = function
+    let get_variable_expression var_ht name =
+      match Ht.find_opt var_ht name with
+      | Some v -> Variable.expression v
+      | None ->
+        let var = Variable.create ~name ~c_type:(`pointer `void) () in
+        Ht.add var_ht name var;
+        Variable.expression var
+
+
+    let rec compile_size variables_ht = function
       | Size_fixed s -> `literal_int s
-      | Size_variable v -> `variable v
+      | Size_variable v -> get_variable_expression variables_ht v
       | Size_binary_expression (op, size_a, size_b) ->
-        let compiled_a, compiled_b = compile_size size_a, compile_size size_b in
+        let compiled_a, compiled_b =
+          compile_size variables_ht size_a, compile_size variables_ht size_b in
         `binary (c_op_of_size_op op, compiled_a, compiled_b)
       | Size_alignment (i, s) ->
         to_do "Size alignment"
       | Size_offset_of v ->
-        (`unary (`unary_addrof, `variable v))
+        (`unary (`unary_addrof, get_variable_expression variables_ht v))
       | Size_unknown -> 
         raise Error_compile_unknown_size
 
-    let c_offset_of_packet packet byte_offset =
+    let c_offset_of_packet variables_ht packet byte_offset =
       let packet_as_buffer = 
         `cast (`pointer `unsigned_char, Typed_expression.expression packet) in
       let the_address_at_offset =
-        `binary (`bin_add, packet_as_buffer, compile_size byte_offset) in
+        `binary (`bin_add, packet_as_buffer,
+                 compile_size variables_ht byte_offset) in
       Typed_expression.create ~expression:the_address_at_offset
         ~c_type:(`pointer `void) ()
 
@@ -334,7 +345,7 @@ module C_parsing = struct
           Variable.t * Typed_expression.t * Typed_expression.t
       | Compiled_offset_variable of Variable.t * Typed_expression.t
         
-    let compile_offset already_compiled final computes name packet =
+    let compile_offset variables_ht already_compiled final computes name packet =
       (* assert (final = (Finally_get_pointer, [])); *)
       let computations = Ls.map fst computes in
       debug$ sprintf "Offset of %s" name;
@@ -345,14 +356,14 @@ module C_parsing = struct
         if bit_ofs <> Size_fixed 0 then (
           to_do "Bit offset of a pointer in [1 .. 7]";
         ) else (
-          let expr = c_offset_of_packet packet byte_ofs in
+          let expr = c_offset_of_packet variables_ht packet byte_ofs in
           Ht.add already_compiled name (Compiled_offset_expression expr);
           debug$ sprintf " will be: %s"
             (code$ C_to_str.expression (Typed_expression.expression expr));
         );
       end
 
-    let compile_value already_compiled final computes name packet =
+    let compile_value variables_ht already_compiled final computes name packet =
       debug$ sprintf "Value of %s" name;
       let value_and_offset_expressions expr = 
         let computations = Ls.map fst computes in
@@ -385,7 +396,7 @@ module C_parsing = struct
         debug$ sprintf " has to be compiled from scratch,";
         let computations = Ls.map fst computes in
         let byte_ofs, bit_ofs = aggregate_computations computations in
-        let expr = c_offset_of_packet packet byte_ofs in
+        let expr = c_offset_of_packet variables_ht packet byte_ofs in
         debug$ sprintf " so its offset will be %s"
           (code$ C_to_str.expression (Typed_expression.expression expr));
         let val_expr, ofs_expr =
@@ -398,12 +409,15 @@ module C_parsing = struct
 
     let compile computables_ht request packet_expression =
       let compiled_chunks = Ht.create 42 in
+      let variables_ht = Ht.create 43 in
       Ht.iter (fun f  (final, computes, deps) ->
         match f with
         | `offset s ->
-          compile_offset compiled_chunks final computes s packet_expression
+          compile_offset variables_ht compiled_chunks
+            final computes s packet_expression
         | `value s -> 
-          compile_value compiled_chunks final computes s packet_expression
+          compile_value variables_ht compiled_chunks
+            final computes s packet_expression
       ) computables_ht;
 
       let f = function 
