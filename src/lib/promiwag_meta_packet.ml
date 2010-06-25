@@ -74,17 +74,17 @@ end
 
 module Packet_database = struct
 
-  type t = (string, Packet_structure.packet) Hashtbl.t
+  type t = (string, Packet_structure.packet) Ht.t
 
-  let add t (name, packet) = Hashtbl.add t name (name, packet)
+  let add t (name, packet) = Ht.add t name (name, packet)
 
   let of_list l = 
-    let t = Hashtbl.create 42 in
-    List.iter (fun p -> add t p) l;
+    let t = Ht.create 42 in
+    Ls.iter (fun p -> add t p) l;
     t
 
   let get_format (t:t) name =
-    try let _, fmt = Hashtbl.find t name in fmt with
+    try let _, fmt = Ht.find t name in fmt with
     | Not_found ->
       failwith (sprintf "ERROR: Meta_packet.Packet_database.find \
                    packet format \"%s\" not found" name)
@@ -107,7 +107,7 @@ module C_parsing = struct
 
     open Packet_structure
 
-    let cmp_str a b = (String.compare a b) = 0
+    let cmp_str a b = (Str.compare a b) = 0
     let to_do s =
       failwith (sprintf "Meta_packet.C_parsing.Internal: \
                            %s: NOT IMPLEMENTED" s)
@@ -162,7 +162,7 @@ module C_parsing = struct
           raise Field_not_found
         | (Item_field (name, tp)) :: l ->
           if cmp_str name field_name then
-            (final_computation_of_content_type tp, List.rev computations)
+            (final_computation_of_content_type tp, Ls.rev computations)
           else
             let comp = computation_of_content_type tp in
             f (comp :: computations) field_name l
@@ -172,46 +172,46 @@ module C_parsing = struct
         
     let resolve_dependencies max_depth packet_format (request:request list) =
       let request_as_dependencies =
-        List.map (function `field f -> Depend_on_value_of f) request in
-      let computable_variables = Hashtbl.create 42 in
+        Ls.map (function `field f -> Depend_on_value_of f) request in
+      let computable_variables = Ht.create 42 in
       let die_on_max_depth d =
         if d > max_depth then raise (Max_dependency_depth_reached d); in
       let rec go_deeper ?(depth=0) = function
         | [] -> (* Done! *) ()
         | Depend_on_value_of f :: l ->
           die_on_max_depth depth;
-          begin match Hashtbl.find_all computable_variables (`value f) with
+          begin match Ht.find_all computable_variables (`value f) with
           | [] ->
             let (final_comp, final_deps) as final, computes =
               find_field_in_packet packet_format f in
             let deps = 
               final_deps @ 
-                (List.flatten (List.map (fun (_, d) -> d) computes)) in
+                (Ls.flatten (Ls.map (fun (_, d) -> d) computes)) in
             go_deeper ~depth:(depth + 1) deps;
-            Hashtbl.add computable_variables (`value f) (final, computes, deps);
+            Ht.add computable_variables (`value f) (final, computes, deps);
             go_deeper ~depth:(depth + 1) l;
           | one :: [] -> ()
           | more -> 
             failwith (sprintf "field %s added %d times to \
                                  computable_variables as `value"
-                        f (List.length more))
+                        f (Ls.length more))
           end
         | Depend_on_offset_of f :: l -> 
           die_on_max_depth depth;
-          begin match Hashtbl.find_all computable_variables (`offset f) with
+          begin match Ht.find_all computable_variables (`offset f) with
           | [] ->
             let (final_comp, final_deps) as final, computes =
               find_field_in_packet packet_format f in
             let deps = 
-              (List.flatten (List.map (fun (_, d) -> d) computes)) in
+              (Ls.flatten (Ls.map (fun (_, d) -> d) computes)) in
             go_deeper ~depth:(depth + 1) deps;
-            Hashtbl.add computable_variables (`offset f) (final, computes, deps);
+            Ht.add computable_variables (`offset f) (final, computes, deps);
             go_deeper ~depth:(depth + 1) l;
           | one :: [] -> ()
           | more -> 
             failwith (sprintf "field %s added %d times to \
                                  computable_variables as `offset"
-                        f (List.length more))
+                        f (Ls.length more))
           end
         | Depend_on_unknown :: _ ->
           failwith "Depends on something Unknown/Uncomputable"
@@ -336,7 +336,7 @@ module C_parsing = struct
         
     let compile_offset already_compiled final computes name packet =
       (* assert (final = (Finally_get_pointer, [])); *)
-      let computations = List.map fst computes in
+      let computations = Ls.map fst computes in
       debug$ sprintf "Offset of %s" name;
       begin match Ht.find_opt already_compiled name with
       | Some _ -> debug$ sprintf " is already compiled somewhere";
@@ -355,7 +355,7 @@ module C_parsing = struct
     let compile_value already_compiled final computes name packet =
       debug$ sprintf "Value of %s" name;
       let value_and_offset_expressions expr = 
-        let computations = List.map fst computes in
+        let computations = Ls.map fst computes in
         let byte_ofs, bit_ofs = aggregate_computations computations in
         c_value_of_offset_pointer expr bit_ofs (fst final) in
       begin match Ht.find_opt already_compiled name with
@@ -383,7 +383,7 @@ module C_parsing = struct
           (Compiled_value_expression (val_expr, ofs_expr))
       | None ->
         debug$ sprintf " has to be compiled from scratch,";
-        let computations = List.map fst computes in
+        let computations = Ls.map fst computes in
         let byte_ofs, bit_ofs = aggregate_computations computations in
         let expr = c_offset_of_packet packet byte_ofs in
         debug$ sprintf " so its offset will be %s"

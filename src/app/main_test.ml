@@ -21,7 +21,7 @@ module String_tree = struct
     
   let rec print ?(out=stdout) = function
     | Str s -> output_string out s
-    | Cat l -> List.iter (print ~out) l
+    | Cat l -> Ls.iter (print ~out) l
 
 end
 module C2StrTree = Promiwag.C_backend.To_big_string(String_tree)
@@ -152,8 +152,7 @@ let test_pcap_basic () =
 let test_packet_parsing () =
   let module C = Promiwag.C_backend in
 
-  let request_list =
-    ExtList.List.init 14 (fun i -> `field (sprintf "field_%02d" i)) in
+  let request_list = Ls.init 14 (fun i -> `field (sprintf "field_%02d" i)) in
   let packet_var =
     C.Variable.create ~unique:false ~name:"user_packet"
       ~c_type:(`pointer `unsigned_char) () in

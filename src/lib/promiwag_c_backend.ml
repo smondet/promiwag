@@ -198,10 +198,10 @@ module To_big_string(Big_string: BIG_STRING) = struct
     | `named_type type_name -> type_name
     | `array _ as t-> typed_var_str ("", t)
     | `structure items -> 
-      spr "struct {%s;}" (String.concat "; " (List.map typed_var_str items))
+      spr "struct {%s;}" (Str.concat "; " (Ls.map typed_var_str items))
     | `union types -> 
       spr "union {%s}" 
-        (String.concat "" (List.map (fun t -> type_to_str t) types))
+        (Str.concat "" (Ls.map (fun t -> type_to_str t) types))
     | `pointer t -> spr "%s *"  (type_to_str t)
   and typed_var_str: C.variable_name * C.c_type -> string = fun (name, typ) ->
     match typ with
@@ -209,7 +209,7 @@ module To_big_string(Big_string: BIG_STRING) = struct
       (spr "%s %s[]" (type_to_str t) name)
     | `array (size_list, t) ->
       let sz =
-        String.concat "" (List.map (function
+        Str.concat "" (Ls.map (function
           | `literal_int i -> spr "[%d]" i
           | `variable v -> spr "[%s]" v
           | `empty -> "[]") size_list) in
@@ -294,9 +294,9 @@ module To_big_string(Big_string: BIG_STRING) = struct
       BS.cat [ parentize (expression exp); BS.str "->"; BS.str field_name; ]
     | `literal_int i -> BS.str (spr "%d" i)
     | `literal_float f -> BS.str (string_of_float f)
-    | `literal_char c -> parentize ~paren:("'", "'") (BS.str (String.make 1 c))
+    | `literal_char c -> parentize ~paren:("'", "'") (BS.str (Str.make 1 c))
     | `literal_string s -> 
-      parentize ~paren:("\"", "\"") (BS.str (String.escaped s))
+      parentize ~paren:("\"", "\"") (BS.str (Str.escaped s))
     | `compound_literal exps -> 
       parentize ~paren:("{", "}") 
         (sep_list ~str:BS.str ~map:expression ~sep:", "  exps)
@@ -306,7 +306,7 @@ module To_big_string(Big_string: BIG_STRING) = struct
     function
       | `literal_int i -> case (BS.str (string_of_int i))
       | `literal_char c ->
-        case (parentize ~paren:("'", "'") (BS.str (String.make 1 c)))
+        case (parentize ~paren:("'", "'") (BS.str (Str.make 1 c)))
       | `identifier identifier -> case (BS.str identifier)
       | `default -> BS.str "default:"
 
@@ -332,8 +332,8 @@ module To_big_string(Big_string: BIG_STRING) = struct
   let rec block: C.block -> BS.t = fun (local_vars, statements) ->
     BS.cat [
       BS.str " {"; BS.new_line ();
-      BS.cat (List.map (and_newline *** local_variable) local_vars);
-      BS.cat (List.map (and_newline *** statement) statements);
+      BS.cat (Ls.map (and_newline *** local_variable) local_vars);
+      BS.cat (Ls.map (and_newline *** statement) statements);
       BS.str "}"; BS.new_line (); ]
   and statement: C.statement -> BS.t = function
     | `empty -> BS.str ";"
@@ -354,7 +354,7 @@ module To_big_string(Big_string: BIG_STRING) = struct
       BS.cat [
         (BS.str "switch "); (parentize (expression exp)); (BS.str "{");
         (BS.new_line ());
-        BS.cat (List.map 
+        BS.cat (Ls.map 
                   (fun (casexp, blok) -> 
                     BS.cat [
                       case_expression casexp; 
@@ -383,7 +383,7 @@ module To_big_string(Big_string: BIG_STRING) = struct
     | `comment s -> comment s
       
 
-  let file: C.file -> BS.t = fun l -> BS.cat (List.map toplevel l)
+  let file: C.file -> BS.t = fun l -> BS.cat (Ls.map toplevel l)
     
 end
 
@@ -477,7 +477,7 @@ module Function = struct
      arguments = arguments; block = block;}
             
   let signature: t -> C_LightAST.function_signature = fun t -> 
-    (t.return_type, t.name, List.map Variable.function_argument t.arguments)
+    (t.return_type, t.name, Ls.map Variable.function_argument t.arguments)
 
   let local_declaration: t -> C_LightAST.toplevel = fun t ->
     (`function_declaration (`local (signature t)))
@@ -499,7 +499,7 @@ module Construct = struct
     Variable.assignment v (`call (`variable f, args))
 
   let sharp_includes s_list = 
-    (List.map (fun s -> `sharp_include s) s_list : C_LightAST.toplevel list)
+    (Ls.map (fun s -> `sharp_include s) s_list : C_LightAST.toplevel list)
 
   let standard_main block =
     let argc =
