@@ -420,6 +420,22 @@ module C_parsing = struct
             final computes s packet_expression
       ) computables_ht;
 
+      let declarations, assignments = ref [], ref [] in
+      Ht.iter (fun name c_var -> 
+        declarations := (Variable.declaration c_var) :: !declarations;
+        let expression =
+          match Ht.find_opt compiled_chunks name with
+          | Some (Compiled_value_expression (e, _)) -> e
+          | Some (Compiled_value_variable (v, e, _)) -> Variable.typed_expression v
+          | Some (Compiled_offset_expression _)  
+          | None
+          | Some (Compiled_offset_variable _) ->
+            failwith (sprintf "Field %s should have been compiled!" name)
+        in
+        assignments := 
+          (Variable.assignment ~cast:true c_var
+             (Typed_expression.expression expression)) :: !assignments;
+      ) variables_ht;
       let f = function 
         | `field field ->
           begin match Ht.find_opt compiled_chunks field with
@@ -431,7 +447,7 @@ module C_parsing = struct
             failwith (sprintf "Field %s should have been compiled!" field)
           end
       in
-      Ls.map request ~f
+      (Ls.rev !declarations, Ls.rev !assignments, Ls.map request ~f)
 
   end
 
@@ -454,11 +470,11 @@ module C_parsing = struct
     let computables = 
       Internal.resolve_dependencies 42 packet_format request_list in
 
-    let compiled_c_expressions = 
+    let declarations, assignments, compiled_c_expressions = 
       Internal.compile computables request_list packet_expression in
 
     let user_decl, user_stms = make_user_block compiled_c_expressions in
-    (user_decl, user_stms)
+    (declarations @ user_decl, assignments @ user_stms)
 
 
 

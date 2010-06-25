@@ -163,14 +163,21 @@ let test_packet_parsing () =
     Promiwag.Meta_packet.C_parsing.informed_block
       ~packet_format ~packet_expression ~request_list
       ~make_user_block:(fun te_list ->
-        ([], Ls.map2 request_list te_list
-          ~f:(fun req expr ->
-            let `field s = req in
-            `assignment (`variable ("the_" ^ s),
-                         C.Typed_expression.expression expr))))
+        let vars =
+          Ls.map request_list ~f:(function `field name -> C.Variable.create ~name ())
+        in
+        (Ls.map (packet_var :: vars) ~f:C.Variable.declaration,
+         Ls.map2 vars te_list
+           ~f:(fun var expr ->
+            C.Variable.assignment var (C.Typed_expression.expression expr))))
   in
-  String_tree.print (C2StrTree.block block);
-
+  let main, _, _ = 
+    C.Construct.standard_main block in
+  String_tree.print (C2StrTree.file  [C.Function.definition main]);
+  
+  let out = open_out "parsingtest.c" in
+  String_tree.print ~out (C2StrTree.file [C.Function.definition main]);
+  close_out out;
   ()
 
 (* ocamlfind ocamlc -package "extlib" -linkpkg -g custom_ast.ml && ./a.out mp *)
