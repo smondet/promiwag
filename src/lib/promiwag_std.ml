@@ -53,3 +53,15 @@ module Unique = struct
 
 end
   
+let ($) f x = f x
+
+let debug_mode: [`stdout | `silent ] ref = ref `stdout
+
+let debug s = 
+  match !debug_mode with
+  | `stdout -> 
+    (if s.[0] <> ' ' then printf "------\n%!"); printf "DEBUG| %s\n%!" s
+  | `silent -> ()
+
+let code s = sprintf "[[%s]]" s
+

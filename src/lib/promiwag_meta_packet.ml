@@ -109,7 +109,6 @@ module C_parsing = struct
 
     let cmp_str a b = (String.compare a b) = 0
     let to_do s =
-      printf "%!";
       failwith (sprintf "Meta_packet.C_parsing.Internal: \
                            %s: NOT IMPLEMENTED" s)
         
@@ -338,9 +337,9 @@ module C_parsing = struct
     let compile_offset already_compiled final computes name packet =
       (* assert (final = (Finally_get_pointer, [])); *)
       let computations = List.map fst computes in
-      printf "Offset of %s " name;
+      debug$ sprintf "Offset of %s" name;
       begin match Ht.find_opt already_compiled name with
-      | Some _ -> printf "is already compiled somewhere\n";
+      | Some _ -> debug$ sprintf " is already compiled somewhere";
       | None ->
         let byte_ofs, bit_ofs = aggregate_computations computations in
         if bit_ofs <> Size_fixed 0 then (
@@ -348,13 +347,13 @@ module C_parsing = struct
         ) else (
           let expr = c_offset_of_packet packet byte_ofs in
           Ht.add already_compiled name (Compiled_offset_expression expr);
-          printf "will be: %s\n" (C_to_str.expression 
-                                    (Typed_expression.expression expr));
+          debug$ sprintf " will be: %s"
+            (code$ C_to_str.expression (Typed_expression.expression expr));
         );
       end
 
     let compile_value already_compiled final computes name packet =
-      printf "Value of %s" name;
+      debug$ sprintf "Value of %s" name;
       let value_and_offset_expressions expr = 
         let computations = List.map fst computes in
         let byte_ofs, bit_ofs = aggregate_computations computations in
@@ -362,41 +361,40 @@ module C_parsing = struct
       begin match Ht.find_opt already_compiled name with
       | Some (Compiled_value_variable _)
       | Some (Compiled_value_expression _) ->
-        printf "is already compiled somewhere\n";
+        debug$ sprintf " is already compiled somewhere\n";
       | Some (Compiled_offset_variable (v, e)) ->
-        printf " has an offset variable \"%s = %s\","
-          (C_to_str.expression (Variable.expression v))
-          (C_to_str.expression (Typed_expression.expression e));
+        debug$ sprintf " has an offset variable %s (= %s),"
+          (code$ C_to_str.expression (Variable.expression v))
+          (code$ C_to_str.expression (Typed_expression.expression e));
         let val_expr, ofs_expr =
           value_and_offset_expressions (Variable.expression v) in
-        printf " so, its value is \"%s\"" 
-          (C_to_str.expression (Typed_expression.expression val_expr));
+        debug$ sprintf " so, its value is %s" 
+          (code$ C_to_str.expression (Typed_expression.expression val_expr));
         Ht.add already_compiled name 
           (Compiled_value_expression (val_expr, ofs_expr))
       | Some (Compiled_offset_expression e) ->
-        printf " has an offset expression \"%s\","
-          (C_to_str.expression (Typed_expression.expression e));
+        debug$ sprintf " has an offset expression %s,"
+          (code$ C_to_str.expression (Typed_expression.expression e));
         let val_expr, ofs_expr =
           value_and_offset_expressions (Typed_expression.expression e) in
-        printf " hance, its value is \"%s\"" 
-          (C_to_str.expression (Typed_expression.expression val_expr));
+        debug$ sprintf " hance, its value is %s" 
+          (code$ C_to_str.expression (Typed_expression.expression val_expr));
         Ht.add already_compiled name 
           (Compiled_value_expression (val_expr, ofs_expr))
       | None ->
-        printf " has to be compiled from scratch,";
+        debug$ sprintf " has to be compiled from scratch,";
         let computations = List.map fst computes in
         let byte_ofs, bit_ofs = aggregate_computations computations in
         let expr = c_offset_of_packet packet byte_ofs in
-        printf " so its offset will be \"%s\""
-          (C_to_str.expression (Typed_expression.expression expr));
+        debug$ sprintf " so its offset will be %s"
+          (code$ C_to_str.expression (Typed_expression.expression expr));
         let val_expr, ofs_expr =
           value_and_offset_expressions (Typed_expression.expression expr) in
-        printf " therefore its value is \"%s\"" 
-          (C_to_str.expression (Typed_expression.expression val_expr));
+        debug$ sprintf " therefore its value is %s" 
+          (code$ C_to_str.expression (Typed_expression.expression val_expr));
         Ht.add already_compiled name 
           (Compiled_value_expression (val_expr, ofs_expr))
-      end;
-      (printf "\n")
+      end
 
     let compile computables_ht request packet_expression =
       let compiled_chunks = Ht.create 42 in
