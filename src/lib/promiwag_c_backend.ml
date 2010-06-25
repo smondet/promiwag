@@ -452,6 +452,15 @@ module Variable = struct
 
 end
 
+module Normal_string = struct
+  include String
+  let str s = s
+  let cat = concat ""
+  let new_line () = "\n"
+end
+module C_to_str = To_big_string(Normal_string)
+
+
 module Function = struct
 
   type t = {
