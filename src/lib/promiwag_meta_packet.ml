@@ -10,6 +10,8 @@ module Packet_structure = struct
 
   let caml_op_of_size_op = function
     | Op_add -> (+) | Op_sub -> (-) | Op_mul -> ( * ) | Op_div -> (/)
+  let string_of_size_op = function
+    | Op_add -> "+" | Op_sub -> "-" | Op_mul -> "*" | Op_div -> "/"
 
   type size =
     | Size_fixed of int
@@ -21,6 +23,16 @@ module Packet_structure = struct
 
   let size_int i = Size_fixed i
   let size_var v = Size_variable v
+
+  let rec string_of_size = function
+    | Size_fixed o -> sprintf "%d" o
+    | Size_variable v -> v
+    | Size_binary_expression (op, size_a, size_b) ->
+      sprintf "(%s %s %s)" (string_of_size size_a)
+        (string_of_size_op op) (string_of_size size_b)
+    | Size_alignment (i, s) -> sprintf "align%d(%s)" i (string_of_size s)
+    | Size_offset_of o -> sprintf "offset_of(%s)" o
+    | Size_unknown ->  "[Unknown]"
 
   let rec parse_size = function
     | `int i -> Size_fixed i
@@ -90,6 +102,259 @@ module Packet_database = struct
                    packet format \"%s\" not found" name)
 
 end
+
+module Parser_generator = struct
+
+  type request = [ `field of string | `offset of string ]
+
+  exception Field_not_found
+  exception Max_dependency_depth_reached of int
+  exception Error_compile_unknown_size
+
+  module Stage_1 = struct 
+      
+    open Packet_structure
+
+    let cmp_str a b = (Str.compare a b) = 0
+
+    let error_prefix = "Meta_packet.Parser_generator.Stage_1"
+    let to_do s =
+      failwith (sprintf "%s; %s: NOT IMPLEMENTED" error_prefix s)
+    let fail s =
+      failwith (sprintf "%s: ERROR %s" error_prefix s)
+
+    type dependency =
+      | Depend_on_value_of of string
+      | Depend_on_offset_of of string
+      | Depend_on_unknown
+
+    let dependencies_of_size sz =
+      let rec tree_descent deps = function
+        | Size_fixed s -> deps
+        | Size_variable v -> (Depend_on_value_of v :: deps)
+        | Size_binary_expression (op, size_a, size_b) ->
+          (tree_descent deps size_a) @ (tree_descent deps size_b)
+        | Size_alignment (i, s) -> tree_descent deps s
+        | Size_offset_of v -> (Depend_on_offset_of v :: deps)
+        | Size_unknown -> (Depend_on_unknown :: deps)
+      in
+      (tree_descent [] sz)
+
+    let string_of_dependency = function
+      | Depend_on_value_of o -> sprintf "(value-of: %s)" o
+      | Depend_on_offset_of o -> sprintf "(offset-of: %s)" o
+      | Depend_on_unknown -> "(depends-on-unknown)"
+
+    type computation_item =
+      | Compute_byte_offset of size
+      | Compute_bit_offset of size
+
+    let rec computation_of_content_type = function
+      | Type_little_endian ct -> computation_of_content_type ct
+      | Type_unsigned_integer sz
+      | Type_signed_integer sz -> 
+        (Compute_bit_offset sz, dependencies_of_size sz)
+      | Type_string sz -> 
+        (Compute_byte_offset sz, dependencies_of_size sz)
+
+    let string_of_computation_item = function
+      | Compute_byte_offset o -> sprintf "(byte-offset: %s)" (string_of_size o)
+      | Compute_bit_offset o -> sprintf "(bit-offset: %s)" (string_of_size o)
+
+
+    type final_computation =
+      | Finally_get_integer of [`big | `little] * [`signed | `unsigned] * size
+      | Finally_get_pointer
+
+    let string_of_final_computation = function
+      | Finally_get_integer (`big, `signed, s) -> 
+        sprintf "(get-integer %s, signed, big endian)" (string_of_size s)
+      | Finally_get_integer (`big, `unsigned, s) -> 
+        sprintf "(get-integer %s, unsigned, big endian)" (string_of_size s)
+      | Finally_get_integer (`little, `signed, s) -> 
+        sprintf "(get-integer %s, signed, little endian)" (string_of_size s)
+      | Finally_get_integer (`little, `unsigned, s) -> 
+        sprintf "(get-integer %s, unsigned, little endian)" (string_of_size s)
+      | Finally_get_pointer -> "get-pointer"
+
+    let rec final_computation_of_content_type ?(endianism=`big) = function
+      | Type_little_endian ct -> 
+        final_computation_of_content_type ~endianism:`little ct
+      | Type_unsigned_integer sz ->
+        (Finally_get_integer (endianism, `unsigned, sz),
+         dependencies_of_size sz)
+      | Type_signed_integer sz ->
+        (Finally_get_integer (endianism, `unsigned, sz),
+         dependencies_of_size sz)
+      | Type_string sz -> (Finally_get_pointer, [])
+
+    let rec propagate_constants_in_size = function
+      | Size_fixed s -> Size_fixed s
+      | Size_variable v -> Size_variable v
+      | Size_binary_expression (op, size_a, size_b) ->
+        let propagated_a = propagate_constants_in_size size_a in
+        let propagated_b = propagate_constants_in_size size_b in
+        begin match propagated_a, propagated_b with
+        | Size_fixed a, Size_fixed b ->
+          Size_fixed (caml_op_of_size_op op a b)
+        | sa, sb ->
+          Size_binary_expression (op, sa, sb)
+        end
+      | Size_alignment (i, s) ->
+        begin match propagate_constants_in_size s with
+        | Size_fixed s -> Size_fixed (s + (s mod i))
+        | other -> other
+        end
+      | Size_offset_of v -> Size_offset_of v
+      | Size_unknown -> Size_unknown
+
+    let aggregate_computations computations = 
+      let byte_offset, bit_offset =
+        let f (prev_byte, prev_bit) = function
+          | Compute_byte_offset s ->
+            (Size_binary_expression (Op_add, prev_byte, s), prev_bit)
+          | Compute_bit_offset s ->
+            (prev_byte, Size_binary_expression (Op_add, prev_bit, s)) in
+        Ls.fold_left ~f computations ~init:(Size_fixed 0, Size_fixed 0) in
+      let total_byte_offset, in_byte_bit_offset =
+        size (`add (`size byte_offset, `div (`size bit_offset, `int 8))),
+        size (`sub (`size bit_offset,
+                    `mul (`int 8, `div (`size bit_offset, `int 8))))
+      in
+      let propagated_byte_ofs, propagated_bit_ofs =
+        propagate_constants_in_size total_byte_offset,
+        propagate_constants_in_size in_byte_bit_offset in
+      (propagated_byte_ofs, propagated_bit_ofs)
+
+    let find_field_in_packet packet_format field_name =
+      let rec f computations dependencies field_name = function
+        | [] ->
+          raise Field_not_found
+        | (Item_field (name, tp)) :: l ->
+          if cmp_str name field_name then
+            let fcomp, fdeps = final_computation_of_content_type tp in
+            (fcomp, fdeps, Ls.rev computations, Ls.rev dependencies)
+          else
+            let comp, dep = computation_of_content_type tp in
+            f (comp :: computations) (dep :: dependencies) field_name l
+      in
+      (f [] [] field_name packet_format)
+
+    type stage_1_compiled_expression = {  (* TODO find a better name... *)
+      s1_field: string;
+      s1_byte_offset: size;
+      s1_bit_offset: size;
+      s1_final: final_computation;
+      s1_dependencies: dependency list;
+      mutable s1_needed_as: [`value | `offset | `both];
+      mutable s1_needed_by: stage_1_compiled_expression list;
+    }
+
+    let stage_1_compile_field needed_as needed_by packet_format field_name =
+      let final_comp, final_deps, comps, deps =
+        find_field_in_packet packet_format field_name in
+      let total_deps = final_deps @ (Ls.flatten deps) in
+      let byte_ofs, bit_ofs = aggregate_computations comps in
+      {s1_field = field_name; s1_byte_offset = byte_ofs; s1_bit_offset = bit_ofs;
+       s1_final = final_comp; s1_dependencies = total_deps;
+       s1_needed_as = needed_as; s1_needed_by = needed_by}
+
+    let stage_1_compile_dependency packet_format needed_by = function
+      | Depend_on_value_of f ->
+        stage_1_compile_field `value needed_by packet_format f
+      | Depend_on_offset_of f ->
+        stage_1_compile_field `offset needed_by packet_format f
+      | Depend_on_unknown -> fail "stage_1_compile_dependency: should not be here"
+
+    let dependencies_of_request: request list -> dependency list =
+      Ls.map ~f:(function 
+        | `field f -> Depend_on_value_of f
+        | `offset f -> Depend_on_offset_of f)
+
+    type stage_1 = {
+      packet_format: packet;
+      request_list: request list;
+      compiled_expressions: (string, stage_1_compiled_expression) Ht.t;
+    }
+
+    let compile_with_dependencies
+        ?(max_depth=42) ~packet_format (request:request list) =
+      let first_dependencies = dependencies_of_request request in
+      let stage_compiled_things = Ht.create 42 in
+      let die_on_max_depth d =
+        if d > max_depth then raise (Max_dependency_depth_reached d); in
+      let rec go_deeper depth dependers = function
+        | [] -> (* Done! *) ()
+        | (Depend_on_value_of f as d) :: l
+        | (Depend_on_offset_of f as d) :: l ->
+          die_on_max_depth depth;
+          begin match Ht.find_all stage_compiled_things f with
+          | [] ->
+            let compiled =
+              stage_1_compile_dependency (snd packet_format) dependers d in
+            go_deeper (depth + 1) [ compiled ] compiled.s1_dependencies;
+            Ht.add stage_compiled_things f compiled;
+            go_deeper depth dependers l;
+          | one :: [] ->
+            begin match one.s1_needed_as, d with
+            | `both, _
+            | `value, Depend_on_value_of _
+            | `offset, Depend_on_offset_of _ -> ()
+            | `value, Depend_on_offset_of _
+            | `offset, Depend_on_value_of _ ->
+              one.s1_needed_as <- `both;
+            | _ -> ()
+            end;
+            one.s1_needed_by <- dependers @ one.s1_needed_by;
+          | more -> 
+            fail (sprintf "field %s added %d times to stage_compiled_things"
+                    f (Ls.length more))
+          end
+        | Depend_on_unknown :: l ->
+          fail "Stage 1: Cannot compile unknown dependency"
+      in
+      go_deeper 0 [] first_dependencies;
+      {packet_format = packet_format; 
+       request_list = request;
+       compiled_expressions = stage_compiled_things}
+
+    let string_of_stage_1_compiled_expression
+        ?(before="") ?(sep_parens=" ") ce =
+      sprintf "%s[\"%s\" (byte_offset: %s, bit_offset: %s)%s\
+              (final: %s)%s(dependencies: [%s])%s(needed by: [%s] as %s)]"
+        before ce.s1_field
+        (string_of_size ce.s1_byte_offset) 
+        (string_of_size ce.s1_bit_offset) sep_parens
+        (string_of_final_computation ce.s1_final) sep_parens
+        (Str.concat "; " (Ls.map string_of_dependency ce.s1_dependencies))
+        sep_parens
+        (Str.concat "; " (Ls.map (fun c -> c.s1_field) ce.s1_needed_by))
+        (match ce.s1_needed_as with
+        | `value -> "value" | `offset -> "offset" | `both -> "both")
+
+    let string_of_stage_1_compilation_ht
+        ?(sep_items="\n") ?(before="") ?(sep_parens="\n  ") ht =
+      let l = ref [] in
+      Ht.iter (fun _ s1 -> 
+        l :=
+          (string_of_stage_1_compiled_expression ~before ~sep_parens s1)
+        :: !l;
+      ) ht;
+      Str.concat sep_items (Ls.rev !l)
+
+    let dump s1 =
+      sprintf "{Stage 1 for [%s], on \"%s\" packets:\n%s\n}"
+        (Str.concat ", " (Ls.map (function
+          | `field f -> sprintf "field %s" f
+          | `offset f -> sprintf "offset of %s" f) s1.request_list))
+        (fst s1.packet_format)
+        (string_of_stage_1_compilation_ht
+           ~before:"  " ~sep_parens:"\n    " s1.compiled_expressions)
+
+  end
+
+end
+
 
 module C_parsing = struct
 
