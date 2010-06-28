@@ -17,3 +17,4 @@ module C = struct
 
 end
 
+let default = {endianism = `little}

@@ -162,13 +162,14 @@ let test_packet_parsing () =
 
   printf "STAGE 1:\n%s\n" (Stage_one.dump stage_1);
 
+  let module Stage_two = Promiwag.Meta_packet.Parser_generator.Stage_2_C in
   let packet_var =
     C.Variable.create ~unique:false ~name:"user_packet"
       ~c_type:(`pointer `unsigned_char) () in
   let packet_expression = C.Variable.typed_expression packet_var in
   let block =
-    Promiwag.Meta_packet.C_parsing.informed_block
-      ~packet_format:(snd packet_format) ~packet_expression ~request_list
+    Stage_two.informed_block ~stage_1 ~packet_expression 
+      ~platform:Promiwag.Platform.default
       ~make_user_block:(fun te_list ->
         let vars =
           Ls.map request_list ~f:(function `field name -> C.Variable.create ~name ())
