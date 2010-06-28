@@ -271,7 +271,7 @@ module Parser_generator = struct
         | `field f -> Depend_on_value_of f
         | `offset f -> Depend_on_offset_of f)
 
-    type stage_1 = {
+    type result = {
       packet_format: packet;
       request_list: request list;
       compiled_expressions: (string, stage_1_compiled_expression) Ht.t;
@@ -350,6 +350,92 @@ module Parser_generator = struct
         (fst s1.packet_format)
         (string_of_stage_1_compilation_ht
            ~before:"  " ~sep_parens:"\n    " s1.compiled_expressions)
+
+  end
+
+  module Stage_2_C = struct
+    
+    module C = Promiwag_c_backend.C_LightAST
+    open Promiwag_c_backend
+    open Packet_structure
+    let error_prefix = "Meta_packet.Parser_generator.Stage_2_C"
+    let to_do s =
+      failwith (sprintf "%s; %s: NOT IMPLEMENTED" error_prefix s)
+    let fail s =
+      failwith (sprintf "%s: ERROR %s" error_prefix s)
+
+    type compiled =
+      (* TODO: extend with more types ! and platform specificities *)
+      | C_Variable of [`value | `offset] * Variable.t
+      | C_Expression of  [`value | `offset] * Typed_expression.t
+
+    type compiler = {
+      stage_1: Stage_1.result;
+      compiled_ht: (string, Variable.t) Ht.t;
+      target_platform: Promiwag_platform.platform;
+    }
+
+(*    let get_variable_expression compiler needed_as name =
+      let c_type =
+        match needed_as with
+        | `value -> Promiwag_platform.C.native_uint compiler.target_platform
+        | `offset -> `pointer `void in
+      match Ht.find_opt compiler.variables_ht name with
+      | Some v -> `cast (c_type, Variable.expression v)
+      | None ->
+        let var =
+          Variable.create ~name ~c_type () in
+        Ht.add compiler.variables_ht name var;
+        Variable.expression var
+*)
+
+    let c_op_of_size_op = function
+      | Op_add -> `bin_add
+      | Op_sub -> `bin_sub
+      | Op_mul -> `bin_mul
+      | Op_div -> `bin_div
+
+    let get_stage_1_expression expressions f =
+      match Ht.find_opt expressions f with
+      | Some e -> e
+      | None -> fail (sprintf "Stage 1 missed field %s???" f)
+
+    let rec compile_expression compiler expr_or_var field_or_offset expr =
+(*      let stage_1_expressions = 
+        compiler.stage_1.Stage_1.compiled_expressions in *)
+      let needness = Ls.length expr.Stage_1.s1_needed_by in
+      begin match needness with
+      | 0 | 1 ->
+        compile_expression compiler `as_expression `as_field expr
+      | n ->
+        compile_expression compiler `as_variable `as_field expr
+      end
+
+
+
+    let informed_block ~stage_1 ~platform
+        ~(packet_expression: Typed_expression.t)
+        ~(make_user_block: Typed_expression.t list -> C.block) =
+      let compiler = 
+        {stage_1 = stage_1;
+         compiled_ht = Ht.create 42; target_platform = platform} in
+      let request_list = compiler.stage_1.Stage_1.request_list in
+
+      Ls.iter request_list ~f:(function 
+        | `field f ->
+          let stage_1_expressions = 
+            compiler.stage_1.Stage_1.compiled_expressions in
+          let s1_expr = get_stage_1_expression stage_1_expressions f in
+          compile_expression compiler `as_expression `as_field s1_expr
+        | `offset f ->
+          let stage_1_expressions = 
+            compiler.stage_1.Stage_1.compiled_expressions in
+          let s1_expr = get_stage_1_expression stage_1_expressions f in
+          compile_expression compiler `as_expression `as_offset s1_expr
+      ); 
+
+
+      ()
 
   end
 
