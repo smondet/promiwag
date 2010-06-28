@@ -3,6 +3,7 @@ LIB_MODULES[] =
     promiwag_Yaboon_PolyComp
     promiwag_std
     promiwag_c_backend
+    promiwag_platform
     promiwag_meta_packet
     promiwag_standard_packets
     promiwag_pcap_boilerplate
