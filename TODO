@@ -2,5 +2,6 @@
 To do:
 
 * start using PolyComp
-
+* Promiwag_platform: Generate an "inspector.c" piece of code which
+  retrives endianism, sizeof's, etc ... as OCaml code ...
 
