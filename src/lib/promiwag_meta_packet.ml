@@ -274,26 +274,27 @@ module Parser_generator = struct
     type result = {
       packet_format: packet;
       request_list: request list;
-      compiled_expressions: (string, stage_1_compiled_expression) Ht.t;
+      compiled_expressions: stage_1_compiled_expression list;
     }
 
     let compile_with_dependencies
         ?(max_depth=42) ~packet_format (request:request list) =
       let first_dependencies = dependencies_of_request request in
-      let stage_compiled_things = Ht.create 42 in
+      let stage_compiled_things = ref [] in
       let die_on_max_depth d =
         if d > max_depth then raise (Max_dependency_depth_reached d); in
       let rec go_deeper depth dependers = function
         | [] -> (* Done! *) ()
-        | (Depend_on_value_of f as d) :: l
-        | (Depend_on_offset_of f as d) :: l ->
+        | (Depend_on_value_of fname as d) :: l
+        | (Depend_on_offset_of fname as d) :: l ->
           die_on_max_depth depth;
-          begin match Ht.find_all stage_compiled_things f with
+          let f ct = cmp_str ct.s1_field fname in
+          begin match Ls.find_all !stage_compiled_things ~f with
           | [] ->
             let compiled =
               stage_1_compile_dependency (snd packet_format) dependers d in
             go_deeper (depth + 1) [ compiled ] compiled.s1_dependencies;
-            Ht.add stage_compiled_things f compiled;
+            stage_compiled_things := compiled :: !stage_compiled_things;
             go_deeper depth dependers l;
           | one :: [] ->
             begin match one.s1_needed_as, d with
@@ -308,7 +309,7 @@ module Parser_generator = struct
             one.s1_needed_by <- dependers @ one.s1_needed_by;
           | more -> 
             fail (sprintf "field %s added %d times to stage_compiled_things"
-                    f (Ls.length more))
+                    fname (Ls.length more))
           end
         | Depend_on_unknown :: l ->
           fail "Stage 1: Cannot compile unknown dependency"
@@ -316,7 +317,7 @@ module Parser_generator = struct
       go_deeper 0 [] first_dependencies;
       {packet_format = packet_format; 
        request_list = request;
-       compiled_expressions = stage_compiled_things}
+       compiled_expressions = Ls.rev !stage_compiled_things}
 
     let string_of_stage_1_compiled_expression
         ?(before="") ?(sep_parens=" ") ce =
@@ -335,10 +336,10 @@ module Parser_generator = struct
     let string_of_stage_1_compilation_ht
         ?(sep_items="\n") ?(before="") ?(sep_parens="\n  ") ht =
       let l = ref [] in
-      Ht.iter (fun _ s1 -> 
-        l :=
-          (string_of_stage_1_compiled_expression ~before ~sep_parens s1)
-        :: !l;
+      Ls.iter (fun s1 -> 
+        let expr = 
+          string_of_stage_1_compiled_expression ~before ~sep_parens s1 in
+        l := expr :: !l;
       ) ht;
       Str.concat sep_items (Ls.rev !l)
 
@@ -371,7 +372,7 @@ module Parser_generator = struct
 
     type compiler = {
       stage_1: Stage_1.result;
-      compiled_ht: (string, Variable.t) Ht.t;
+     (* compiled: compiled list; *)
       target_platform: Promiwag_platform.platform;
     }
 
@@ -395,8 +396,9 @@ module Parser_generator = struct
       | Op_mul -> `bin_mul
       | Op_div -> `bin_div
 
+(*
     let get_stage_1_expression expressions f =
-      match Ht.find_opt expressions f with
+      match Ls.find_opt expressions ~f: with
       | Some e -> e
       | None -> fail (sprintf "Stage 1 missed field %s???" f)
 
@@ -411,31 +413,21 @@ module Parser_generator = struct
         compile_expression compiler `as_variable `as_field expr
       end
 
+*)
+
+    let compile_expression compiler expression = 
+      ()
+
 
 
     let informed_block ~stage_1 ~platform
         ~(packet_expression: Typed_expression.t)
         ~(make_user_block: Typed_expression.t list -> C.block) =
       let compiler = 
-        {stage_1 = stage_1;
-         compiled_ht = Ht.create 42; target_platform = platform} in
-      let request_list = compiler.stage_1.Stage_1.request_list in
+        {stage_1 = stage_1; target_platform = platform} in
 
-      Ls.iter request_list ~f:(function 
-        | `field f ->
-          let stage_1_expressions = 
-            compiler.stage_1.Stage_1.compiled_expressions in
-          let s1_expr = get_stage_1_expression stage_1_expressions f in
-          compile_expression compiler `as_expression `as_field s1_expr
-        | `offset f ->
-          let stage_1_expressions = 
-            compiler.stage_1.Stage_1.compiled_expressions in
-          let s1_expr = get_stage_1_expression stage_1_expressions f in
-          compile_expression compiler `as_expression `as_offset s1_expr
-      ); 
-
-
-      ()
+      Ls.map compiler.stage_1.Stage_1.compiled_expressions 
+        ~f:(compile_expression compiler)
 
   end
 
