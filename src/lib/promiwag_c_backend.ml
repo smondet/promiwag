@@ -87,6 +87,7 @@ module C_LightAST = struct
   | `dot_field of expression * field_name
   | `arrow_field of expression * field_name
   | `literal_int of int
+  | `literal_int64 of int64
   | `literal_float of float
   | `literal_char of char
   | `literal_string of string
@@ -293,6 +294,7 @@ module To_big_string(Big_string: BIG_STRING) = struct
     | `arrow_field (exp, field_name) -> 
       BS.cat [ parentize (expression exp); BS.str "->"; BS.str field_name; ]
     | `literal_int i -> BS.str (spr "%d" i)
+    | `literal_int64 i -> BS.str (spr "%Ld" i)
     | `literal_float f -> BS.str (string_of_float f)
     | `literal_char c -> parentize ~paren:("'", "'") (BS.str (Str.make 1 c))
     | `literal_string s -> 
@@ -520,6 +522,12 @@ module Construct = struct
       failwith "ones_int_literal: Too big int"
     else
       `literal_int ((1 lsl size) - 1)
+
+  let ones_int64_literal size =
+    if  Int64.to_float Int64.max_int < (2. ** (float size)) then
+      failwith "ones_int64_literal: Too big int64"
+    else
+      `literal_int64 (Int64.sub (Int64.shift_left 1L size) 1L)
 
    
 end
