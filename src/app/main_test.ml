@@ -177,7 +177,8 @@ let test_packet_parsing () =
         (Ls.map (packet_var :: vars) ~f:C.Variable.declaration,
          Ls.map2 vars te_list
            ~f:(fun var expr ->
-            C.Variable.assignment var (C.Typed_expression.expression expr))))
+            C.Variable.assignment ~cast:true
+              var (C.Typed_expression.expression expr))))
   in
   let main, _, _ = 
     C.Construct.standard_main block in
@@ -194,6 +195,22 @@ let test_pcap_parsing dev () =
   let module Pcap = Promiwag.Pcap_C in
 
   printf "Start test_pcap_parsing\n";
+
+  let module C = Promiwag.C_backend in
+
+  let request_list = [
+    `offset "dest_addr"; `field "src_addr"; `field "ethertype_length"; ] in
+  let packet_format = Promiwag.Standard_packets.ethernet in
+
+  let module Stage_one = Promiwag.Meta_packet.Parser_generator.Stage_1 in
+  let stage_1 =
+    Stage_one.compile_with_dependencies
+      ~max_depth:10 ~packet_format request_list in
+
+  printf "STAGE 1:\n%s\n" (Stage_one.dump stage_1);
+
+
+
   let passed_structure =
     C.Variable.create ~name:"passed_structure"
       ~c_type:(`unsigned_long) ~initialisation:(`literal_int 1) () in
@@ -217,39 +234,44 @@ let test_pcap_parsing dev () =
           ];
         `assignment (counter_mem_contents,
                      `binary (`bin_add, `literal_int 1, counter_mem_contents));
-(*        begin 
-          let paths = [
-            `field ("Ethernet", "dest_addr");
-            `field ("Ethernet", "src_addr");
-            `field ("Ethernet", "ethertype_length"); ] in
-          let packet = ("Ethernet", Variable.typed_expression packet_buffer) in
-          let format_db = Standard_packets.whole_database in
-          let (_, stmts) =
-            Meta_packet.C_parsing.get_fields ~paths ~packet ~format_db in
-          let vars = [
-            ("dest_addr", `pointer `unsigned_char, None);
-            ("src_addr", `pointer `unsigned_char, None);
-            ("ethertype_length", `unsigned_int, None); ] in
-          let big_printf =
-            call_printf "ethernet:\n    dest: %02x:%02x:%02x:%02x:%02x:%02x\n\
-                          \    src: %02x:%02x:%02x:%02x:%02x:%02x\
+
+begin
+        let module Stage_two = Promiwag.Meta_packet.Parser_generator.Stage_2_C in
+        let packet_expression = C.Variable.typed_expression packet_buffer in
+        let block =
+          Stage_two.informed_block ~stage_1 ~packet_expression 
+            ~platform:Promiwag.Platform.default
+            ~make_user_block:(fun te_list ->
+              match te_list with 
+              | var_offset_dest_addr :: var_field_src_addr ::
+                  var_field_ethertype_length :: [] ->
+                let idx te i =
+                  `array_index (C.Typed_expression.expression te, `literal_int i) in
+
+                let big_printf =
+                  call_printf "ethernet:\n\
+                          \    dest: %02x:%02x:%02x:%02x:%02x:%02x\n\
+                          \    src: %02x:%02x:%02x:%02x:%02x:%02x\n\
                           \    ethertype_length: %x\n" [
-              `array_index (`variable "dest_addr", `literal_int 0);
-              `array_index (`variable "dest_addr", `literal_int 1);
-              `array_index (`variable "dest_addr", `literal_int 2);
-              `array_index (`variable "dest_addr", `literal_int 3);
-              `array_index (`variable "dest_addr", `literal_int 4);
-              `array_index (`variable "dest_addr", `literal_int 5);
-              `array_index (`variable "src_addr",  `literal_int 0);
-              `array_index (`variable "src_addr",  `literal_int 1);
-              `array_index (`variable "src_addr",  `literal_int 2);
-              `array_index (`variable "src_addr",  `literal_int 3);
-              `array_index (`variable "src_addr",  `literal_int 4);
-              `array_index (`variable "src_addr",  `literal_int 5);
-              `variable "ethertype_length";
-            ] in
-          `block (vars, stmts @ [ big_printf ])
-        end;*)
+                    idx var_offset_dest_addr 0;
+                    idx var_offset_dest_addr 1;
+                    idx var_offset_dest_addr 2;
+                    idx var_offset_dest_addr 3;
+                    idx var_offset_dest_addr 4;
+                    idx var_offset_dest_addr 5;
+                    idx var_field_src_addr 0;
+                    idx var_field_src_addr 1;
+                    idx var_field_src_addr 2;
+                    idx var_field_src_addr 3;
+                    idx var_field_src_addr 4;
+                    idx var_field_src_addr 5;
+                    C.Typed_expression.expression var_field_ethertype_length;
+                  ] in
+                ([], [big_printf])
+              | _ -> failwith "Expecting 3 typed exprs")
+        in
+`block block
+end;
       ]
     in
     Pcap.make_capture ~device ~on_error ~passed_expression ~packet_treatment in

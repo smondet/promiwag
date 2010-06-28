@@ -403,8 +403,8 @@ module Parser_generator = struct
       | Some (C_offset_variable (v, e)), `offset -> Variable.typed_expression v
       | Some (C_offset_variable (v, e)), `value -> 
         fail "asking for the value at a pointer at the wrong place"
-      | Some (C_value_expression (ev, eo)), `value -> eo
-      | Some (C_value_expression (ev, eo)), `offset -> ev
+      | Some (C_value_expression (ev, eo)), `value -> ev
+      | Some (C_value_expression (ev, eo)), `offset -> eo
       | Some (C_offset_expression e), `offset -> e
       | Some (C_offset_expression e), `value -> 
         fail "asking for the value at a pointer at the wrong place"
@@ -451,9 +451,7 @@ module Parser_generator = struct
       let packet_as_buffer = 
         `cast (`pointer `unsigned_char,
                Typed_expression.expression packet) in
-      let c_offset = 
-        `cast (`pointer `unsigned_char,
-               compile_size compiler `value byte_offset) in
+      let c_offset = compile_size compiler `value byte_offset in
       let the_address_at_offset =
         `binary (`bin_add, packet_as_buffer, c_offset) in
       Typed_expression.create ~expression:the_address_at_offset
