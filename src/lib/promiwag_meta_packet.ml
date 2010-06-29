@@ -496,11 +496,13 @@ module Parser_generator = struct
             begin match bofs + psz with
             | 0 -> `literal_int 0
             | s when 1 <= s && s <= 32 ->
+              let pointer_expr = Typed_expression.expression pointer in
+              let value_at_pointer =
+                `unary (`unary_memof, `cast (`pointer c_type, pointer_expr)) in
+              let endianised_value =
+                `cast (c_type, endianise value_at_pointer) in
               let aligned =
-                `binary (`bin_shr, 
-                         cast (endianise
-                                 (`unary (`unary_memof,
-                                          Typed_expression.expression pointer))),
+                `binary (`bin_shr, endianised_value,
                          `literal_int (c_type_size - bofs - psz)) in
               `binary (`bin_band, aligned, Construct.ones_int_literal psz)
             | s ->
