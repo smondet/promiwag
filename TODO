@@ -6,8 +6,6 @@ To do:
   retrives endianism, sizeof's, etc ... as OCaml code ...
 * Promiwag_meta_packet: maxsize testing
 * Promiwag_meta_packet: heavy testing
-* Promiwag_meta_packet: options for variable creation: `all `as_needed
-  `as_few_as_possible
 * Promiwag_meta_packet: fail, and to_do part of the compiler (with
   pseudo-locations?)
 * Promiwag_meta_packet: generate request from packet_format

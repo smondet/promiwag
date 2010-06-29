@@ -168,8 +168,8 @@ let test_packet_parsing () =
       ~c_type:(`pointer `unsigned_char) () in
   let packet_expression = C.Variable.typed_expression packet_var in
   let block =
-    Stage_two.informed_block ~stage_1 ~packet_expression 
-      ~platform:Promiwag.Platform.default
+    Stage_two.informed_block ~stage_1 ~packet_expression ()
+      ~create_variables:`for_all
       ~make_user_block:(fun te_list ->
         let vars =
           Ls.map request_list ~f:(function `pointer name -> C.Variable.create ~name ())
@@ -268,7 +268,7 @@ begin
         let block_ethernet block_ipv4 =
           let packet_expression = C.Variable.typed_expression packet_buffer in
           Stage_two.informed_block ~stage_1:stage_1_ethernet ~packet_expression 
-            ~platform:Promiwag.Platform.default
+            ~platform:Promiwag.Platform.default ()
             ~make_user_block:(fun te_list ->
               match te_list with 
               | [var_offset_dest_addr; var_field_src_addr;
@@ -304,7 +304,7 @@ begin
                 let ipv4_treatment =
                   let block_then = 
                     let packet_expression = var_payload in
-                    Stage_two.informed_block
+                    Stage_two.informed_block ()
                       ~stage_1:stage_1_ipv4 ~packet_expression 
                       ~platform:Promiwag.Platform.default
                       ~make_user_block:(function

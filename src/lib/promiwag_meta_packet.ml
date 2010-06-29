@@ -397,6 +397,11 @@ module Parser_generator = struct
     module Platform = Promiwag_platform
     open Promiwag_c_backend
     open Packet_structure
+
+    type variable_creation_preference =
+      [`minimalistically | `as_needed | `for_all]
+
+
     let error_prefix = "Meta_packet.Parser_generator.Stage_2_C"
     let to_do s =
       failwith (sprintf "%s; %s: NOT IMPLEMENTED" error_prefix s)
@@ -422,6 +427,7 @@ module Parser_generator = struct
       stage_1: Stage_1.result;
       c_dependencies: (string, compiled) Ht.t;
       target_platform: Promiwag_platform.platform;
+      variable_creation_preference: variable_creation_preference;
     }
 
     let get_c_value_dependency compiler name =
@@ -595,10 +601,12 @@ module Parser_generator = struct
             | `offset _ -> (v, o + 1, p)
             | `pointer _ -> (v, o, p + 1))
             ~init:(0, 0, 0) needed_as_by in
-        let comp = function
-          | 0 -> `none
-          | 1 -> `expression
-          | n -> `variable
+        let comp n = match n, compiler.variable_creation_preference with
+          | 0, _ -> `none
+          | _, `for_all -> `variable
+          | 1, `as_needed -> `expression
+          | n, `minimalistically -> `expression
+          | n, `as_needed -> `variable
         in
         (comp value_needness, comp offset_needness, comp pointer_needness) in
       let c_offset = c_offset compiler byte_offset in
@@ -641,11 +649,12 @@ module Parser_generator = struct
         (compiled_value, compiled_offset, compiled_pointer);
       ()
 
-    let informed_block ~stage_1 ~platform
+    let informed_block ~stage_1 ?(platform=Promiwag_platform.default)
+        ?(create_variables:variable_creation_preference=`as_needed)
         ~(packet_expression: Typed_expression.t)
-        ~(make_user_block: Typed_expression.t list -> C.block) =
+        ~(make_user_block: Typed_expression.t list -> C.block) () =
       let compiler = 
-        {stage_1 = stage_1;
+        {stage_1 = stage_1; variable_creation_preference = create_variables;
          c_dependencies = Ht.create 42; target_platform = platform} in
      
       Ls.iter compiler.stage_1.Stage_1.compiled_expressions 
