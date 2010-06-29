@@ -290,6 +290,8 @@ module Parser_generator = struct
     let compile_with_dependencies
         ?(max_depth=42) ~packet_format (request:request list) =
       let first_dependencies = dependencies_of_request request in
+      debug$ sprintf "First dependencies: [%s]" 
+        (Str.concat "; " (Ls.map string_of_dependency first_dependencies));
       let stage_compiled_things = ref [] in
       let die_on_max_depth d =
         if d > max_depth then raise (Max_dependency_depth_reached d); in
@@ -298,6 +300,7 @@ module Parser_generator = struct
         | (Depend_on_value_of fname as d) :: l
         | (Depend_on_offset_of fname as d) :: l ->
           die_on_max_depth depth;
+          debug$ sprintf "Going deep for %s at depth %d" fname depth;
           let f ct = cmp_str ct.s1_field fname in
           begin match Ls.find_all !stage_compiled_things ~f with
           | [] ->
@@ -305,14 +308,15 @@ module Parser_generator = struct
               stage_1_compile_dependency (snd packet_format) dependers d in
             go_deeper (depth + 1) [ `other compiled ] compiled.s1_dependencies;
             stage_compiled_things := compiled :: !stage_compiled_things;
-            go_deeper depth dependers l;
           | one :: [] ->
             begin match one.s1_needed_as, d with
             | `both, _
             | `value, Depend_on_value_of _
-            | `offset, Depend_on_offset_of _ -> ()
+            | `offset, Depend_on_offset_of _ -> 
+              debug$ sprintf " found already done"; ()
             | `value, Depend_on_offset_of _
             | `offset, Depend_on_value_of _ ->
+              debug$ sprintf " found already done";
               one.s1_needed_as <- `both;
             | _ -> ()
             end;
@@ -320,7 +324,8 @@ module Parser_generator = struct
           | more -> 
             fail (sprintf "field %s added %d times to stage_compiled_things"
                     fname (Ls.length more))
-          end
+          end;
+          go_deeper depth dependers l;
         | Depend_on_unknown :: l ->
           fail "Stage 1: Cannot compile unknown dependency"
       in
