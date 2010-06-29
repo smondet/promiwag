@@ -198,17 +198,33 @@ let test_pcap_parsing dev () =
 
   let module C = Promiwag.C_backend in
 
-  let request_list = [
-    `offset "dest_addr"; `field "src_addr";
-    `field "ethertype_length"; `offset "ethertype_length"; ] in
-  let packet_format = Promiwag.Standard_packets.ethernet in
-
   let module Stage_one = Promiwag.Meta_packet.Parser_generator.Stage_1 in
-  let stage_1 =
+  let stage_1_ethernet =
+    let request_list = [
+      `offset "dest_addr"; `field "src_addr";
+      `field "ethertype_length"; `offset "ethertype_length";
+      `field "payload" ] in
+    let packet_format = Promiwag.Standard_packets.ethernet in
     Stage_one.compile_with_dependencies
       ~max_depth:10 ~packet_format request_list in
 
-  printf "STAGE 1:\n%s\n" (Stage_one.dump stage_1);
+  printf "STAGE 1:\n%s\n" (Stage_one.dump stage_1_ethernet);
+
+  let stage_1_ipv4 =
+    let request_list = [
+      `field "version"; `field "ihl";
+      `field "length"; `field "id";
+      `field "can_fragment"; 
+      `field "ttl"; `field "protocol";
+      `field "checksum";
+      `offset "src"; `offset "dest";
+      (* `offset "ip_payload"; *)
+    ] in
+    let packet_format = Promiwag.Standard_packets.ipv4 in
+    Stage_one.compile_with_dependencies
+      ~max_depth:10 ~packet_format request_list in
+
+  printf "%s\n" (Stage_one.dump stage_1_ipv4);
 
 
 
@@ -231,10 +247,10 @@ let test_pcap_parsing dev () =
         let fmt = Str.concat ":" (Ls.init size (fun i -> "%02hhx")) in
         let idx e i = `array_index (e, `literal_int i) in
         let arg = Ls.init size (idx expr) in
-        call_printf (sprintf "packet:[%s]\n" fmt) arg
+        call_printf (sprintf "  Contents[0..%d]: %s\n" size fmt) arg
       in
       C.Construct.block () ~statements:[
-        call_printf "packet_treatment: arg:%d lgth: %d buf: %x\n"
+        call_printf "=== Packet %d === (length: %d, address: %x)\n"
           [counter_mem_contents;
            C.Variable.expression packet_length;
            C.Variable.expression packet_buffer;
@@ -245,24 +261,24 @@ let test_pcap_parsing dev () =
 
 begin
         let module Stage_two = Promiwag.Meta_packet.Parser_generator.Stage_2_C in
-        let packet_expression = C.Variable.typed_expression packet_buffer in
-        let block =
-          Stage_two.informed_block ~stage_1 ~packet_expression 
+        let block_ethernet block_ipv4 =
+          let packet_expression = C.Variable.typed_expression packet_buffer in
+          Stage_two.informed_block ~stage_1:stage_1_ethernet ~packet_expression 
             ~platform:Promiwag.Platform.default
             ~make_user_block:(fun te_list ->
               match te_list with 
-              | var_offset_dest_addr :: var_field_src_addr ::
-                  var_field_ethertype_length :: var_offset_ethertype_length ::
-                  [] ->
+              | [var_offset_dest_addr; var_field_src_addr;
+                 var_field_ethertype_length; var_offset_ethertype_length;
+                 var_payload] ->
                 let idx te i =
                   `array_index (C.Typed_expression.expression ~cast:true te,
                                 `literal_int i) in
 
                 let big_printf =
-                  call_printf "ethernet:\n\
-                          \    dest: %02x:%02x:%02x:%02x:%02x:%02x\n\
-                          \    src: %02x:%02x:%02x:%02x:%02x:%02x\n\
-                          \    ethertype_length: %hd at %x [%02hhx:%02hhx]\n" [
+                  call_printf "  Ethernet:\n\
+                          \    dest: %02x:%02x:%02x:%02x:%02x:%02x,\
+                          \    src: %02x:%02x:%02x:%02x:%02x:%02x,\n\
+                          \    ethertype_length: %hd at %x [%02hhx:%02hhx].\n" [
                     idx var_offset_dest_addr 0;
                     idx var_offset_dest_addr 1;
                     idx var_offset_dest_addr 2;
@@ -280,10 +296,61 @@ begin
                     idx var_offset_ethertype_length 0;
                     idx var_offset_ethertype_length 1;
                   ] in
-                ([], [big_printf])
-              | _ -> failwith "Expecting 3 typed exprs")
+                let ethertypelegnth_expr =
+                  C.Typed_expression.expression var_field_ethertype_length in
+                let ipv4_treatment =
+                  let block_then = 
+                    let packet_expression = var_payload in
+                    Stage_two.informed_block
+                      ~stage_1:stage_1_ipv4 ~packet_expression 
+                      ~platform:Promiwag.Platform.default
+                      ~make_user_block:(function
+                        | [field_version; field_ihl;
+                           field_length; field_id;
+                           field_can_fragment; 
+                           field_ttl; field_protocol;
+                           field_checksum;
+                           offset_src; offset_dest; ] ->
+                          let expr_of_te =  C.Typed_expression.expression in
+                          ([], [call_printf "  IPv4:\n\
+                                  \    version: %d, ihl: %d, length: %d, id: %d,\n\
+                                  \    can fragment: %d, TTL: %d, protocol: %d, \
+                                       checksum: %d\n\
+                                  \    SRC: %d.%d.%d.%d DEST: %d.%d.%d.%d.\n" 
+                                   [expr_of_te field_version;
+                                    expr_of_te field_ihl;
+                                    expr_of_te field_length;
+                                    expr_of_te field_id;
+                                    expr_of_te field_can_fragment; 
+                                    expr_of_te field_ttl;
+                                    expr_of_te field_protocol;
+                                    expr_of_te field_checksum;
+                                    idx offset_src 0;
+                                    idx offset_src 1;
+                                    idx offset_src 2;
+                                    idx offset_src 3;
+                                    idx offset_dest 0;
+                                    idx offset_dest 1;
+                                    idx offset_dest 2;
+                                    idx offset_dest 3;
+                                   ]
+                               ])
+                          
+                        | _ -> failwith "Wrong number of typed_exprs"
+                      ) in
+                  C.Construct.if_then_else 
+                    (`binary (`bin_eq, ethertypelegnth_expr, `literal_int 0x800))
+                    ~block_then
+                in
+                let arp_treatment =
+                  let block_then = ([], [call_printf "  ARP.\n" []]) in
+                  C.Construct.if_then_else 
+                    (`binary (`bin_eq, ethertypelegnth_expr, `literal_int 0x806))
+                    ~block_then in
+                ([], [big_printf; ipv4_treatment; arp_treatment])
+              | _ -> failwith "Wrong number of typed_exprs")
         in
-`block block
+        `block (block_ethernet (C.Construct.block ()))
 end;
       ]
     in

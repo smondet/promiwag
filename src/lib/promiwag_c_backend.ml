@@ -534,5 +534,8 @@ module Construct = struct
     else
       `literal_int64 (Int64.sub (Int64.shift_left 1L size) 1L)
 
-   
+  let if_then_else ?(block_then=([], [])) ?(block_else=([], [])) condition =
+    (`conditional (condition, `block block_then, `block block_else)
+        : C_LightAST.statement)
+
 end
