@@ -116,9 +116,6 @@ module Parser_generator = struct
   | `offset of string
   ]
 
-  exception Field_not_found
-  exception Max_dependency_depth_reached of int
-  exception Error_compile_unknown_size
 
   module Stage_1 = struct 
       
@@ -240,7 +237,7 @@ module Parser_generator = struct
     let find_field_in_packet packet_format field_name =
       let rec f computations dependencies field_name = function
         | [] ->
-          raise Field_not_found
+          fail (sprintf "Field %s not found" field_name)
         | (Item_field (name, tp)) :: l ->
           if cmp_str name field_name then
             let fcomp, fdeps = final_computation_of_content_type tp in
@@ -260,9 +257,6 @@ module Parser_generator = struct
       s1_final: final_computation;
       s1_dependencies: dependency list;
       mutable s1_needed_as_by: need list;
-      (* mutable s1_needed_as: [`value | `offset | `both]; *)
-      (* mutable s1_needed_by: *)
-      (*   [`request | `other of stage_1_compiled_expression] list; *)
     }
 
     let explode_stage_1_compiled_expression ce =
@@ -307,18 +301,19 @@ module Parser_generator = struct
     let compile_with_dependencies
         ?(max_depth=42) ~packet_format (request:request list) =
       let first_dependencies = dependencies_of_request request in
-      debug$ sprintf "First dependencies: [%s]" 
-        (Str.concat "; " (Ls.map string_of_dependency first_dependencies));
       let stage_compiled_things = ref [] in
-      let die_on_max_depth d =
-        if d > max_depth then raise (Max_dependency_depth_reached d); in
+      let die_on_max_depth depender d =
+        if d > max_depth then 
+          fail (sprintf "Stage 1: Maximal dependency reached for %s"
+                  (match depender with 
+                  | `request -> "request (this should never happen)"
+                  | `other c -> c.s1_field)) in
       let rec go_deeper depth depender = function
         | [] -> (* Done! *) ()
         | (Depend_on_value_of fname as d) :: l
         | (Depend_on_pointer_to fname as d) :: l
         | (Depend_on_offset_of fname as d) :: l ->
-          die_on_max_depth depth;
-          debug$ sprintf "Going deep for %s at depth %d" fname depth;
+          die_on_max_depth depender depth;
           let f ct = cmp_str ct.s1_field fname in
           begin match Ls.find_all !stage_compiled_things ~f with
           | [] ->
@@ -343,7 +338,10 @@ module Parser_generator = struct
           end;
           go_deeper depth depender l;
         | Depend_on_unknown :: l ->
-          fail "Stage 1: Cannot compile unknown dependency"
+          fail (sprintf "Stage 1: Cannot compile unknown dependency of %s"
+                  (match depender with 
+                  | `request -> "request (this should never happen)"
+                  | `other c -> c.s1_field)) 
       in
       go_deeper 0 `request first_dependencies;
       {packet_format = packet_format; 
@@ -402,12 +400,6 @@ module Parser_generator = struct
       [`minimalistically | `as_needed | `for_all]
 
 
-    let error_prefix = "Meta_packet.Parser_generator.Stage_2_C"
-    let to_do s =
-      failwith (sprintf "%s; %s: NOT IMPLEMENTED" error_prefix s)
-    let fail s =
-      failwith (sprintf "%s: ERROR %s" error_prefix s)
-
     type compiled_value =
       | C_value_variable of Variable.t * Typed_expression.t
       | C_value_expression of Typed_expression.t
@@ -428,25 +420,45 @@ module Parser_generator = struct
       c_dependencies: (string, compiled) Ht.t;
       target_platform: Promiwag_platform.platform;
       variable_creation_preference: variable_creation_preference;
+      mutable location: string option;
     }
+
+    exception Compilation_failed of string
+        
+    let error_prefix = "Meta_packet.Parser_generator.Stage_2_C"
+      
+    let to_do s =
+      failwith (sprintf "%s; %s: NOT IMPLEMENTED" error_prefix s)
+
+    let fail compiler s =
+      let field_str = 
+        match compiler.location with
+        | None -> ""
+        | Some s -> sprintf "[field: %s]" s in
+      raise (Compilation_failed
+               (sprintf "%s%s: ERROR %s" error_prefix field_str s))
+
+    let set_location_field compiler field =
+      compiler.location <- Some field;
+      ()
 
     let get_c_value_dependency compiler name =
       match Ht.find_opt compiler.c_dependencies name with
       | Some (C_value_variable (v, ev), _, _) -> Variable.typed_expression v
       | Some (C_value_expression e, _, _) -> e
-      | _ -> fail "asking for a non-compiled value"
+      | _ -> fail compiler "asking for a non-compiled value"
 
     let get_c_offset_dependency compiler name =
       match Ht.find_opt compiler.c_dependencies name with
       | Some (_, C_offset_variable (v, ev), _) -> Variable.typed_expression v
       | Some (_, C_offset_expression e, _) -> e
-      | _ -> fail "asking for a non-compiled offset"
+      | _ -> fail compiler "asking for a non-compiled offset"
 
     let get_c_pointer_dependency compiler name =
       match Ht.find_opt compiler.c_dependencies name with
       | Some (_, _, C_pointer_variable (v, ev)) -> Variable.typed_expression v
       | Some (_, _, C_pointer_expression e) -> e
-      | _ -> fail "asking for a non-compiled pointer"
+      | _ -> fail compiler "asking for a non-compiled pointer"
 
     let get_c_dependency compiler needed_as name =
       match needed_as with
@@ -503,7 +515,7 @@ module Parser_generator = struct
       | Size_offset_of v ->
         get_c_dependency_expression compiler needed_as v
       | Size_unknown -> 
-        raise Error_compile_unknown_size
+        fail compiler "Trying to compile unknown size"
 
     let c_offset compiler byte_offset =
      Typed_expression.create ()
@@ -533,7 +545,7 @@ module Parser_generator = struct
         match final with
         | Stage_1.Finally_get_integer (e,s,c) -> (e,s,c)
         | Stage_1.Finally_fail `string ->
-          fail "Cannot compile the 'value' of a string/payload" in
+          fail compiler "Cannot compile the 'value' of a string/payload" in
       (* [`big | `little] * [`signed | `unsigned] * size *)
       let c_type, c_type_size, cast =
         match signedism with
@@ -554,7 +566,7 @@ module Parser_generator = struct
           | 16 -> `call (`variable "ntohs", [e])
           | 32 -> `call (`variable "ntohl", [e])
           | 64 -> to_do "Big endian 64 bit integers"
-          | _ -> fail "c_type_size not in {8, 16, 32, 64}"
+          | _ -> fail compiler "c_type_size not in {8, 16, 32, 64}"
           end
         | `little -> to_do "Little endian integers" in
       let the_bits =
@@ -593,6 +605,7 @@ module Parser_generator = struct
            dependencies,
            needed_as_by) =
         Stage_1.explode_stage_1_compiled_expression expression in
+      set_location_field compiler field;
       let compile_value_to, compile_offset_to, compile_pointer_to =
         let value_needness, offset_needness, pointer_needness =
           Ls.fold_left ~f:(fun (v, o, p) nab ->
@@ -655,7 +668,8 @@ module Parser_generator = struct
         ~(make_user_block: Typed_expression.t list -> C.block) () =
       let compiler = 
         {stage_1 = stage_1; variable_creation_preference = create_variables;
-         c_dependencies = Ht.create 42; target_platform = platform} in
+         c_dependencies = Ht.create 42; target_platform = platform;
+         location = None} in
      
       Ls.iter compiler.stage_1.Stage_1.compiled_expressions 
         ~f:(compile_expression compiler packet_expression);
