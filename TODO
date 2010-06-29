@@ -7,3 +7,6 @@ To do:
 * a request of offset should be a difference from current packet
   a request of address should be a pointer
   a integers should be retrieved with minimal size
+* Promiwag_meta_packet: maxsize testing
+* Promiwag_meta_packet: heavy testing
++ Promiwag_meta_packet: when need address, a useless variable is created

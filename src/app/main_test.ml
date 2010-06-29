@@ -199,7 +199,8 @@ let test_pcap_parsing dev () =
   let module C = Promiwag.C_backend in
 
   let request_list = [
-    `offset "dest_addr"; `field "src_addr"; `field "ethertype_length"; ] in
+    `offset "dest_addr"; `field "src_addr";
+    `field "ethertype_length"; `offset "ethertype_length"; ] in
   let packet_format = Promiwag.Standard_packets.ethernet in
 
   let module Stage_one = Promiwag.Meta_packet.Parser_generator.Stage_1 in
@@ -226,12 +227,19 @@ let test_pcap_parsing dev () =
     let packet_treatment ~passed_argument ~packet_length ~packet_buffer =
       let counter_mem_contents =
         `unary (`unary_memof, C.Variable.expression passed_argument) in
+      let printf_packet expr size =
+        let fmt = Str.concat ":" (Ls.init size (fun i -> "%02hhx")) in
+        let idx e i = `array_index (e, `literal_int i) in
+        let arg = Ls.init size (idx expr) in
+        call_printf (sprintf "packet:[%s]\n" fmt) arg
+      in
       C.Construct.block () ~statements:[
         call_printf "packet_treatment: arg:%d lgth: %d buf: %x\n"
           [counter_mem_contents;
            C.Variable.expression packet_length;
            C.Variable.expression packet_buffer;
           ];
+        printf_packet (C.Variable.expression packet_buffer) 20;
         `assignment (counter_mem_contents,
                      `binary (`bin_add, `literal_int 1, counter_mem_contents));
 
@@ -244,15 +252,17 @@ begin
             ~make_user_block:(fun te_list ->
               match te_list with 
               | var_offset_dest_addr :: var_field_src_addr ::
-                  var_field_ethertype_length :: [] ->
+                  var_field_ethertype_length :: var_offset_ethertype_length ::
+                  [] ->
                 let idx te i =
-                  `array_index (C.Typed_expression.expression te, `literal_int i) in
+                  `array_index (C.Typed_expression.expression ~cast:true te,
+                                `literal_int i) in
 
                 let big_printf =
                   call_printf "ethernet:\n\
                           \    dest: %02x:%02x:%02x:%02x:%02x:%02x\n\
                           \    src: %02x:%02x:%02x:%02x:%02x:%02x\n\
-                          \    ethertype_length: %x\n" [
+                          \    ethertype_length: %hd at %x [%02hhx:%02hhx]\n" [
                     idx var_offset_dest_addr 0;
                     idx var_offset_dest_addr 1;
                     idx var_offset_dest_addr 2;
@@ -266,6 +276,9 @@ begin
                     idx var_field_src_addr 4;
                     idx var_field_src_addr 5;
                     C.Typed_expression.expression var_field_ethertype_length;
+                    C.Typed_expression.expression var_offset_ethertype_length;
+                    idx var_offset_ethertype_length 0;
+                    idx var_offset_ethertype_length 1;
                   ] in
                 ([], [big_printf])
               | _ -> failwith "Expecting 3 typed exprs")

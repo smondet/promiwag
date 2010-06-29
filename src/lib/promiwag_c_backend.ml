@@ -20,6 +20,8 @@ module C_LightAST = struct
   | `signed_int
   | `unsigned_long
   | `signed_long
+  | `unsigned_long_long
+  | `signed_long_long
   | `float
   | `double
   | `long_double
@@ -193,6 +195,8 @@ module To_big_string(Big_string: BIG_STRING) = struct
     | `signed_int    -> "int"   
     | `unsigned_long -> "unsigned long"
     | `signed_long   -> "long"  
+    | `unsigned_long_long -> "unsigned long long"
+    | `signed_long_long   -> "long long"  
     | `float         -> "float"        
     | `double        -> "double"       
     | `long_double   -> "long double"
@@ -408,7 +412,8 @@ module Typed_expression = struct
   let create ?(expression = `literal_int 0) ?(c_type = `signed_int) () = 
     { expression = expression; c_type = c_type; }
 
-  let expression t = t.expression
+  let expression ?(cast=false) t =
+    if cast then `cast (t.c_type, t.expression) else t.expression
   let c_type t = t.c_type
 
   let check_typing: t -> bool = fun _ ->
