@@ -52,7 +52,15 @@ module Packet_structure = struct
     | Type_signed_integer of size
     | Type_little_endian of content_type
     | Type_string of size
-        
+
+  let rec string_of_content_type ?(little_endian=false) ct =
+    let lestr = if little_endian then " LE" else "" in
+    match ct with
+    | Type_unsigned_integer s -> sprintf "uint of %s bits%s" (string_of_size s) lestr
+    | Type_signed_integer s -> sprintf "sint of %s bits%s" (string_of_size s) lestr
+    | Type_little_endian ct -> string_of_content_type ~little_endian:true ct
+    | Type_string s -> sprintf "string of %s Bytes%s" (string_of_size s) lestr
+
   let fixed_int ?(unsigned=true) ?(little_endian=false) s = 
     let t = 
       if unsigned then Type_unsigned_integer (Size_fixed s) 
@@ -542,11 +550,11 @@ module Parser_generator = struct
 
     let c_value  compiler pointer bit_offset final =
       let (endianism, signedism, sz) =
+        (* [`big | `little] * [`signed | `unsigned] * size *)
         match final with
         | Stage_1.Finally_get_integer (e,s,c) -> (e,s,c)
         | Stage_1.Finally_fail `string ->
           fail compiler "Cannot compile the 'value' of a string/payload" in
-      (* [`big | `little] * [`signed | `unsigned] * size *)
       let c_type, c_type_size, cast =
         match signedism with
         | `unsigned -> 
@@ -554,9 +562,6 @@ module Parser_generator = struct
           (c_type, c_type_size,
            fun e -> `cast (c_type, e))
         | `signed -> to_do "Signed integers"
-        (* emit a warning?  
-           (`signed_int, fun e -> `cast (`signed_int, `unary (`unary_memof, e))) 
-        *)
       in
       let endianise e =
         match endianism with

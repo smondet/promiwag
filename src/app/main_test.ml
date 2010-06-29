@@ -31,6 +31,34 @@ let call_printf format_str exp_list =
   `expression (`cast (`void, `call (`variable "printf",
                                     `literal_string format_str :: exp_list)))
 
+let printf_of_typed_expression te =
+  let fmt, init =
+    match Promiwag.C_backend.Typed_expression.c_type te with
+    | `unsigned_char      -> ("(dec: %hhu, hex: %02hhx)" , 2)    
+    | `signed_char        -> ("(dec: %hhd, hex: %02hhx)" , 2)    
+    | `unsigned_short     -> ("(dec: %hu,  hex: %04hx)"  , 2)   
+    | `signed_short       -> ("(dec: %hd,  hex: %04hx)"  , 2)   
+    | `unsigned_int       -> ("(dec: %u,   hex: %04x)"   , 2)   
+    | `signed_int         -> ("(dec: %d,   hex: %04x)"   , 2)   
+    | `unsigned_long      -> ("(dec: %lu,  hex: %08lx)"  , 2)   
+    | `signed_long        -> ("(dec: %ld,  hex: %08lx)"  , 2)   
+    | `unsigned_long_long -> ("(dec: %llu, hex: %08llx)" , 2)    
+    | `signed_long_long   -> ("(dec: %lld, hex: %08llx)" , 2)    
+    | `float              -> ("(dec: %f,   hex: %08llx)" , 2)    
+    | `double             -> ("(dec: %f,   hex: %08llx)" , 2)    
+    | `long_double        -> ("(dec: %f,   hex: %16llx)" , 2)    
+    | `pointer _          -> ("(pointer    hex: %08lx)"  , 1)   
+    | _ -> "not printable", 0
+  in
+  let expr =  Promiwag.C_backend.Typed_expression.expression te in
+  let format_str =
+    `literal_string (sprintf "Typed Expr %s is %s\n"
+                       (C2S.expression expr) fmt) in
+  let arg_list = 
+    Ls.init init (fun i -> expr) in
+  `expression (`cast (`void, `call (`variable "printf", format_str :: arg_list)))
+
+
 let test_c_ast () =
   let module C_AST = Promiwag.C_backend.C_LightAST in
   printf "Start 'test_c_ast'\n";
@@ -152,41 +180,62 @@ let test_pcap_basic () =
 let test_packet_parsing () =
   let module C = Promiwag.C_backend in
 
-  let request_list = Ls.init 14 (fun i -> `pointer (sprintf "field_%02d" i)) in
+  let request, packet_format_string = 
+    let module S = Promiwag.Meta_packet.Packet_structure in
+    let (n, fmt) = Promiwag.Standard_packets.test in
+    let req =
+      Ls.map fmt ~f:(function
+        | S.Item_field (n, S.Type_unsigned_integer _)
+        | S.Item_field (n, S.Type_signed_integer _)
+        | S.Item_field (n, S.Type_little_endian _) ->
+          `value n
+        | S.Item_field (n, S.Type_string _) ->
+          `pointer n) in
+    let fmt_str_list =
+      Ls.map fmt ~f:(function
+        | S.Item_field (n, t) ->
+          sprintf "Field %s: %s" n (S.string_of_content_type t)) in
+    (req, fmt_str_list)
+  in
   let packet_format = Promiwag.Standard_packets.test in
-
   let module Stage_one = Promiwag.Meta_packet.Parser_generator.Stage_1 in
   let stage_1 =
-    Stage_one.compile_with_dependencies
-      ~max_depth:10 ~packet_format request_list in
+    Stage_one.compile_with_dependencies ~max_depth:10 ~packet_format request in
 
   printf "STAGE 1:\n%s\n" (Stage_one.dump stage_1);
 
   let module Stage_two = Promiwag.Meta_packet.Parser_generator.Stage_2_C in
   let packet_var =
     C.Variable.create ~unique:false ~name:"user_packet"
-      ~c_type:(`pointer `unsigned_char) () in
+      ~c_type:(`array ([`literal_int 1000], `unsigned_char))
+      ~initialisation:(`compound_literal 
+                          (Ls.init 1000 (fun i -> `literal_int 255)))
+      () in
   let packet_expression = C.Variable.typed_expression packet_var in
   let block =
     Stage_two.informed_block ~stage_1 ~packet_expression ()
       ~create_variables:`for_all
       ~make_user_block:(fun te_list ->
-        let vars =
-          Ls.map request_list ~f:(function `pointer name -> C.Variable.create ~name ())
-        in
-        (Ls.map (packet_var :: vars) ~f:C.Variable.declaration,
-         Ls.map2 vars te_list
-           ~f:(fun var expr ->
-            C.Variable.assignment ~cast:true
-              var (C.Typed_expression.expression expr))))
+        let declarations = 
+          (C.Variable.declaration packet_var) :: [] in
+        let statements =
+          Ls.flatten
+            (Ls.map2 te_list packet_format_string 
+               ~f:(fun te s -> [
+                 call_printf (sprintf "%s:\n" s) [];
+                 printf_of_typed_expression te; ])) in
+        C.Construct.block ~declarations ~statements ())
   in
   let main, _, _ = 
     C.Construct.standard_main block in
-  String_tree.print (C2StrTree.file  [C.Function.definition main]);
+  (*ring_tree.print (C2StrTree.file  [C.Function.definition main]);*)
   
-  let out = open_out "parsingtest.c" in
+  let out = open_out "/tmp/parsingtest.c" in
   String_tree.print ~out (C2StrTree.file [C.Function.definition main]);
   close_out out;
+
+  printf "gcc /tmp/parsingtest.c -o /tmp/parsingtest && /tmp/parsingtest";
+  printf "\n";
   ()
 
 (* ocamlfind ocamlc -package "extlib" -linkpkg -g custom_ast.ml && ./a.out mp *)
@@ -367,10 +416,10 @@ end;
     toplevels @ [ C.Function.definition main_pcap ] in
   String_tree.print (C2StrTree.file test_pcap);
 
-  let out = open_out "pcaptest.c" in
+  let out = open_out "/tmp/pcaptest.c" in
   String_tree.print ~out (C2StrTree.file test_pcap);
   close_out out;
-  (* gcc -Wall -lpcap  pcaptest.c && ./a.out *)
+  printf "gcc -lpcap /tmp/pcaptest.c -o /tmp/pcaptest && /tmp/pcaptest\n";
   ()
 
 
