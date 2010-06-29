@@ -41,7 +41,10 @@ module Packet_structure = struct
     | `sub (a, b) -> Size_binary_expression (Op_sub, parse_size a, parse_size b)
     | `mul (a, b) -> Size_binary_expression (Op_mul, parse_size a, parse_size b)
     | `div (a, b) -> Size_binary_expression (Op_div, parse_size a, parse_size b)
-    | `align (i, e) -> Size_alignment (i, parse_size e)
+    | `align64 e -> Size_alignment (8, parse_size e)
+    | `align32 e -> Size_alignment (4, parse_size e)
+    | `align16 e -> Size_alignment (2, parse_size e)
+    | `align8 e -> Size_alignment  (1, parse_size e)
     | `offset v -> Size_offset_of v
     | `size s -> s
 
@@ -216,10 +219,10 @@ module Parser_generator = struct
         | sa, sb ->
           Size_binary_expression (op, sa, sb)
         end
-      | Size_alignment (i, s) ->
+      | Size_alignment (al, s) ->
         begin match propagate_constants_in_size s with
-        | Size_fixed s -> Size_fixed (s + (s mod i))
-        | other -> other
+        | Size_fixed i -> Size_fixed (i + (i mod al))
+        | sz -> Size_alignment (al, sz)
         end
       | Size_offset_of v -> Size_offset_of v
       | Size_unknown -> Size_unknown
@@ -519,9 +522,10 @@ module Parser_generator = struct
                  compile_size compiler needed_as size_a,
                  compile_size compiler needed_as size_b)
       | Size_alignment (i, s) ->
-        to_do "Size alignment"
+        let c = compile_size compiler needed_as s in
+        `binary (`bin_add, c, `binary (`bin_mod, c, `literal_int i))
       | Size_offset_of v ->
-        get_c_dependency_expression compiler needed_as v
+        get_c_dependency_expression compiler `offset v
       | Size_unknown -> 
         fail compiler "Trying to compile unknown size"
 
