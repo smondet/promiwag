@@ -58,6 +58,15 @@ let printf_of_typed_expression te =
     Ls.init init (fun i -> expr) in
   `expression (`cast (`void, `call (`variable "printf", format_str :: arg_list)))
 
+let printf_packet ?(prefix="packet") ?(suffix="\n") expr size =
+  let fmt = Str.concat ":" (Ls.init size (fun i -> "%02hhx")) in
+  let idx e i = `array_index (e, `literal_int i) in
+  let arg = Ls.init size (idx expr) in
+  call_printf (sprintf "%s[0..%d]: %s%s" prefix size fmt suffix) arg
+
+
+
+
 
 let test_c_ast () =
   let module C_AST = Promiwag.C_backend.C_LightAST in
@@ -271,7 +280,8 @@ let test_pcap_parsing dev () =
       `value "checksum";
       `pointer "src";
       `pointer "dest";
-      (* `offset "ip_payload"; *)
+      `offset "ip_payload";
+      `pointer "ip_payload";
     ] in
     let packet_format = Promiwag.Standard_packets.ipv4 in
     Stage_one.compile_with_dependencies
@@ -296,19 +306,13 @@ let test_pcap_parsing dev () =
     let packet_treatment ~passed_argument ~packet_length ~packet_buffer =
       let counter_mem_contents =
         `unary (`unary_memof, C.Variable.expression passed_argument) in
-      let printf_packet expr size =
-        let fmt = Str.concat ":" (Ls.init size (fun i -> "%02hhx")) in
-        let idx e i = `array_index (e, `literal_int i) in
-        let arg = Ls.init size (idx expr) in
-        call_printf (sprintf "  Contents[0..%d]: %s\n" size fmt) arg
-      in
       C.Construct.block () ~statements:[
         call_printf "=== Packet %d === (length: %d, address: %x)\n"
           [counter_mem_contents;
            C.Variable.expression packet_length;
            C.Variable.expression packet_buffer;
           ];
-        printf_packet (C.Variable.expression packet_buffer) 20;
+        printf_packet ~prefix:"  Content" (C.Variable.expression packet_buffer) 20;
         `assignment (counter_mem_contents,
                      `binary (`bin_add, `literal_int 1, counter_mem_contents));
 
@@ -363,13 +367,16 @@ begin
                            field_ttl; field_protocol;
                            field_checksum;
                            pointer_src;
-                           pointer_dest; ] ->
+                           pointer_dest; 
+                           offset_payload;
+                           pointer_payload] ->
                           let expr_of_te =  C.Typed_expression.expression in
                           ([], [call_printf "  IPv4:\n\
                                   \    version: %d, ihl: %d, length: %d, id: %d,\n\
                                   \    can fragment: %d, TTL: %d, protocol: %d, \
                                        checksum: %d\n\
-                                  \    SRC: %d.%d.%d.%d DEST: %d.%d.%d.%d.\n" 
+                                  \    SRC: %d.%d.%d.%d DEST: %d.%d.%d.%d,\n\
+                                  \    Payload at offset %d is:\n" 
                                    [expr_of_te field_version;
                                     expr_of_te field_ihl;
                                     expr_of_te field_length;
@@ -386,7 +393,12 @@ begin
                                     idx pointer_dest 1;
                                     idx pointer_dest 2;
                                     idx pointer_dest 3;
-                                   ]
+                                    expr_of_te offset_payload;
+                                    expr_of_te pointer_payload;
+                                   ];
+                                printf_packet ~prefix:"    p"
+                                  (expr_of_te pointer_payload) 20;
+
                                ])
                           
                         | _ -> failwith "Wrong number of typed_exprs"
