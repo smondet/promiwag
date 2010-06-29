@@ -152,7 +152,7 @@ let test_pcap_basic () =
 let test_packet_parsing () =
   let module C = Promiwag.C_backend in
 
-  let request_list = Ls.init 14 (fun i -> `field (sprintf "field_%02d" i)) in
+  let request_list = Ls.init 14 (fun i -> `pointer (sprintf "field_%02d" i)) in
   let packet_format = Promiwag.Standard_packets.test in
 
   let module Stage_one = Promiwag.Meta_packet.Parser_generator.Stage_1 in
@@ -172,7 +172,7 @@ let test_packet_parsing () =
       ~platform:Promiwag.Platform.default
       ~make_user_block:(fun te_list ->
         let vars =
-          Ls.map request_list ~f:(function `field name -> C.Variable.create ~name ())
+          Ls.map request_list ~f:(function `pointer name -> C.Variable.create ~name ())
         in
         (Ls.map (packet_var :: vars) ~f:C.Variable.declaration,
          Ls.map2 vars te_list
@@ -201,23 +201,27 @@ let test_pcap_parsing dev () =
   let module Stage_one = Promiwag.Meta_packet.Parser_generator.Stage_1 in
   let stage_1_ethernet =
     let request_list = [
-      `offset "dest_addr"; `field "src_addr";
-      `field "ethertype_length"; `offset "ethertype_length";
-      `field "payload" ] in
+      `pointer "dest_addr"; `pointer "src_addr";
+      `value "ethertype_length"; `offset "ethertype_length";
+      `pointer "payload" ] in
     let packet_format = Promiwag.Standard_packets.ethernet in
     Stage_one.compile_with_dependencies
       ~max_depth:10 ~packet_format request_list in
 
   printf "STAGE 1:\n%s\n" (Stage_one.dump stage_1_ethernet);
-
+  
   let stage_1_ipv4 =
     let request_list = [
-      `field "version"; `field "ihl";
-      `field "length"; `field "id";
-      `field "can_fragment"; 
-      `field "ttl"; `field "protocol";
-      `field "checksum";
-      `offset "src"; `offset "dest";
+      `value "version";
+      `value "ihl";
+      `value "length"; 
+      `value "id";
+      `value "can_fragment"; 
+      `value "ttl";
+      `value "protocol";
+      `value "checksum";
+      `pointer "src";
+      `pointer "dest";
       (* `offset "ip_payload"; *)
     ] in
     let packet_format = Promiwag.Standard_packets.ipv4 in
@@ -278,7 +282,7 @@ begin
                   call_printf "  Ethernet:\n\
                           \    dest: %02x:%02x:%02x:%02x:%02x:%02x,\
                           \    src: %02x:%02x:%02x:%02x:%02x:%02x,\n\
-                          \    ethertype_length: %hd at %x [%02hhx:%02hhx].\n" [
+                          \    ethertype_length: %hd (at %x + %d).\n" [
                     idx var_offset_dest_addr 0;
                     idx var_offset_dest_addr 1;
                     idx var_offset_dest_addr 2;
@@ -292,9 +296,8 @@ begin
                     idx var_field_src_addr 4;
                     idx var_field_src_addr 5;
                     C.Typed_expression.expression var_field_ethertype_length;
+                    C.Variable.expression packet_buffer;
                     C.Typed_expression.expression var_offset_ethertype_length;
-                    idx var_offset_ethertype_length 0;
-                    idx var_offset_ethertype_length 1;
                   ] in
                 let ethertypelegnth_expr =
                   C.Typed_expression.expression var_field_ethertype_length in
@@ -310,7 +313,8 @@ begin
                            field_can_fragment; 
                            field_ttl; field_protocol;
                            field_checksum;
-                           offset_src; offset_dest; ] ->
+                           pointer_src;
+                           pointer_dest; ] ->
                           let expr_of_te =  C.Typed_expression.expression in
                           ([], [call_printf "  IPv4:\n\
                                   \    version: %d, ihl: %d, length: %d, id: %d,\n\
@@ -325,14 +329,14 @@ begin
                                     expr_of_te field_ttl;
                                     expr_of_te field_protocol;
                                     expr_of_te field_checksum;
-                                    idx offset_src 0;
-                                    idx offset_src 1;
-                                    idx offset_src 2;
-                                    idx offset_src 3;
-                                    idx offset_dest 0;
-                                    idx offset_dest 1;
-                                    idx offset_dest 2;
-                                    idx offset_dest 3;
+                                    idx pointer_src 0;
+                                    idx pointer_src 1;
+                                    idx pointer_src 2;
+                                    idx pointer_src 3;
+                                    idx pointer_dest 0;
+                                    idx pointer_dest 1;
+                                    idx pointer_dest 2;
+                                    idx pointer_dest 3;
                                    ]
                                ])
                           

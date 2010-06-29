@@ -4,9 +4,11 @@ To do:
 * start using PolyComp
 * Promiwag_platform: Generate an "inspector.c" piece of code which
   retrives endianism, sizeof's, etc ... as OCaml code ...
-* a request of offset should be a difference from current packet
-  a request of address should be a pointer
-  a integers should be retrieved with minimal size
 * Promiwag_meta_packet: maxsize testing
 * Promiwag_meta_packet: heavy testing
-+ Promiwag_meta_packet: when need address, a useless variable is created
+* Promiwag_meta_packet: options for variable creation: `all `as_needed
+  `as_few_as_possible
+* Promiwag_meta_packet: fail, and to_do part of the compiler (with
+  pseudo-locations?)
+* Promiwag_meta_packet: generate request from packet_format
+

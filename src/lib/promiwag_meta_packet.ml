@@ -105,7 +105,16 @@ end
 
 module Parser_generator = struct
 
-  type request = [ `field of string | `offset of string ]
+  (*
+    a request of offset should be a difference from current packet
+    a request of pointer should be a C-like pointer
+    a value is for now an unsigned integer of minimal size
+  *)
+  type request = [ 
+  | `value of string
+  | `pointer of string
+  | `offset of string
+  ]
 
   exception Field_not_found
   exception Max_dependency_depth_reached of int
@@ -126,6 +135,7 @@ module Parser_generator = struct
     type dependency =
       | Depend_on_value_of of string
       | Depend_on_offset_of of string
+      | Depend_on_pointer_to of string
       | Depend_on_unknown
 
     let dependencies_of_size sz =
@@ -143,8 +153,9 @@ module Parser_generator = struct
     let string_of_dependency = function
       | Depend_on_value_of o -> sprintf "(value-of: %s)" o
       | Depend_on_offset_of o -> sprintf "(offset-of: %s)" o
+      | Depend_on_pointer_to o -> sprintf "(pointer-to: %s)" o
       | Depend_on_unknown -> "(depends-on-unknown)"
-
+        
     type computation_item =
       | Compute_byte_offset of size
       | Compute_bit_offset of size
@@ -156,7 +167,7 @@ module Parser_generator = struct
         (Compute_bit_offset sz, dependencies_of_size sz)
       | Type_string sz -> 
         (Compute_byte_offset sz, dependencies_of_size sz)
-
+          
     let string_of_computation_item = function
       | Compute_byte_offset o -> sprintf "(byte-offset: %s)" (string_of_size o)
       | Compute_bit_offset o -> sprintf "(bit-offset: %s)" (string_of_size o)
@@ -164,7 +175,7 @@ module Parser_generator = struct
 
     type final_computation =
       | Finally_get_integer of [`big | `little] * [`signed | `unsigned] * size
-      | Finally_get_pointer
+      | Finally_fail of [`string]
 
     let string_of_final_computation = function
       | Finally_get_integer (`big, `signed, s) -> 
@@ -175,7 +186,7 @@ module Parser_generator = struct
         sprintf "(get-integer %s, signed, little endian)" (string_of_size s)
       | Finally_get_integer (`little, `unsigned, s) -> 
         sprintf "(get-integer %s, unsigned, little endian)" (string_of_size s)
-      | Finally_get_pointer -> "get-pointer"
+      | Finally_fail `string -> "fail-on-string"
 
     let rec final_computation_of_content_type ?(endianism=`big) = function
       | Type_little_endian ct -> 
@@ -186,7 +197,7 @@ module Parser_generator = struct
       | Type_signed_integer sz ->
         (Finally_get_integer (endianism, `unsigned, sz),
          dependencies_of_size sz)
-      | Type_string sz -> (Finally_get_pointer, [])
+      | Type_string sz -> (Finally_fail `string, [])
 
     let rec propagate_constants_in_size = function
       | Size_fixed s -> Size_fixed s
@@ -241,13 +252,14 @@ module Parser_generator = struct
       (f [] [] field_name packet_format)
 
     type needer = [`request | `other  of stage_1_compiled_expression]
+    and need = [`value of needer | `pointer of needer | `offset of needer]
     and stage_1_compiled_expression = {  (* TODO find a better name... *)
       s1_field: string;
       s1_byte_offset: size;
       s1_bit_offset: size;
       s1_final: final_computation;
       s1_dependencies: dependency list;
-      mutable s1_needed_as_by: [`value of needer | `offset of needer] list;
+      mutable s1_needed_as_by: need list;
       (* mutable s1_needed_as: [`value | `offset | `both]; *)
       (* mutable s1_needed_by: *)
       (*   [`request | `other of stage_1_compiled_expression] list; *)
@@ -275,12 +287,16 @@ module Parser_generator = struct
         stage_1_compile_field (`value needed_by) packet_format f
       | Depend_on_offset_of f ->
         stage_1_compile_field (`offset needed_by) packet_format f
-      | Depend_on_unknown -> fail "stage_1_compile_dependency: should not be here"
+      | Depend_on_pointer_to f ->
+        stage_1_compile_field (`pointer needed_by) packet_format f
+      | Depend_on_unknown ->
+        fail "stage_1_compile_dependency: should not be here"
 
     let dependencies_of_request: request list -> dependency list =
       Ls.map ~f:(function 
-        | `field f -> Depend_on_value_of f
-        | `offset f -> Depend_on_offset_of f)
+        | `value f -> Depend_on_value_of f
+        | `offset f -> Depend_on_offset_of f
+        | `pointer f -> Depend_on_pointer_to f)
 
     type result = {
       packet_format: packet;
@@ -299,6 +315,7 @@ module Parser_generator = struct
       let rec go_deeper depth depender = function
         | [] -> (* Done! *) ()
         | (Depend_on_value_of fname as d) :: l
+        | (Depend_on_pointer_to fname as d) :: l
         | (Depend_on_offset_of fname as d) :: l ->
           die_on_max_depth depth;
           debug$ sprintf "Going deep for %s at depth %d" fname depth;
@@ -315,6 +332,8 @@ module Parser_generator = struct
               one.s1_needed_as_by <- (`value depender) :: one.s1_needed_as_by;
             | Depend_on_offset_of _ -> 
               one.s1_needed_as_by <- (`offset depender) :: one.s1_needed_as_by;
+            | Depend_on_pointer_to _ -> 
+              one.s1_needed_as_by <- (`pointer depender) :: one.s1_needed_as_by;
             | Depend_on_unknown -> 
               fail "compile_with_dependencies: Depend_on_unknown"
             end;
@@ -344,8 +363,10 @@ module Parser_generator = struct
         (Str.concat "; " (Ls.map (function
           | `value `request -> "requested value" 
           | `offset `request -> "requested offset" 
+          | `pointer `request -> "requested pointer" 
           | `value (`other c) -> sprintf "value needed by %s" c.s1_field
           | `offset (`other c) -> sprintf "offset needed by %s" c.s1_field
+          | `pointer (`other c) -> sprintf "pointer needed by %s" c.s1_field
          ) ce.s1_needed_as_by))
 
     let string_of_stage_1_compilation_ht
@@ -361,7 +382,8 @@ module Parser_generator = struct
     let dump s1 =
       sprintf "{Stage 1 for [%s], on \"%s\" packets:\n%s\n}"
         (Str.concat ", " (Ls.map (function
-          | `field f -> sprintf "field %s" f
+          | `value f -> sprintf "field %s" f
+          | `pointer f -> sprintf "pointer  %s" f
           | `offset f -> sprintf "offset of %s" f) s1.request_list))
         (fst s1.packet_format)
         (string_of_stage_1_compilation_ht
@@ -389,8 +411,12 @@ module Parser_generator = struct
       | C_offset_variable of Variable.t * Typed_expression.t
       | C_offset_expression of Typed_expression.t
       | C_offset_none
+    type compiled_pointer =
+      | C_pointer_variable of Variable.t * Typed_expression.t
+      | C_pointer_expression of Typed_expression.t
+      | C_pointer_none
 
-    type compiled = compiled_value * compiled_offset
+    type compiled = compiled_value * compiled_offset * compiled_pointer
 
     type compiler = {
       stage_1: Stage_1.result;
@@ -400,20 +426,27 @@ module Parser_generator = struct
 
     let get_c_value_dependency compiler name =
       match Ht.find_opt compiler.c_dependencies name with
-      | Some (C_value_variable (v, ev), _) -> Variable.typed_expression v
-      | Some (C_value_expression e, _) -> e
+      | Some (C_value_variable (v, ev), _, _) -> Variable.typed_expression v
+      | Some (C_value_expression e, _, _) -> e
       | _ -> fail "asking for a non-compiled value"
 
     let get_c_offset_dependency compiler name =
       match Ht.find_opt compiler.c_dependencies name with
-      | Some (_, C_offset_variable (v, ev)) -> Variable.typed_expression v
-      | Some (_, C_offset_expression e) -> e
+      | Some (_, C_offset_variable (v, ev), _) -> Variable.typed_expression v
+      | Some (_, C_offset_expression e, _) -> e
       | _ -> fail "asking for a non-compiled offset"
+
+    let get_c_pointer_dependency compiler name =
+      match Ht.find_opt compiler.c_dependencies name with
+      | Some (_, _, C_pointer_variable (v, ev)) -> Variable.typed_expression v
+      | Some (_, _, C_pointer_expression e) -> e
+      | _ -> fail "asking for a non-compiled pointer"
 
     let get_c_dependency compiler needed_as name =
       match needed_as with
       | `value -> get_c_value_dependency compiler name
       | `offset -> get_c_offset_dependency compiler name
+      | `pointer -> get_c_pointer_dependency compiler name
 
     let get_c_dependency_expression c n a =
       Typed_expression.expression (get_c_dependency c n a)
@@ -421,7 +454,7 @@ module Parser_generator = struct
     let get_variables compiler = 
       let decls = ref [] in
       let assigns = ref [] in
-      Ht.iter (fun _ (depval, depptr) ->
+      Ht.iter (fun _ (depval, depofs, depptr) ->
         begin match depval with
         | C_value_variable (v, e) -> 
           decls := (Variable.declaration v) :: !decls;
@@ -429,8 +462,15 @@ module Parser_generator = struct
             (Variable.assignment v (Typed_expression.expression e)) :: !assigns;
         | _ -> ()
         end;
-        begin match depptr with
+        begin match depofs with
         | C_offset_variable (v, e) -> 
+          decls := (Variable.declaration v) :: !decls;
+          assigns := 
+            (Variable.assignment v (Typed_expression.expression e)) :: !assigns;
+        | _ -> ()
+        end;
+        begin match depptr with
+        | C_pointer_variable (v, e) -> 
           decls := (Variable.declaration v) :: !decls;
           assigns := 
             (Variable.assignment v (Typed_expression.expression e)) :: !assigns;
@@ -459,7 +499,12 @@ module Parser_generator = struct
       | Size_unknown -> 
         raise Error_compile_unknown_size
 
-    let c_offset_in_packet compiler packet byte_offset =
+    let c_offset compiler byte_offset =
+     Typed_expression.create ()
+       ~expression:(compile_size compiler `value byte_offset)
+       ~c_type:(Platform.C.native_uint compiler.target_platform)
+
+    let c_pointer_in_packet compiler packet byte_offset =
       let packet_as_buffer = 
         `cast (`pointer `unsigned_char,
                Typed_expression.expression packet) in
@@ -477,55 +522,63 @@ module Parser_generator = struct
         (Platform.C.native_uint compiler.target_platform,
          Platform.C.size_of_native_uint compiler.target_platform)
 
+    let c_value  compiler pointer bit_offset final =
+      let (endianism, signedism, sz) =
+        match final with
+        | Stage_1.Finally_get_integer (e,s,c) -> (e,s,c)
+        | Stage_1.Finally_fail `string ->
+          fail "Cannot compile the 'value' of a string/payload" in
+      (* [`big | `little] * [`signed | `unsigned] * size *)
+      let c_type, c_type_size, cast =
+        match signedism with
+        | `unsigned -> 
+          let c_type, c_type_size = c_value_type_of_size compiler sz in
+          (c_type, c_type_size,
+           fun e -> `cast (c_type, e))
+        | `signed -> to_do "Signed integers"
+        (* emit a warning?  
+           (`signed_int, fun e -> `cast (`signed_int, `unary (`unary_memof, e))) 
+        *)
+      in
+      let endianise e =
+        match endianism with
+        | `big -> 
+          begin match c_type_size with 
+          | 8 -> e
+          | 16 -> `call (`variable "ntohs", [e])
+          | 32 -> `call (`variable "ntohl", [e])
+          | 64 -> to_do "Big endian 64 bit integers"
+          | _ -> fail "c_type_size not in {8, 16, 32, 64}"
+          end
+        | `little -> to_do "Little endian integers" in
+      let the_bits =
+        match bit_offset, sz with
+        | Size_fixed bofs, Size_fixed psz ->
+          begin match bofs + psz with
+          | 0 -> `literal_int 0
+          | s when 1 <= s && s <= 32 ->
+            let pointer_expr = Typed_expression.expression pointer in
+            let value_at_pointer =
+              `unary (`unary_memof, `cast (`pointer c_type, pointer_expr)) in
+            let endianised_value =
+              `cast (c_type, endianise value_at_pointer) in
+            let aligned =
+              `binary (`bin_shr, endianised_value,
+                       `literal_int (c_type_size - bofs - psz)) in
+            `binary (`bin_band, aligned, Construct.ones_int_literal psz)
+          | s ->
+            to_do (sprintf "Integer's offset + size = %d (>= 32)" s)
+          end
+        | _, _ ->
+          to_do "Integer's offset or size not resolved to constants"
+      in
+      (Typed_expression.create ~expression:the_bits ~c_type ())
+      
+(*
     let c_value_of_offset_pointer compiler pointer bit_offset = function
       | Stage_1.Finally_get_pointer -> pointer
-      | Stage_1.Finally_get_integer (endianism, signedism, sz) ->
-        (* [`big | `little] * [`signed | `unsigned] * size *)
-        let c_type, c_type_size, cast =
-          match signedism with
-          | `unsigned -> 
-            let c_type, c_type_size = c_value_type_of_size compiler sz in
-            (c_type, c_type_size,
-             fun e -> `cast (c_type, e))
-          | `signed -> to_do "Signed integers"
-            (* emit a warning?  
-            (`signed_int, fun e -> `cast (`signed_int, `unary (`unary_memof, e))) 
-            *)
-        in
-        let endianise e =
-          match endianism with
-          | `big -> 
-            begin match c_type_size with 
-            | 8 -> e
-            | 16 -> `call (`variable "ntohs", [e])
-            | 32 -> `call (`variable "ntohl", [e])
-            | 64 -> to_do "Big endian 64 bit integers"
-            | _ -> fail "c_type_size not in {8, 16, 32, 64}"
-            end
-          | `little -> to_do "Little endian integers" in
-        let the_bits =
-          match bit_offset, sz with
-          | Size_fixed bofs, Size_fixed psz ->
-            begin match bofs + psz with
-            | 0 -> `literal_int 0
-            | s when 1 <= s && s <= 32 ->
-              let pointer_expr = Typed_expression.expression pointer in
-              let value_at_pointer =
-                `unary (`unary_memof, `cast (`pointer c_type, pointer_expr)) in
-              let endianised_value =
-                `cast (c_type, endianise value_at_pointer) in
-              let aligned =
-                `binary (`bin_shr, endianised_value,
-                         `literal_int (c_type_size - bofs - psz)) in
-              `binary (`bin_band, aligned, Construct.ones_int_literal psz)
-            | s ->
-              to_do (sprintf "Integer's offset + size = %d (>= 32)" s)
-            end
-          | _, _ ->
-            to_do "Integer's offset or size not resolved to constants"
-        in
-        (Typed_expression.create ~expression:the_bits ~c_type ())
-          
+      | Stage_1.Finally_get_integer  ->
+*)  
     let compile_expression compiler packet expression = 
       let (field, 
            byte_offset,
@@ -534,18 +587,22 @@ module Parser_generator = struct
            dependencies,
            needed_as_by) =
         Stage_1.explode_stage_1_compiled_expression expression in
-      let compile_value_to, compile_offset_to =
-        let value_needness, offset_needness =
-          Ls.fold_left ~f:(fun (v, a) nab ->
-            match nab with `value _ -> (1 + v, a) | `offset _ -> (v, a + 1))
-            ~init:(0, 0) needed_as_by in
+      let compile_value_to, compile_offset_to, compile_pointer_to =
+        let value_needness, offset_needness, pointer_needness =
+          Ls.fold_left ~f:(fun (v, o, p) nab ->
+            match nab with
+            | `value _ -> (1 + v, o, p)
+            | `offset _ -> (v, o + 1, p)
+            | `pointer _ -> (v, o, p + 1))
+            ~init:(0, 0, 0) needed_as_by in
         let comp = function
           | 0 -> `none
           | 1 -> `expression
           | n -> `variable
         in
-        (comp value_needness, comp offset_needness) in
-      let c_offset = c_offset_in_packet compiler packet byte_offset in
+        (comp value_needness, comp offset_needness, comp pointer_needness) in
+      let c_offset = c_offset compiler byte_offset in
+      let c_pointer = c_pointer_in_packet compiler packet byte_offset in
 
       let compiled_offset =
         match compile_offset_to with
@@ -554,43 +611,53 @@ module Parser_generator = struct
         | `variable ->
           let c_type = Typed_expression.c_type c_offset in
           let c_var =
-            Variable.create ~name:(sprintf "%s_addr" field) ~c_type () in
+            Variable.create ~name:(sprintf "offset_of_%s" field) ~c_type () in
           C_offset_variable (c_var, c_offset)
+      in
+      let compiled_pointer =
+        match compile_pointer_to with
+        | `none -> C_pointer_none
+        | `expression -> C_pointer_expression c_pointer
+        | `variable ->
+          let c_type = Typed_expression.c_type c_pointer in
+          let c_var =
+            Variable.create ~name:(sprintf "pointer_to_%s" field) ~c_type () in
+          C_pointer_variable (c_var, c_pointer)
       in
       let compiled_value =
         match compile_value_to with
         | `none -> C_value_none
         | `expression ->
-          let c_val =
-            c_value_of_offset_pointer compiler c_offset bit_offset final in
+          let c_val = c_value compiler c_pointer bit_offset final in
           C_value_expression c_val
         | `variable ->
-          let c_val =
-            c_value_of_offset_pointer compiler c_offset bit_offset final in
+          let c_val = c_value compiler c_pointer bit_offset final in
           let c_type = Typed_expression.c_type c_val in
-          let c_var = Variable.create ~name:field ~c_type () in
+          let c_var = 
+            Variable.create ~name:(sprintf "value_of_%s" field) ~c_type () in
           C_value_variable (c_var, c_val)
       in
-      Ht.add compiler.c_dependencies field (compiled_value, compiled_offset);
-      field
+      Ht.add compiler.c_dependencies field
+        (compiled_value, compiled_offset, compiled_pointer);
+      ()
 
     let informed_block ~stage_1 ~platform
         ~(packet_expression: Typed_expression.t)
         ~(make_user_block: Typed_expression.t list -> C.block) =
       let compiler = 
         {stage_1 = stage_1;
-         c_dependencies = Ht.create 42;
-         target_platform = platform} in
+         c_dependencies = Ht.create 42; target_platform = platform} in
+     
+      Ls.iter compiler.stage_1.Stage_1.compiled_expressions 
+        ~f:(compile_expression compiler packet_expression);
 
-      let _compiled =
-        Ls.map compiler.stage_1.Stage_1.compiled_expressions 
-          ~f:(compile_expression compiler packet_expression) in
       let declarations, assignments = get_variables compiler in
       let user_expressions =
         Ls.map compiler.stage_1.Stage_1.request_list
           ~f:(function
-            | `field f -> get_c_dependency compiler `value f
-            | `offset f -> get_c_dependency compiler `offset f) in
+            | `value f -> get_c_dependency compiler `value f
+            | `offset f -> get_c_dependency compiler `offset f
+            | `pointer f -> get_c_dependency compiler `pointer f) in
       let user_decls, user_stmts = make_user_block user_expressions in
       (declarations @ user_decls, assignments @ user_stmts)
 
