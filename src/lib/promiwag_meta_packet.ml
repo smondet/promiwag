@@ -407,34 +407,51 @@ module Parser_generator = struct
     open Promiwag_c_backend
     open Packet_structure
 
+    (* Input/Output Types: *)
+
     type variable_creation_preference =
-      [`minimalistically | `as_needed | `for_all]
+      [`minimalistically (** Only when absolutely needed, this may mean 
+                             duplication of computations. *)
+      | `as_needed (** Normal behaviour: create variables when absolutely
+                       needed, and to save intermediary results, and avoid
+                       duplication of computations. *)
+      | `for_all (** Create variables for everything that has to be compiled,
+                     in particular, all the typed expressions passed to
+                     [make_user_block] will be [`variables name]. *)
+      ]
+
+    type c_packet = {
+      packet_expression: Typed_expression.t;
+      packet_size: Typed_expression.t option;
+    }
+    let make_packet ?size expression =
+      {packet_expression = expression; packet_size = size;}
+
+    exception Compilation_error of string
 
 
-    type compiled_value =
-      | C_value_variable of Variable.t * Typed_expression.t
-      | C_value_expression of Typed_expression.t
-      | C_value_none
-    type compiled_offset =
-      | C_offset_variable of Variable.t * Typed_expression.t
-      | C_offset_expression of Typed_expression.t
-      | C_offset_none
-    type compiled_pointer =
-      | C_pointer_variable of Variable.t * Typed_expression.t
-      | C_pointer_expression of Typed_expression.t
-      | C_pointer_none
+    (* Internal representations: *)
 
-    type compiled = compiled_value * compiled_offset * compiled_pointer
+    type c_compiled =
+      | C_variable of Variable.t * Typed_expression.t
+      | C_expression of Typed_expression.t
+      | C_not_compiled
+
+    type compiled_entity = {
+      c_value: c_compiled;
+      c_offset: c_compiled;
+      c_pointer: c_compiled;
+      stage_1_expression: Stage_1.stage_1_compiled_expression;
+    }
 
     type compiler = {
       stage_1: Stage_1.result;
-      c_dependencies: (string, compiled) Ht.t;
+      compiled_entities: (string, compiled_entity) Ht.t;
       target_platform: Promiwag_platform.platform;
       variable_creation_preference: variable_creation_preference;
       mutable location: string option;
     }
 
-    exception Compilation_failed of string
         
     let error_prefix = "Meta_packet.Parser_generator.Stage_2_C"
       
@@ -446,36 +463,35 @@ module Parser_generator = struct
         match compiler.location with
         | None -> ""
         | Some s -> sprintf "[field: %s]" s in
-      raise (Compilation_failed
-               (sprintf "%s%s: ERROR %s" error_prefix field_str s))
+      failwith (sprintf "%s%s: COMPILER-ERROR %s" error_prefix field_str s)
+
+    let error compiler s =
+      let field_str = 
+        match compiler.location with
+        | None -> ""
+        | Some s -> sprintf "[field: %s]" s in
+      raise (Compilation_error (sprintf "%s%s: %s" error_prefix field_str s))
+
 
     let set_location_field compiler field =
       compiler.location <- Some field;
       ()
 
-    let get_c_value_dependency compiler name =
-      match Ht.find_opt compiler.c_dependencies name with
-      | Some (C_value_variable (v, ev), _, _) -> Variable.typed_expression v
-      | Some (C_value_expression e, _, _) -> e
-      | _ -> fail compiler "asking for a non-compiled value"
-
-    let get_c_offset_dependency compiler name =
-      match Ht.find_opt compiler.c_dependencies name with
-      | Some (_, C_offset_variable (v, ev), _) -> Variable.typed_expression v
-      | Some (_, C_offset_expression e, _) -> e
-      | _ -> fail compiler "asking for a non-compiled offset"
-
-    let get_c_pointer_dependency compiler name =
-      match Ht.find_opt compiler.c_dependencies name with
-      | Some (_, _, C_pointer_variable (v, ev)) -> Variable.typed_expression v
-      | Some (_, _, C_pointer_expression e) -> e
-      | _ -> fail compiler "asking for a non-compiled pointer"
-
+    let get_c_expression compiler cc =
+      match cc with
+      | C_variable (v, ev) -> Variable.typed_expression v
+      | C_expression e -> e
+      | _ -> fail compiler "asking for a non-compiled c_thing of entity"
+        
     let get_c_dependency compiler needed_as name =
-      match needed_as with
-      | `value -> get_c_value_dependency compiler name
-      | `offset -> get_c_offset_dependency compiler name
-      | `pointer -> get_c_pointer_dependency compiler name
+      match Ht.find_opt compiler.compiled_entities name with
+      | None -> fail compiler "asking for a non-compiled entitie"
+      | Some ce ->
+        begin match needed_as with
+        | `value ->   get_c_expression compiler ce.c_value
+        | `offset ->  get_c_expression compiler ce.c_offset 
+        | `pointer -> get_c_expression compiler ce.c_pointer
+        end
 
     let get_c_dependency_expression c n a =
       Typed_expression.expression (get_c_dependency c n a)
@@ -483,29 +499,19 @@ module Parser_generator = struct
     let get_variables compiler = 
       let decls = ref [] in
       let assigns = ref [] in
-      Ht.iter (fun _ (depval, depofs, depptr) ->
-        begin match depval with
-        | C_value_variable (v, e) -> 
-          decls := (Variable.declaration v) :: !decls;
-          assigns := 
-            (Variable.assignment v (Typed_expression.expression e)) :: !assigns;
-        | _ -> ()
-        end;
-        begin match depofs with
-        | C_offset_variable (v, e) -> 
-          decls := (Variable.declaration v) :: !decls;
-          assigns := 
-            (Variable.assignment v (Typed_expression.expression e)) :: !assigns;
-        | _ -> ()
-        end;
-        begin match depptr with
-        | C_pointer_variable (v, e) -> 
-          decls := (Variable.declaration v) :: !decls;
-          assigns := 
-            (Variable.assignment v (Typed_expression.expression e)) :: !assigns;
-        | _ -> ()
-        end)
-        compiler.c_dependencies;
+      Ht.iter (fun _ c ->
+        let add = function 
+          | C_variable (v, e) -> 
+            decls := (Variable.declaration v) :: !decls;
+            assigns := 
+              (Variable.assignment v (Typed_expression.expression e)) ::
+              !assigns;
+          | _ -> ()
+        in
+        add c.c_value;
+        add c.c_offset;
+        add c.c_pointer;
+      ) compiler.compiled_entities;
       (Ls.rev !decls, Ls.rev !assigns)
 
     let c_op_of_size_op = function
@@ -601,11 +607,6 @@ module Parser_generator = struct
       in
       (Typed_expression.create ~expression:the_bits ~c_type (), c_type_size)
       
-(*
-    let c_value_of_offset_pointer compiler pointer bit_offset = function
-      | Stage_1.Finally_get_pointer -> pointer
-      | Stage_1.Finally_get_integer  ->
-*)  
     let compile_expression compiler packet expression = 
       let (field, 
            byte_offset,
@@ -636,39 +637,42 @@ module Parser_generator = struct
 
       let compiled_offset =
         match compile_offset_to with
-        | `none -> C_offset_none
-        | `expression -> C_offset_expression c_offset
+        | `none -> C_not_compiled
+        | `expression -> C_expression c_offset
         | `variable ->
           let c_type = Typed_expression.c_type c_offset in
           let c_var =
             Variable.create ~name:(sprintf "offset_of_%s" field) ~c_type () in
-          C_offset_variable (c_var, c_offset)
+          C_variable (c_var, c_offset)
       in
       let compiled_pointer =
         match compile_pointer_to with
-        | `none -> C_pointer_none
-        | `expression -> C_pointer_expression c_pointer
+        | `none -> C_not_compiled
+        | `expression -> C_expression c_pointer
         | `variable ->
           let c_type = Typed_expression.c_type c_pointer in
           let c_var =
             Variable.create ~name:(sprintf "pointer_to_%s" field) ~c_type () in
-          C_pointer_variable (c_var, c_pointer)
+          C_variable (c_var, c_pointer)
       in
       let compiled_value, value_size =
         match compile_value_to with
-        | `none -> (C_value_none, 0)
+        | `none -> (C_not_compiled, 0)
         | `expression ->
           let c_val, size = c_value compiler c_pointer bit_offset final in
-          (C_value_expression c_val, size)
+          (C_expression c_val, size)
         | `variable ->
           let c_val, size = c_value compiler c_pointer bit_offset final in
           let c_type = Typed_expression.c_type c_val in
           let c_var = 
             Variable.create ~name:(sprintf "value_of_%s" field) ~c_type () in
-          (C_value_variable (c_var, c_val), size)
+          (C_variable (c_var, c_val), size)
       in
-      Ht.add compiler.c_dependencies field
-        (compiled_value, compiled_offset, compiled_pointer);
+      Ht.add compiler.compiled_entities field
+        {c_value = compiled_value;
+         c_offset = compiled_offset;
+         c_pointer = compiled_pointer;
+         stage_1_expression = expression;};
       (Typed_expression.expression c_offset, value_size)
 
     let generate_size_checks compiler buffer_accesses 
@@ -707,13 +711,7 @@ module Parser_generator = struct
               ~block_then:escape_block) in
       Construct.block ~statements ()
 
-
-    type c_packet = {
-      packet_expression: Typed_expression.t;
-      packet_size: Typed_expression.t option;
-    }
-    let make_packet ?size expression =
-      {packet_expression = expression; packet_size = size;}
+    (* 'Exported' function: *)
 
     let informed_block ~stage_1 ?(platform=Promiwag_platform.default)
         ?(create_variables:variable_creation_preference=`as_needed)
@@ -722,7 +720,7 @@ module Parser_generator = struct
         ~(make_user_block: Typed_expression.t list -> C.block) () =
       let compiler = 
         {stage_1 = stage_1; variable_creation_preference = create_variables;
-         c_dependencies = Ht.create 42; target_platform = platform;
+         compiled_entities = Ht.create 42; target_platform = platform;
          location = None} in
      
       let compiled_needed_accesses =
