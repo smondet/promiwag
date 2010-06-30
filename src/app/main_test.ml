@@ -220,9 +220,15 @@ let test_packet_parsing () =
       ~initialisation:(`compound_literal 
                           (Ls.init 1000 (fun i -> `literal_int 255)))
       () in
-  let packet_expression = C.Variable.typed_expression packet_var in
+  let packet =
+    Stage_two.make_packet
+      ~size:(C.Typed_expression.create
+               (* ~expression:(`variable "packet_size") *)
+               ~expression:(`literal_int 200) 
+               ~c_type:(`unsigned_long) ())
+      (C.Variable.typed_expression packet_var) in
   let block =
-    Stage_two.informed_block ~stage_1 ~packet_expression ()
+    Stage_two.informed_block ~stage_1 ~packet ()
       ~create_variables:`for_all
       ~make_user_block:(fun te_list ->
         let declarations = 
@@ -319,8 +325,9 @@ let test_pcap_parsing dev () =
 begin
         let module Stage_two = Promiwag.Meta_packet.Parser_generator.Stage_2_C in
         let block_ethernet block_ipv4 =
-          let packet_expression = C.Variable.typed_expression packet_buffer in
-          Stage_two.informed_block ~stage_1:stage_1_ethernet ~packet_expression 
+          let packet =
+            Stage_two.make_packet (C.Variable.typed_expression packet_buffer) in
+          Stage_two.informed_block ~stage_1:stage_1_ethernet ~packet 
             ~platform:Promiwag.Platform.default ()
             ~make_user_block:(fun te_list ->
               match te_list with 
@@ -356,9 +363,9 @@ begin
                   C.Typed_expression.expression var_field_ethertype_length in
                 let ipv4_treatment =
                   let block_then = 
-                    let packet_expression = var_payload in
+                    let packet = Stage_two.make_packet var_payload in
                     Stage_two.informed_block ()
-                      ~stage_1:stage_1_ipv4 ~packet_expression 
+                      ~stage_1:stage_1_ipv4 ~packet
                       ~platform:Promiwag.Platform.default
                       ~make_user_block:(function
                         | [field_version; field_ihl;

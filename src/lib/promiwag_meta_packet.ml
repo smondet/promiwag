@@ -599,7 +599,7 @@ module Parser_generator = struct
         | _, _ ->
           to_do "Integer's offset or size not resolved to constants"
       in
-      (Typed_expression.create ~expression:the_bits ~c_type ())
+      (Typed_expression.create ~expression:the_bits ~c_type (), c_type_size)
       
 (*
     let c_value_of_offset_pointer compiler pointer bit_offset = function
@@ -654,34 +654,87 @@ module Parser_generator = struct
             Variable.create ~name:(sprintf "pointer_to_%s" field) ~c_type () in
           C_pointer_variable (c_var, c_pointer)
       in
-      let compiled_value =
+      let compiled_value, value_size =
         match compile_value_to with
-        | `none -> C_value_none
+        | `none -> (C_value_none, 0)
         | `expression ->
-          let c_val = c_value compiler c_pointer bit_offset final in
-          C_value_expression c_val
+          let c_val, size = c_value compiler c_pointer bit_offset final in
+          (C_value_expression c_val, size)
         | `variable ->
-          let c_val = c_value compiler c_pointer bit_offset final in
+          let c_val, size = c_value compiler c_pointer bit_offset final in
           let c_type = Typed_expression.c_type c_val in
           let c_var = 
             Variable.create ~name:(sprintf "value_of_%s" field) ~c_type () in
-          C_value_variable (c_var, c_val)
+          (C_value_variable (c_var, c_val), size)
       in
       Ht.add compiler.c_dependencies field
         (compiled_value, compiled_offset, compiled_pointer);
-      ()
+      (Typed_expression.expression c_offset, value_size)
+
+    let generate_size_checks compiler buffer_accesses 
+        size_expression escape_block =
+      let maximal_constant_offset, non_constant_offsets =
+        let m = ref (-1) in
+        let non_constant = 
+          Ls.filter ~f:(function
+            | (`literal_int i, s) -> m := max !m (i + s); false
+            | c -> true) buffer_accesses in
+        (!m, non_constant) in
+      debug$ sprintf "Maximal: %d, Non constant: %d" 
+        maximal_constant_offset (Ls.length non_constant_offsets);
+      let continue =
+        match Typed_expression.expression size_expression with
+        | `literal_int i -> maximal_constant_offset < i
+        | `literal_int64 i64 ->
+          (Int64.compare (Int64.of_int maximal_constant_offset) i64) <= 0
+        | `literal_float f -> (float maximal_constant_offset) < f
+        | `literal_char c ->  maximal_constant_offset < (int_of_char c)
+        | _ -> true
+      in
+      if not continue then
+        fail compiler "Found statically that packet size is inferior \
+                       to one buffer access!";
+      let statements = 
+        (Construct.if_then_else
+          (`binary (`bin_le, Typed_expression.expression size_expression,
+                    `literal_int maximal_constant_offset)))
+        ::
+          Ls.map non_constant_offsets 
+          ~f:(fun (e, s) ->
+            Construct.if_then_else
+              (`binary (`bin_le, Typed_expression.expression size_expression,
+                        `binary (`bin_add, e, `literal_int s)))
+              ~block_then:escape_block) in
+      Construct.block ~statements ()
+
+
+    type c_packet = {
+      packet_expression: Typed_expression.t;
+      packet_size: Typed_expression.t option;
+    }
+    let make_packet ?size expression =
+      {packet_expression = expression; packet_size = size;}
 
     let informed_block ~stage_1 ?(platform=Promiwag_platform.default)
         ?(create_variables:variable_creation_preference=`as_needed)
-        ~(packet_expression: Typed_expression.t)
+        ~(packet:c_packet)
+        ?(size_error_block=([], []))
         ~(make_user_block: Typed_expression.t list -> C.block) () =
       let compiler = 
         {stage_1 = stage_1; variable_creation_preference = create_variables;
          c_dependencies = Ht.create 42; target_platform = platform;
          location = None} in
      
-      Ls.iter compiler.stage_1.Stage_1.compiled_expressions 
-        ~f:(compile_expression compiler packet_expression);
+      let compiled_needed_accesses =
+        Ls.map compiler.stage_1.Stage_1.compiled_expressions 
+          ~f:(compile_expression compiler packet.packet_expression) in
+
+      let check_size_declarations, check_size_statements =
+        match packet.packet_size with
+        | None -> ([], [])
+        | Some var ->
+          generate_size_checks compiler compiled_needed_accesses
+            var size_error_block in
 
       let declarations, assignments = get_variables compiler in
       let user_expressions =
@@ -691,7 +744,8 @@ module Parser_generator = struct
             | `offset f -> get_c_dependency compiler `offset f
             | `pointer f -> get_c_dependency compiler `pointer f) in
       let user_decls, user_stmts = make_user_block user_expressions in
-      (declarations @ user_decls, assignments @ user_stmts)
+      (declarations @ check_size_declarations @ user_decls,
+       assignments @ check_size_statements @ user_stmts)
 
   end
 
