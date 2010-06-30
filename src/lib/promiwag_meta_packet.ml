@@ -114,6 +114,27 @@ module Packet_database = struct
 
 end
 
+module C_packet = struct
+
+  open Promiwag_c_backend
+
+  type t = {
+    expression: Typed_expression.t;
+    size: Typed_expression.t option;
+    format: string option;
+  }
+
+  let create ?size ?format expression =
+    {expression = expression; size = size; format = format}
+
+  let expression t = t.expression
+  let size t = t.size
+  let format t = t.format
+  let get_size t = Opt.get t.size
+  let get_format t = Opt.get t.format
+
+end
+
 module Parser_generator = struct
 
   (*
@@ -402,11 +423,10 @@ module Parser_generator = struct
 
   module Stage_2_C = struct
     
-    module C = Promiwag_c_backend.C_LightAST
     module Platform = Promiwag_platform
     open Promiwag_c_backend
     open Packet_structure
-
+    module C = C_LightAST
     (* Input/Output Types: *)
 
     type variable_creation_preference =
@@ -420,12 +440,6 @@ module Parser_generator = struct
                      [make_user_block] will be [`variables name]. *)
       ]
 
-    type c_packet = {
-      packet_expression: Typed_expression.t;
-      packet_size: Typed_expression.t option;
-    }
-    let make_packet ?size expression =
-      {packet_expression = expression; packet_size = size;}
 
     exception Compilation_error of string
 
@@ -542,7 +556,7 @@ module Parser_generator = struct
         match final with
         | Stage_1.Finally_get_integer (e,s,c) -> (e,s,c)
         | Stage_1.Finally_fail `string ->
-          fail compiler "Cannot compile the 'value' of a string/payload" in
+          error compiler "Cannot compile the 'value' of a string/payload" in
       let c_type, c_type_size, cast =
         match signedism with
         | `unsigned -> 
@@ -743,7 +757,7 @@ module Parser_generator = struct
 
     let informed_block ~stage_1 ?(platform=Promiwag_platform.default)
         ?(create_variables:variable_creation_preference=`as_needed)
-        ~(packet:c_packet)
+        ~(packet:C_packet.t)
         ?(size_error_block=([], [`comment "Default size_error_block."]))
         ~(make_user_block: Typed_expression.t list -> C.block) () =
       let compiler = 
@@ -753,12 +767,12 @@ module Parser_generator = struct
      
       let ordered_entities =
         Ls.map compiler.stage_1.Stage_1.compiled_expressions 
-          ~f:(compile_expression compiler packet.packet_expression) in
+          ~f:(compile_expression compiler (C_packet.expression packet)) in
 
       compiler.location <- 
         Some "{Generating constant size/buffer-access checks}";
       let cstszchecks_declarations, cstszchecks_statements =
-        match packet.packet_size with
+        match C_packet.size packet with
         | None -> ([], [])
         | Some var ->
           generate_constant_size_checks
@@ -768,7 +782,7 @@ module Parser_generator = struct
                                   size/buffer-access checks}";
       let declarations, assignments = 
         get_variables_and_size_checks compiler ordered_entities 
-          packet.packet_size size_error_block in
+          (C_packet.size packet) size_error_block in
       
       compiler.location <- Some "{Generating user_expressions}";
       let user_expressions =
