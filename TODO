@@ -4,7 +4,6 @@ To do:
 * start using PolyComp
 * Promiwag_platform: Generate an "inspector.c" piece of code which
   retrives endianism, sizeof's, etc ... as OCaml code ...
-* Promiwag_meta_packet: maxsize testing
 * Promiwag_meta_packet: heavy testing
 * Promiwag_meta_packet: add request `size of field
 * Promiwag_meta_packet: get_variables has still a Ht.iter: suspicious.

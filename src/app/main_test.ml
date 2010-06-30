@@ -224,7 +224,7 @@ let test_packet_parsing () =
     Stage_two.make_packet
       ~size:(C.Typed_expression.create
                (* ~expression:(`variable "packet_size") *)
-               ~expression:(`literal_int 200) 
+               ~expression:(`literal_int 200)
                ~c_type:(`unsigned_long) ())
       (C.Variable.typed_expression packet_var) in
   let block =

@@ -442,6 +442,7 @@ module Parser_generator = struct
       c_offset: c_compiled;
       c_pointer: c_compiled;
       stage_1_expression: Stage_1.stage_1_compiled_expression;
+      buffer_access: C.expression * int;
     }
 
     type compiler = {
@@ -460,23 +461,18 @@ module Parser_generator = struct
 
     let fail compiler s =
       let field_str = 
-        match compiler.location with
-        | None -> ""
-        | Some s -> sprintf "[field: %s]" s in
+        match compiler.location with | None -> "" | Some s -> s in
       failwith (sprintf "%s%s: COMPILER-ERROR %s" error_prefix field_str s)
 
     let error compiler s =
-      let field_str = 
-        match compiler.location with
-        | None -> ""
-        | Some s -> sprintf "[field: %s]" s in
+      let field_str =
+        match compiler.location with | None -> "" | Some s -> s in
       raise (Compilation_error (sprintf "%s%s: %s" error_prefix field_str s))
 
 
     let set_location_field compiler field =
-      compiler.location <- Some field;
-      ()
-
+      compiler.location <- Some (sprintf "{Compiling field  %s]" field)
+        
     let get_c_expression compiler cc =
       match cc with
       | C_variable (v, ev) -> Variable.typed_expression v
@@ -495,24 +491,6 @@ module Parser_generator = struct
 
     let get_c_dependency_expression c n a =
       Typed_expression.expression (get_c_dependency c n a)
-
-    let get_variables compiler = 
-      let decls = ref [] in
-      let assigns = ref [] in
-      Ht.iter (fun _ c ->
-        let add = function 
-          | C_variable (v, e) -> 
-            decls := (Variable.declaration v) :: !decls;
-            assigns := 
-              (Variable.assignment v (Typed_expression.expression e)) ::
-              !assigns;
-          | _ -> ()
-        in
-        add c.c_value;
-        add c.c_offset;
-        add c.c_pointer;
-      ) compiler.compiled_entities;
-      (Ls.rev !decls, Ls.rev !assigns)
 
     let c_op_of_size_op = function
       | Op_add -> `bin_add
@@ -668,73 +646,131 @@ module Parser_generator = struct
             Variable.create ~name:(sprintf "value_of_%s" field) ~c_type () in
           (C_variable (c_var, c_val), size)
       in
-      Ht.add compiler.compiled_entities field
+      let entity =
         {c_value = compiled_value;
          c_offset = compiled_offset;
          c_pointer = compiled_pointer;
-         stage_1_expression = expression;};
-      (Typed_expression.expression c_offset, value_size)
+         stage_1_expression = expression;
+         buffer_access =
+            (Typed_expression.expression c_offset, value_size);} in
+      Ht.add compiler.compiled_entities field entity;
+      entity
 
-    let generate_size_checks compiler buffer_accesses 
+    let generate_constant_size_checks compiler entities
         size_expression escape_block =
-      let maximal_constant_offset, non_constant_offsets =
-        let m = ref (-1) in
-        let non_constant = 
-          Ls.filter ~f:(function
-            | (`literal_int i, s) -> m := max !m (i + s); false
-            | c -> true) buffer_accesses in
-        (!m, non_constant) in
-      debug$ sprintf "Maximal: %d, Non constant: %d" 
-        maximal_constant_offset (Ls.length non_constant_offsets);
-      let continue =
-        match Typed_expression.expression size_expression with
-        | `literal_int i -> maximal_constant_offset < i
+      let maximal_constant_access=
+        Ls.fold_left ~init:(-1) entities ~f:(fun m e ->
+          match e.buffer_access with
+          | (`literal_int i, s) -> max m (i + (s / 8)) | _ -> m) in
+      debug$ sprintf "Maximal: %d" maximal_constant_access;
+      let c_size = Typed_expression.expression size_expression in
+      let stop_now, c_size_is_literal =
+        match c_size with
+        | `literal_int i -> (i < maximal_constant_access, true)
         | `literal_int64 i64 ->
-          (Int64.compare (Int64.of_int maximal_constant_offset) i64) <= 0
-        | `literal_float f -> (float maximal_constant_offset) < f
-        | `literal_char c ->  maximal_constant_offset < (int_of_char c)
-        | _ -> true
+          ((Int64.compare i64 (Int64.of_int maximal_constant_access)) <= 0,
+           true)
+        | `literal_float f -> (f < (float maximal_constant_access), true)
+        | `literal_char c -> ((int_of_char c) < maximal_constant_access, true)
+        | _ -> (false, false)
       in
-      if not continue then
-        fail compiler "Found statically that packet size is inferior \
-                       to one buffer access!";
-      let statements = 
-        (Construct.if_then_else
-          (`binary (`bin_le, Typed_expression.expression size_expression,
-                    `literal_int maximal_constant_offset)))
-        ::
-          Ls.map non_constant_offsets 
-          ~f:(fun (e, s) ->
-            Construct.if_then_else
-              (`binary (`bin_le, Typed_expression.expression size_expression,
-                        `binary (`bin_add, e, `literal_int s)))
-              ~block_then:escape_block) in
+      if stop_now then
+        error compiler
+          (sprintf  "Found statically that the packet size is inferior \
+                     to the maximal buffer access: %s < %d"
+             (C_to_str.expression c_size) maximal_constant_access);
+      let statements =
+        if (maximal_constant_access <> -1) && (not c_size_is_literal) then
+          [ `comment "Checking maximal_constant_access against packet size.";
+            (Construct.if_then_else ~block_then:escape_block
+               (`binary (`bin_le, c_size,
+                         `literal_int maximal_constant_access)))]
+        else [] in
       Construct.block ~statements ()
+
+
+
+    let generate_size_check compiler entity size_expr_opt escape_block =
+      match size_expr_opt, entity.buffer_access with
+      | None, _  | _ , (`literal_int _, _) -> Construct.block ()
+      | Some size_expr, (offset_expr, type_bits) ->
+        let c_size = Typed_expression.expression size_expr in
+        let bufacc_expr = 
+          `binary (`bin_add, offset_expr, `literal_int (type_bits / 8)) in
+        let statements = 
+          [`comment (sprintf 
+                       "Checking buffer-access of field %s against packet size."
+                       entity.stage_1_expression.Stage_1.s1_field);
+           Construct.if_then_else (`binary (`bin_le, c_size, bufacc_expr))
+             ~block_then:escape_block; ] in
+        Construct.block ~statements ()
+        
+
+    let get_variables_and_size_checks
+        compiler entities size_expression_option escape_block  = 
+      let decls = ref [] in
+      let assigns = ref [] in
+      let final_checks = ref [] in
+      Ls.iter (fun c ->
+        let check_decl, check_stms = 
+          generate_size_check compiler c size_expression_option escape_block in
+        let is_a_variable = function C_variable _ -> true | _ -> false in
+        let there_are_variables =
+          is_a_variable c.c_value
+          || is_a_variable c.c_offset
+          || is_a_variable c.c_pointer in
+        decls := !decls @ check_decl;
+        if there_are_variables then (
+          assigns := !assigns @ check_stms;
+        ) else (
+          final_checks := !final_checks @ check_stms;
+        );
+        let add = function 
+          | C_variable (v, e) -> 
+            decls := !decls @ [(Variable.declaration v)];
+            assigns := !assigns @ 
+              [Variable.assignment v (Typed_expression.expression e)];
+          | _ -> ()
+        in
+        add c.c_value;
+        add c.c_offset;
+        add c.c_pointer;
+      ) entities;
+      (!decls, !assigns @ !final_checks)
+
 
     (* 'Exported' function: *)
 
     let informed_block ~stage_1 ?(platform=Promiwag_platform.default)
         ?(create_variables:variable_creation_preference=`as_needed)
         ~(packet:c_packet)
-        ?(size_error_block=([], []))
+        ?(size_error_block=([], [`comment "Default size_error_block."]))
         ~(make_user_block: Typed_expression.t list -> C.block) () =
       let compiler = 
         {stage_1 = stage_1; variable_creation_preference = create_variables;
          compiled_entities = Ht.create 42; target_platform = platform;
          location = None} in
      
-      let compiled_needed_accesses =
+      let ordered_entities =
         Ls.map compiler.stage_1.Stage_1.compiled_expressions 
           ~f:(compile_expression compiler packet.packet_expression) in
 
-      let check_size_declarations, check_size_statements =
+      compiler.location <- 
+        Some "{Generating constant size/buffer-access checks}";
+      let cstszchecks_declarations, cstszchecks_statements =
         match packet.packet_size with
         | None -> ([], [])
         | Some var ->
-          generate_size_checks compiler compiled_needed_accesses
-            var size_error_block in
+          generate_constant_size_checks
+            compiler ordered_entities var size_error_block in
 
-      let declarations, assignments = get_variables compiler in
+      compiler.location <- Some "{Generating declarations, assignments, and \
+                                  size/buffer-access checks}";
+      let declarations, assignments = 
+        get_variables_and_size_checks compiler ordered_entities 
+          packet.packet_size size_error_block in
+      
+      compiler.location <- Some "{Generating user_expressions}";
       let user_expressions =
         Ls.map compiler.stage_1.Stage_1.request_list
           ~f:(function
@@ -742,8 +778,8 @@ module Parser_generator = struct
             | `offset f -> get_c_dependency compiler `offset f
             | `pointer f -> get_c_dependency compiler `pointer f) in
       let user_decls, user_stmts = make_user_block user_expressions in
-      (declarations @ check_size_declarations @ user_decls,
-       assignments @ check_size_statements @ user_stmts)
+      (cstszchecks_declarations @ declarations @ user_decls,
+       cstszchecks_statements @ assignments @ user_stmts)
 
   end
 
