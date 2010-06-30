@@ -221,7 +221,7 @@ let test_packet_parsing () =
                           (Ls.init 1000 (fun i -> `literal_int 255)))
       () in
   let packet =
-    Stage_two.make_packet
+    Promiwag.Meta_packet.C_packet.create
       ~size:(C.Typed_expression.create
                (* ~expression:(`variable "packet_size") *)
                ~expression:(`literal_int 200)
@@ -272,7 +272,7 @@ let test_pcap_parsing dev () =
     Stage_one.compile_with_dependencies
       ~max_depth:10 ~packet_format request_list in
 
-  printf "STAGE 1:\n%s\n" (Stage_one.dump stage_1_ethernet);
+  (* printf "STAGE 1:\n%s\n" (Stage_one.dump stage_1_ethernet); *)
   
   let stage_1_ipv4 =
     let request_list = [
@@ -293,7 +293,7 @@ let test_pcap_parsing dev () =
     Stage_one.compile_with_dependencies
       ~max_depth:10 ~packet_format request_list in
 
-  printf "%s\n" (Stage_one.dump stage_1_ipv4);
+  (* printf "%s\n" (Stage_one.dump stage_1_ipv4); *)
 
 
 
@@ -326,7 +326,8 @@ begin
         let module Stage_two = Promiwag.Meta_packet.Parser_generator.Stage_2_C in
         let block_ethernet block_ipv4 =
           let packet =
-            Stage_two.make_packet (C.Variable.typed_expression packet_buffer) in
+            Promiwag.Meta_packet.C_packet.create
+              (C.Variable.typed_expression packet_buffer) in
           Stage_two.informed_block ~stage_1:stage_1_ethernet ~packet 
             ~platform:Promiwag.Platform.default ()
             ~make_user_block:(fun te_list ->
@@ -363,7 +364,8 @@ begin
                   C.Typed_expression.expression var_field_ethertype_length in
                 let ipv4_treatment =
                   let block_then = 
-                    let packet = Stage_two.make_packet var_payload in
+                    let packet =
+                      Promiwag.Meta_packet.C_packet.create var_payload in
                     Stage_two.informed_block ()
                       ~stage_1:stage_1_ipv4 ~packet
                       ~platform:Promiwag.Platform.default
@@ -433,12 +435,14 @@ end;
        block_sts @ [`return (`literal_int 0)]) in
   let test_pcap = 
     toplevels @ [ C.Function.definition main_pcap ] in
-  String_tree.print (C2StrTree.file test_pcap);
+  (* String_tree.print (C2StrTree.file test_pcap); *)
 
   let out = open_out "/tmp/pcaptest.c" in
   String_tree.print ~out (C2StrTree.file test_pcap);
   close_out out;
-  printf "gcc -lpcap /tmp/pcaptest.c -o /tmp/pcaptest && /tmp/pcaptest\n";
+  printf "\  Now you can:\n\
+          \  gcc -lpcap /tmp/pcaptest.c -o /tmp/pcaptest \n\
+          \  /tmp/pcaptest\n";
   ()
 
 
