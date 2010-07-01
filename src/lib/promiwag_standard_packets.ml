@@ -79,6 +79,29 @@ let ipv4 =
     (* byte[length-(ihl*4)]; *)
   ]
 
+(*
+ipv4.protocol: 17
+packet udp {
+    source_port: uint16;
+    dest_port: uint16;
+    length: uint16 min(8) value(offset(total_length));
+    checksum: uint16 default(0);
+    data: byte[length - offset(checksum)];
+    total_length: label;
+}
+*)
+let udp = 
+  MPS.packet_format "UDP" [
+    MPS.fixed_int_field "src_port" 16;
+    MPS.fixed_int_field "dst_port" 16;
+    MPS.fixed_int_field "length" 16;
+    MPS.fixed_int_field "checksum" 16;
+    MPS.payload 
+      ~size:(MPS.size (`sub (`var "length", `add (`offset "checksum", `int 4))))
+      ~name:"udp_payload"
+      ();
+  ]
+
 
 let test =
   MPS.packet_format "Test" [
