@@ -4,7 +4,6 @@ To do:
 
 * start using PolyComp
 * Promiwag_meta_packet: heavy testing (TCP and UDP packets)
-* Promiwag_meta_packet: add request `size of field
 
 
 + a while+switch manager for parsing encapsulations of packets

@@ -146,6 +146,7 @@ module Parser_generator = struct
   | `value of string
   | `pointer of string
   | `offset of string
+  | `size of string
   ]
 
 
@@ -165,6 +166,7 @@ module Parser_generator = struct
       | Depend_on_value_of of string
       | Depend_on_offset_of of string
       | Depend_on_pointer_to of string
+      | Depend_on_size_of of string
       | Depend_on_unknown
 
     let dependencies_of_size sz =
@@ -183,6 +185,7 @@ module Parser_generator = struct
       | Depend_on_value_of o -> sprintf "(value-of: %s)" o
       | Depend_on_offset_of o -> sprintf "(offset-of: %s)" o
       | Depend_on_pointer_to o -> sprintf "(pointer-to: %s)" o
+      | Depend_on_size_of o -> sprintf "(size-of: %s)" o
       | Depend_on_unknown -> "(depends-on-unknown)"
         
     type computation_item =
@@ -204,7 +207,7 @@ module Parser_generator = struct
 
     type final_computation =
       | Finally_get_integer of [`big | `little] * [`signed | `unsigned] * size
-      | Finally_fail of [`string]
+      | Finally_get_string of size
 
     let string_of_final_computation = function
       | Finally_get_integer (`big, `signed, s) -> 
@@ -215,7 +218,8 @@ module Parser_generator = struct
         sprintf "(get-integer %s, signed, little endian)" (string_of_size s)
       | Finally_get_integer (`little, `unsigned, s) -> 
         sprintf "(get-integer %s, unsigned, little endian)" (string_of_size s)
-      | Finally_fail `string -> "fail-on-string"
+      | Finally_get_string size -> 
+        sprintf "(get-string %s)" (string_of_size size)
 
     let rec final_computation_of_content_type ?(endianism=`big) = function
       | Type_little_endian ct -> 
@@ -226,7 +230,7 @@ module Parser_generator = struct
       | Type_signed_integer sz ->
         (Finally_get_integer (endianism, `unsigned, sz),
          dependencies_of_size sz)
-      | Type_string sz -> (Finally_fail `string, [])
+      | Type_string sz -> (Finally_get_string sz, dependencies_of_size sz)
 
     let rec propagate_constants_in_size = function
       | Size_fixed s -> Size_fixed s
@@ -281,7 +285,8 @@ module Parser_generator = struct
       (f [] [] field_name packet_format)
 
     type needer = [`request | `other  of stage_1_compiled_expression]
-    and need = [`value of needer | `pointer of needer | `offset of needer]
+    and need = [`value of needer | `pointer of needer
+               | `offset of needer | `size of needer]
     and stage_1_compiled_expression = {  (* TODO find a better name... *)
       s1_field: string;
       s1_byte_offset: size;
@@ -315,6 +320,8 @@ module Parser_generator = struct
         stage_1_compile_field (`offset needed_by) packet_format f
       | Depend_on_pointer_to f ->
         stage_1_compile_field (`pointer needed_by) packet_format f
+      | Depend_on_size_of f ->
+        stage_1_compile_field (`size needed_by) packet_format f
       | Depend_on_unknown ->
         fail "stage_1_compile_dependency: should not be here"
 
@@ -322,7 +329,8 @@ module Parser_generator = struct
       Ls.map ~f:(function 
         | `value f -> Depend_on_value_of f
         | `offset f -> Depend_on_offset_of f
-        | `pointer f -> Depend_on_pointer_to f)
+        | `pointer f -> Depend_on_pointer_to f
+        | `size f -> Depend_on_size_of f)
 
     type result = {
       packet_format: packet;
@@ -344,6 +352,7 @@ module Parser_generator = struct
         | [] -> (* Done! *) ()
         | (Depend_on_value_of fname as d) :: l
         | (Depend_on_pointer_to fname as d) :: l
+        | (Depend_on_size_of fname as d) :: l
         | (Depend_on_offset_of fname as d) :: l ->
           die_on_max_depth depender depth;
           let f ct = cmp_str ct.s1_field fname in
@@ -361,6 +370,8 @@ module Parser_generator = struct
               one.s1_needed_as_by <- (`offset depender) :: one.s1_needed_as_by;
             | Depend_on_pointer_to _ -> 
               one.s1_needed_as_by <- (`pointer depender) :: one.s1_needed_as_by;
+            | Depend_on_size_of _ -> 
+              one.s1_needed_as_by <- (`size depender) :: one.s1_needed_as_by;
             | Depend_on_unknown -> 
               fail "compile_with_dependencies: Depend_on_unknown"
             end;
@@ -370,10 +381,9 @@ module Parser_generator = struct
           end;
           go_deeper depth depender l;
         | Depend_on_unknown :: l ->
-          fail (sprintf "Stage 1: Cannot compile unknown dependency of %s"
-                  (match depender with 
-                  | `request -> "request (this should never happen)"
-                  | `other c -> c.s1_field)) 
+          (* We do nothing for now. Failure may appear on Stage_2, or not, 
+             depending on what is requested. *)
+          go_deeper depth depender l;
       in
       go_deeper 0 `request first_dependencies;
       {packet_format = packet_format; 
@@ -394,9 +404,11 @@ module Parser_generator = struct
           | `value `request -> "requested value" 
           | `offset `request -> "requested offset" 
           | `pointer `request -> "requested pointer" 
+          | `size `request -> "requested size" 
           | `value (`other c) -> sprintf "value needed by %s" c.s1_field
           | `offset (`other c) -> sprintf "offset needed by %s" c.s1_field
           | `pointer (`other c) -> sprintf "pointer needed by %s" c.s1_field
+          | `size (`other c) -> sprintf "size needed by %s" c.s1_field
          ) ce.s1_needed_as_by))
 
     let string_of_stage_1_compilation_ht
@@ -414,7 +426,8 @@ module Parser_generator = struct
         (Str.concat ", " (Ls.map (function
           | `value f -> sprintf "field %s" f
           | `pointer f -> sprintf "pointer  %s" f
-          | `offset f -> sprintf "offset of %s" f) s1.request_list))
+          | `offset f -> sprintf "offset of %s" f
+          | `size f -> sprintf "size of %s" f) s1.request_list))
         (fst s1.packet_format)
         (string_of_stage_1_compilation_ht
            ~before:"  " ~sep_parens:"\n    " s1.compiled_expressions)
@@ -455,6 +468,7 @@ module Parser_generator = struct
       c_value: c_compiled;
       c_offset: c_compiled;
       c_pointer: c_compiled;
+      c_size: c_compiled;
       stage_1_expression: Stage_1.stage_1_compiled_expression;
       buffer_access: C.expression * int;
     }
@@ -501,6 +515,7 @@ module Parser_generator = struct
         | `value ->   get_c_expression compiler ce.c_value
         | `offset ->  get_c_expression compiler ce.c_offset 
         | `pointer -> get_c_expression compiler ce.c_pointer
+        | `size ->    get_c_expression compiler ce.c_size
         end
 
     let get_c_dependency_expression c n a =
@@ -514,7 +529,11 @@ module Parser_generator = struct
 
     let rec compile_size compiler needed_as = function
       | Size_fixed s -> `literal_int s
-      | Size_variable v -> get_c_dependency_expression compiler needed_as v
+      | Size_variable v ->
+        if needed_as = `size then 
+          get_c_dependency_expression compiler `value v
+        else
+          get_c_dependency_expression compiler needed_as v
       | Size_binary_expression (op, size_a, size_b) ->
         `binary (c_op_of_size_op op,
                  compile_size compiler needed_as size_a,
@@ -542,6 +561,19 @@ module Parser_generator = struct
       Typed_expression.create ~expression:the_address_at_offset
         ~c_type:(`pointer `unsigned_char) ()
         
+
+    let c_size  compiler final =
+      let size =
+        match final with
+        | Stage_1.Finally_get_integer (_, _, sz) -> sz
+        | Stage_1.Finally_get_string sz -> 
+          Size_binary_expression (Op_mul, sz, Size_fixed 8) in
+      let expression = 
+        compile_size compiler `size
+          (Stage_1.propagate_constants_in_size size) in
+      Typed_expression.create () ~expression
+        ~c_type:(Platform.C.native_uint compiler.target_platform)
+
     let c_value_type_of_size compiler = function
       | Size_fixed i ->
         Platform.C.fitted_uint compiler.target_platform i
@@ -555,7 +587,7 @@ module Parser_generator = struct
         (* [`big | `little] * [`signed | `unsigned] * size *)
         match final with
         | Stage_1.Finally_get_integer (e,s,c) -> (e,s,c)
-        | Stage_1.Finally_fail `string ->
+        | Stage_1.Finally_get_string _ ->
           error compiler "Cannot compile the 'value' of a string/payload" in
       let c_type, c_type_size, cast =
         match signedism with
@@ -608,14 +640,16 @@ module Parser_generator = struct
            needed_as_by) =
         Stage_1.explode_stage_1_compiled_expression expression in
       set_location_field compiler field;
-      let compile_value_to, compile_offset_to, compile_pointer_to =
-        let value_needness, offset_needness, pointer_needness =
-          Ls.fold_left ~f:(fun (v, o, p) nab ->
+      let compile_value_to, compile_offset_to, 
+        compile_pointer_to, compile_size_to =
+        let value_needness, offset_needness, pointer_needness, size_needness =
+          Ls.fold_left ~f:(fun (v, o, p, s) nab ->
             match nab with
-            | `value _ -> (1 + v, o, p)
-            | `offset _ -> (v, o + 1, p)
-            | `pointer _ -> (v, o, p + 1))
-            ~init:(0, 0, 0) needed_as_by in
+            | `value _ -> (1 + v, o, p, s)
+            | `offset _ -> (v, o + 1, p, s)
+            | `size _ -> (v, o, p, s + 1)
+            | `pointer _ -> (v, o, p + 1, s))
+            ~init:(0, 0, 0, 0) needed_as_by in
         let comp n = match n, compiler.variable_creation_preference with
           | 0, _ -> `none
           | _, `for_all -> `variable
@@ -623,7 +657,8 @@ module Parser_generator = struct
           | n, `minimalistically -> `expression
           | n, `as_needed -> `variable
         in
-        (comp value_needness, comp offset_needness, comp pointer_needness) in
+        (comp value_needness, comp offset_needness,
+         comp pointer_needness, comp size_needness) in
       let c_offset = c_offset compiler byte_offset in
       let c_pointer = c_pointer_in_packet compiler packet byte_offset in
 
@@ -647,7 +682,19 @@ module Parser_generator = struct
             Variable.create ~name:(sprintf "pointer_to_%s" field) ~c_type () in
           C_variable (c_var, c_pointer)
       in
-      let compiled_value, value_size =
+      let compiled_size =
+        match compile_size_to with
+        | `none -> C_not_compiled
+        | `expression -> C_expression (c_size compiler final)
+        | `variable ->
+          let c_te = c_size compiler final in
+          let c_type = Typed_expression.c_type c_te in
+          let c_var =
+            Variable.create ~name:(sprintf "size_of_%s" field) ~c_type () in
+          C_variable (c_var, c_te)
+      in
+      (* Things related to the size are a bit redundant here: *)
+      let compiled_value, access_size =
         match compile_value_to with
         | `none -> (C_not_compiled, 0)
         | `expression ->
@@ -664,9 +711,10 @@ module Parser_generator = struct
         {c_value = compiled_value;
          c_offset = compiled_offset;
          c_pointer = compiled_pointer;
+         c_size = compiled_size;
          stage_1_expression = expression;
          buffer_access =
-            (Typed_expression.expression c_offset, value_size);} in
+            (Typed_expression.expression c_offset, access_size);} in
       Ht.add compiler.compiled_entities field entity;
       entity
 
@@ -732,6 +780,7 @@ module Parser_generator = struct
         let there_are_variables =
           is_a_variable c.c_value
           || is_a_variable c.c_offset
+          || is_a_variable c.c_size
           || is_a_variable c.c_pointer in
         decls := !decls @ check_decl;
         if there_are_variables then (
@@ -749,6 +798,7 @@ module Parser_generator = struct
         add c.c_value;
         add c.c_offset;
         add c.c_pointer;
+        add c.c_size;
       ) entities;
       (!decls, !assigns @ !final_checks)
 
@@ -790,7 +840,8 @@ module Parser_generator = struct
           ~f:(function
             | `value f -> get_c_dependency compiler `value f
             | `offset f -> get_c_dependency compiler `offset f
-            | `pointer f -> get_c_dependency compiler `pointer f) in
+            | `pointer f -> get_c_dependency compiler `pointer f
+            | `size f -> get_c_dependency compiler `size f) in
       let user_decls, user_stmts = make_user_block user_expressions in
       (cstszchecks_declarations @ declarations @ user_decls,
        cstszchecks_statements @ assignments @ user_stmts)

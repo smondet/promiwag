@@ -31,7 +31,7 @@ let call_printf format_str exp_list =
   `expression (`cast (`void, `call (`variable "printf",
                                     `literal_string format_str :: exp_list)))
 
-let printf_of_typed_expression te =
+let printf_of_typed_expression ?(prefix="") te =
   let fmt, init =
     match Promiwag.C_backend.Typed_expression.c_type te with
     | `unsigned_char      -> ("(dec: %hhu, hex: %02hhx)" , 2)    
@@ -52,7 +52,7 @@ let printf_of_typed_expression te =
   in
   let expr =  Promiwag.C_backend.Typed_expression.expression te in
   let format_str =
-    `literal_string (sprintf "Typed Expr %s is %s\n"
+    `literal_string (sprintf "%sTyped Expr %s is %s\n" prefix
                        (C2S.expression expr) fmt) in
   let arg_list = 
     Ls.init init (fun i -> expr) in
@@ -189,22 +189,27 @@ let test_pcap_basic () =
 let test_packet_parsing () =
   let module C = Promiwag.C_backend in
 
-  let request, packet_format_string = 
+  let request, packet_printf_list = 
     let module S = Promiwag.Meta_packet.Packet_structure in
     let (n, fmt) = Promiwag.Standard_packets.test in
     let req =
-      Ls.map fmt ~f:(function
-        | S.Item_field (n, S.Type_unsigned_integer _)
-        | S.Item_field (n, S.Type_signed_integer _)
-        | S.Item_field (n, S.Type_little_endian _) ->
-          `value n
-        | S.Item_field (n, S.Type_string _) ->
-          `pointer n) in
-    let fmt_str_list =
-      Ls.map fmt ~f:(function
-        | S.Item_field (n, t) ->
-          sprintf "Field %s: %s" n (S.string_of_content_type t)) in
-    (req, fmt_str_list)
+      Ls.flatten 
+        (Ls.map fmt ~f:(function
+          | S.Item_field (n, S.Type_unsigned_integer _)
+          | S.Item_field (n, S.Type_signed_integer _)
+          | S.Item_field (n, S.Type_little_endian _) ->
+            [ `value n; `offset n; `size n ]
+          | S.Item_field (n, S.Type_string _) ->
+            [ `pointer n; `offset n; `size n])) in
+    let prs =
+      Ls.flatten
+        (Ls.map fmt ~f:(function
+          | S.Item_field (n, t) ->
+            [ call_printf (sprintf "Field %s: %s\n" n (S.string_of_content_type t)) [];
+              call_printf "" [];
+              call_printf "" []; ]))
+    in
+    (req, prs)
   in
   let packet_format = Promiwag.Standard_packets.test in
   let module Stage_one = Promiwag.Meta_packet.Parser_generator.Stage_1 in
@@ -223,7 +228,7 @@ let test_packet_parsing () =
   let packet =
     Promiwag.Meta_packet.C_packet.create
       ~size:(C.Typed_expression.create
-               (* ~expression:(`variable "packet_size") *)
+                 (* ~expression:(`variable "packet_size") *)
                ~expression:(`literal_int 200)
                ~c_type:(`unsigned_long) ())
       (C.Variable.typed_expression packet_var) in
@@ -235,15 +240,14 @@ let test_packet_parsing () =
           (C.Variable.declaration packet_var) :: [] in
         let statements =
           Ls.flatten
-            (Ls.map2 te_list packet_format_string 
-               ~f:(fun te s -> [
-                 call_printf (sprintf "%s:\n" s) [];
-                 printf_of_typed_expression te; ])) in
+            (Ls.map2 te_list packet_printf_list 
+               ~f:(fun te pr ->
+                 [ pr; printf_of_typed_expression ~prefix:"  " te; ])) in
         C.Construct.block ~declarations ~statements ())
   in
   let main, _, _ = 
     C.Construct.standard_main block in
-  (*ring_tree.print (C2StrTree.file  [C.Function.definition main]);*)
+    (*ring_tree.print (C2StrTree.file  [C.Function.definition main]);*)
   
   let out = open_out "/tmp/parsingtest.c" in
   String_tree.print ~out (C2StrTree.file [C.Function.definition main]);
@@ -267,7 +271,7 @@ let test_pcap_parsing dev () =
     let request_list = [
       `pointer "dest_addr"; `pointer "src_addr";
       `value "ethertype_length"; `offset "ethertype_length";
-      `pointer "payload" ] in
+      `pointer "eth_payload" ] in
     let packet_format = Promiwag.Standard_packets.ethernet in
     Stage_one.compile_with_dependencies
       ~max_depth:10 ~packet_format request_list in
@@ -286,8 +290,10 @@ let test_pcap_parsing dev () =
       `value "checksum";
       `pointer "src";
       `pointer "dest";
+      `size "options";
       `offset "ip_payload";
       `pointer "ip_payload";
+      `size "ip_payload";
     ] in
     let packet_format = Promiwag.Standard_packets.ipv4 in
     Stage_one.compile_with_dependencies
@@ -377,15 +383,19 @@ begin
                            field_checksum;
                            pointer_src;
                            pointer_dest; 
+                           size_options;
                            offset_payload;
-                           pointer_payload] ->
+                           pointer_payload;
+                           size_payload;] ->
                           let expr_of_te =  C.Typed_expression.expression in
                           ([], [call_printf "  IPv4:\n\
-                                  \    version: %d, ihl: %d, length: %d, id: %d,\n\
-                                  \    can fragment: %d, TTL: %d, protocol: %d, \
-                                       checksum: %d\n\
+                                  \    version: %d, ihl: %d, length: %d, \
+                                  id: %d,\n\
+                                  \    can fragment: %d, TTL: %d, protocol: %d,\n\
+                                  \    checksum: %d, \
+                                  length of IP options: %d bits,\n\
                                   \    SRC: %d.%d.%d.%d DEST: %d.%d.%d.%d,\n\
-                                  \    Payload at offset %d is:\n" 
+                                  \    Payload (offset: %d, size: %d bytes) is:\n" 
                                    [expr_of_te field_version;
                                     expr_of_te field_ihl;
                                     expr_of_te field_length;
@@ -394,6 +404,7 @@ begin
                                     expr_of_te field_ttl;
                                     expr_of_te field_protocol;
                                     expr_of_te field_checksum;
+                                    expr_of_te size_options;
                                     idx pointer_src 0;
                                     idx pointer_src 1;
                                     idx pointer_src 2;
@@ -403,7 +414,8 @@ begin
                                     idx pointer_dest 2;
                                     idx pointer_dest 3;
                                     expr_of_te offset_payload;
-                                    expr_of_te pointer_payload;
+                                    `binary(`bin_div, expr_of_te size_payload,
+                                            `literal_int 8);
                                    ];
                                 printf_packet ~prefix:"    p"
                                   (expr_of_te pointer_payload) 20;

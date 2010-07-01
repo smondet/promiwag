@@ -14,7 +14,7 @@ let ethernet =
               MPS.case_range 46 1500 [
               MPS.payload ~size_variable:"ethertype_length" ()];
               ]; *)
-    MPS.payload ();
+    MPS.payload ~name:"eth_payload" ();
     MPS.field "crc32" (MPS.fixed_int 32);
   ]
 (*
