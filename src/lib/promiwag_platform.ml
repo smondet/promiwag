@@ -6,6 +6,7 @@ type platform = {
   word_size: int;
 }
 
+let endianism p = p.endianism
 
 module C = struct
 

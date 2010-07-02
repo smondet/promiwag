@@ -312,10 +312,12 @@ module To_C = struct
     platform: Promiwag_platform.platform;
   }
 
+  module Platform = Promiwag_platform
   module P = Promiwag_platform.C
   module C = Promiwag_c_backend.C_LightAST
 
   let todo s = failwith (sprintf "Promiwag_stiel.To_C: %s: NOT IMPLEMENTED" s)
+  let fail compiler s = failwith s
   let spr = Printf.sprintf
 
   let  integer_type compiler = function
@@ -324,6 +326,13 @@ module To_C = struct
     | Type_uint32      -> P.uint32      compiler.platform
     | Type_uint64      -> P.uint64      compiler.platform
     | Type_uint_native -> P.uint_native compiler.platform
+
+  let size_of_integer_type compiler = function
+    | Type_uint8       -> 8 
+    | Type_uint16      -> 16
+    | Type_uint32      -> 32
+    | Type_uint64      -> 64
+    | Type_uint_native -> P.size_of_native_uint compiler.platform
 
   let int_unary_operator compiler = function
     | Int_unary_minus             -> `unary_minus
@@ -349,10 +358,28 @@ module To_C = struct
     | Bool_binop_equal_or_greater  -> `bin_ge
     | Bool_binop_equal_or_lower    -> `bin_le
 
-  let get_int_at_buffer compiler = function
-    | Get_native         it -> todo "Get_native"
-    | Get_big_endian     it -> todo "Get_big_endian"
-    | Get_little_endian  it -> todo "Get_little_endian"
+  let get_int_at_buffer compiler =
+    let id = fun _ e -> e in
+    let big_endianise int_typ e =
+      if Platform.endianism compiler.platform <> `big then
+        match size_of_integer_type compiler int_typ with
+        | 8  -> e
+        | 16 -> `call (`variable "ntohs", [e])
+        | 32 -> `call (`variable "ntohl", [e])
+        | 64 -> todo "Big endian 64 bit integers"
+        | _ -> fail compiler "c_type_size not in {8, 16, 32, 64}"
+      else
+        e
+    in
+    let get_int endianise it e =
+      let c_type = integer_type compiler it in
+      let value_at_pointer =
+        `unary (`unary_memof, `cast (`pointer c_type, e)) in
+      `cast (c_type, endianise it value_at_pointer) in
+    function
+      | Get_native         it -> get_int id it
+      | Get_big_endian     it -> get_int big_endianise it
+      | Get_little_endian  it -> todo "Get_little_endian"
 
   let int_variable    s = s
   let bool_variable   s = s
@@ -370,10 +397,7 @@ module To_C = struct
       `binary (int_binary_operator compiler op,
                int_expression compiler ea, int_expression compiler eb)
     | Int_expr_variable  v            -> `variable (int_variable v)
-    | Int_expr_buffer_content (t, ex) ->
-      (* `unary (`unary_memof, *)
-      (*         (integer_type compiler t) (buffer_expression ex) *)
-      todo "Int_expr_buffer_content"
+    | Int_expr_buffer_content (t, ex) -> get_int_at_buffer compiler t ex
     | Int_expr_literal        i64     -> `literal_int64 i64
 
   and buffer_expression compiler = function
