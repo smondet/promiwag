@@ -14,8 +14,6 @@ type integer_type =
 type int_unary_operator =
   | Int_unary_minus     (* -  *)
   | Int_unary_plus      (* +  *)
-  | Int_unary_big2little_endian
-  | Int_unary_little2big_endian
 
 type int_binary_operator =
   | Int_binop_add   (*  +  *)
@@ -44,6 +42,11 @@ type bool_variable = string
 
 type buffer_variable = string
 
+type get_int_at_buffer =
+  | Get_native of integer_type
+  | Get_big_endian of integer_type
+  | Get_little_endian of integer_type
+
 type buffer_type =
   | Type_sized_buffer of int
   | Type_pointer
@@ -53,7 +56,7 @@ and int_expression =
   | Int_expr_unary of int_unary_operator * int_expression
   | Int_expr_binary of int_binary_operator * int_expression * int_expression
   | Int_expr_variable of int_variable
-  | Int_expr_buffer_content of integer_type * buffer_expression
+  | Int_expr_buffer_content of get_int_at_buffer * buffer_expression
   | Int_expr_literal of int64
 
 and buffer_expression =
@@ -108,8 +111,6 @@ module Construct = struct
     | `U64  i -> Int_expr_literal i 
     | `Minus m   -> Int_expr_unary (Int_unary_minus, int m)
     | `Plus  m   -> Int_expr_unary (Int_unary_plus , int m)
-    | `B2L     m -> Int_expr_unary (Int_unary_big2little_endian, int m)
-    | `L2B     m -> Int_expr_unary (Int_unary_little2big_endian, int m)
     | `Add     (a, b) -> Int_expr_binary (Int_binop_add    , int a, int b)
     | `Sub     (a, b) -> Int_expr_binary (Int_binop_sub    , int a, int b)
     | `Mul     (a, b) -> Int_expr_binary (Int_binop_mul    , int a, int b)
@@ -121,11 +122,22 @@ module Construct = struct
     | `Bshl (a, b) -> Int_expr_binary (Int_binop_bin_shl, int a, int b)
     | `Bshr (a, b) -> Int_expr_binary (Int_binop_bin_shr, int a, int b)
     | `Var v -> Int_expr_variable v
-    |   `U8_at b -> Int_expr_buffer_content (Type_uint8       ,  b)
-    |  `U16_at b -> Int_expr_buffer_content (Type_uint16      ,  b)
-    |  `U32_at b -> Int_expr_buffer_content (Type_uint32      ,  b)
-    |  `U64_at b -> Int_expr_buffer_content (Type_uint64      ,  b)
-    | `Unat_at b -> Int_expr_buffer_content (Type_uint_native ,  b)
+    |   `U8_at b -> Int_expr_buffer_content (Get_native Type_uint8       ,  b)
+    |  `U16_at b -> Int_expr_buffer_content (Get_native Type_uint16      ,  b)
+    |  `U32_at b -> Int_expr_buffer_content (Get_native Type_uint32      ,  b)
+    |  `U64_at b -> Int_expr_buffer_content (Get_native Type_uint64      ,  b)
+    | `Unat_at b -> Int_expr_buffer_content (Get_native Type_uint_native ,  b)
+    |   `U8_Big_at b -> Int_expr_buffer_content (Get_big_endian Type_uint8       ,  b)
+    |  `U16_Big_at b -> Int_expr_buffer_content (Get_big_endian Type_uint16      ,  b)
+    |  `U32_Big_at b -> Int_expr_buffer_content (Get_big_endian Type_uint32      ,  b)
+    |  `U64_Big_at b -> Int_expr_buffer_content (Get_big_endian Type_uint64      ,  b)
+    | `Unat_Big_at b -> Int_expr_buffer_content (Get_big_endian Type_uint_native ,  b)
+    |   `U8_Little_at b -> Int_expr_buffer_content (Get_little_endian Type_uint8       ,  b)
+    |  `U16_Little_at b -> Int_expr_buffer_content (Get_little_endian Type_uint16      ,  b)
+    |  `U32_Little_at b -> Int_expr_buffer_content (Get_little_endian Type_uint32      ,  b)
+    |  `U64_Little_at b -> Int_expr_buffer_content (Get_little_endian Type_uint64      ,  b)
+    | `Unat_Little_at b -> Int_expr_buffer_content (Get_little_endian Type_uint_native ,  b)
+
 
 
  let rec buffer = function
@@ -199,8 +211,6 @@ module To_string = struct
   let int_unary_operator = function
     | Int_unary_minus             -> "-"
     | Int_unary_plus              -> "+"
-    | Int_unary_big2little_endian -> "big2ltl"
-    | Int_unary_little2big_endian -> "ltl2big"
 
   let int_binary_operator = function
     | Int_binop_add     ->   "+" 
@@ -210,7 +220,7 @@ module To_string = struct
     | Int_binop_mod     ->   "mod" 
     | Int_binop_bin_and ->   "bin_and" 
     | Int_binop_bin_or  ->   "bin_or" 
-    | Int_binop_bin_xor ->   "bon_xor" 
+    | Int_binop_bin_xor ->   "bin_xor" 
     | Int_binop_bin_shl ->   "<<"  
     | Int_binop_bin_shr ->   ">>" 
 
@@ -221,6 +231,11 @@ module To_string = struct
     | Bool_binop_strictly_lower    -> "<"           
     | Bool_binop_equal_or_greater  -> "<="             
     | Bool_binop_equal_or_lower    -> ">="           
+
+  let get_int_at_buffer = function
+    | Get_native         it -> spr "native-%s" (integer_type it)
+    | Get_big_endian     it -> spr "bigend-%s" (integer_type it)
+    | Get_little_endian  it -> spr "ltlend-%s" (integer_type it)
 
 
   let int_variable    s = s
@@ -240,7 +255,7 @@ module To_string = struct
         (int_binary_operator op) (int_expression eb)
     | Int_expr_variable  v            -> spr "%s" (int_variable v)
     | Int_expr_buffer_content (t, ex) ->
-      spr "(%s @ %s)" (integer_type t) (buffer_expression ex)
+      spr "(%s @ %s)" (get_int_at_buffer t) (buffer_expression ex)
     | Int_expr_literal        i64     -> spr "%s" (Int64.to_string i64)
 
   and buffer_expression = function
@@ -313,8 +328,6 @@ module To_C = struct
   let int_unary_operator compiler = function
     | Int_unary_minus             -> `unary_minus
     | Int_unary_plus              -> `unary_plus
-    | Int_unary_big2little_endian -> todo "big2ltl"
-    | Int_unary_little2big_endian -> todo "ltl2big"
 
   let int_binary_operator compiler = function
     | Int_binop_add     -> `bin_add
@@ -335,6 +348,11 @@ module To_C = struct
     | Bool_binop_strictly_lower    -> `bin_lt
     | Bool_binop_equal_or_greater  -> `bin_ge
     | Bool_binop_equal_or_lower    -> `bin_le
+
+  let get_int_at_buffer compiler = function
+    | Get_native         it -> todo "Get_native"
+    | Get_big_endian     it -> todo "Get_big_endian"
+    | Get_little_endian  it -> todo "Get_little_endian"
 
   let int_variable    s = s
   let bool_variable   s = s
