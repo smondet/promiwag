@@ -589,12 +589,11 @@ module Parser_generator = struct
         | Stage_1.Finally_get_integer (e,s,c) -> (e,s,c)
         | Stage_1.Finally_get_string _ ->
           error compiler "Cannot compile the 'value' of a string/payload" in
-      let c_type, c_type_size, cast =
+      let c_type, c_type_size =
         match signedism with
         | `unsigned -> 
           let c_type, c_type_size = c_value_type_of_size compiler sz in
-          (c_type, c_type_size,
-           fun e -> `cast (c_type, e))
+          (c_type, c_type_size)
         | `signed -> to_do "Signed integers"
       in
       let endianise e =
