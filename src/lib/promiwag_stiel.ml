@@ -195,8 +195,8 @@ module To_string = struct
     | Type_uint_native -> "uint_native"
 
   let int_unary_operator = function
-    | Int_unary_minus             -> "+"
-    | Int_unary_plus              -> "-"
+    | Int_unary_minus             -> "-"
+    | Int_unary_plus              -> "+"
     | Int_unary_big2little_endian -> "big2ltl"
     | Int_unary_little2big_endian -> "ltl2big"
 
