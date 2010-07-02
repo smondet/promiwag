@@ -1,6 +1,8 @@
 
 (* Simple Typed Imperative Embedded Language *)
 
+open Promiwag_std
+
 type integer_type =
   | Type_uint8
   | Type_uint16
@@ -284,6 +286,122 @@ module To_string = struct
       spr "%sDeclare %s as a bool;\n" cur_indent (bool_variable v)
     | Do_declare_var_buffer (t, v) ->
       spr "%sDeclare %s as a %s;\n" cur_indent (buffer_variable v) (buffer_type t)
+
+
+end
+
+
+module To_C = struct
+
+  type compiler = {
+    platform: Promiwag_platform.platform;
+  }
+
+  module P = Promiwag_platform.C
+  module C = Promiwag_c_backend.C_LightAST
+
+  let todo s = failwith (sprintf "Promiwag_stiel.To_C: %s: NOT IMPLEMENTED" s)
+  let spr = Printf.sprintf
+
+  let  integer_type compiler = function
+    | Type_uint8       -> P.uint8       compiler.platform
+    | Type_uint16      -> P.uint16      compiler.platform  
+    | Type_uint32      -> P.uint32      compiler.platform
+    | Type_uint64      -> P.uint64      compiler.platform
+    | Type_uint_native -> P.uint_native compiler.platform
+
+  let int_unary_operator compiler = function
+    | Int_unary_minus             -> `unary_minus
+    | Int_unary_plus              -> `unary_plus
+    | Int_unary_big2little_endian -> todo "big2ltl"
+    | Int_unary_little2big_endian -> todo "ltl2big"
+
+  let int_binary_operator compiler = function
+    | Int_binop_add     -> `bin_add
+    | Int_binop_sub     -> `bin_sub
+    | Int_binop_mul     -> `bin_mul
+    | Int_binop_div     -> `bin_div
+    | Int_binop_mod     -> `bin_mod
+    | Int_binop_bin_and -> `bin_band
+    | Int_binop_bin_or  -> `bin_bor 
+    | Int_binop_bin_xor -> `bin_xor 
+    | Int_binop_bin_shl -> `bin_shl 
+    | Int_binop_bin_shr -> `bin_shr 
+      
+  let bool_binary_operator compiler = function
+    | Bool_binop_equals            -> `bin_eq
+    | Bool_binop_notequals         -> `bin_ne
+    | Bool_binop_strictly_greater  -> `bin_gt
+    | Bool_binop_strictly_lower    -> `bin_lt
+    | Bool_binop_equal_or_greater  -> `bin_ge
+    | Bool_binop_equal_or_lower    -> `bin_le
+
+  let int_variable    s = s
+  let bool_variable   s = s
+  let buffer_variable s = s
+
+  let rec buffer_type compiler = function
+    | Type_sized_buffer   i -> `array (`literal_int i, `unsigned_char)
+    | Type_pointer          -> `pointer `unsigned_char
+    | Type_sizable_buffer s -> todo "Type_sizable_buffer"
+
+  and int_expression compiler = function
+    | Int_expr_unary  (op, ex)        ->
+      `unary (int_unary_operator compiler op, int_expression compiler ex)
+    | Int_expr_binary (op, ea, eb)    -> 
+      `binary (int_binary_operator compiler op,
+               int_expression compiler ea, int_expression compiler eb)
+    | Int_expr_variable  v            -> `variable (int_variable v)
+    | Int_expr_buffer_content (t, ex) ->
+      (* `unary (`unary_memof, *)
+      (*         (integer_type compiler t) (buffer_expression ex) *)
+      todo "Int_expr_buffer_content"
+    | Int_expr_literal        i64     -> `literal_int64 i64
+
+  and buffer_expression compiler = function
+    | Buf_expr_variable v         -> `variable (buffer_variable v)
+    | Buf_expr_offset (bex, iex)  -> 
+      `binary (`bin_add, buffer_expression compiler bex,
+               int_expression compiler iex)
+
+  and bool_expression compiler = function
+    | Bool_expr_true   -> `literal_int 1
+    | Bool_expr_false  -> `literal_int 0
+    | Bool_expr_and        (a, b)     ->
+      `binary (`bin_and, bool_expression compiler a,
+               bool_expression compiler b)
+    | Bool_expr_or         (a, b)     ->
+      `binary (`bin_or, bool_expression compiler a, 
+               bool_expression compiler b)
+    | Bool_expr_not        ex         ->
+      `unary (`unary_not, bool_expression compiler ex)
+    | Bool_expr_binary_int (op, a, b) ->
+      `binary (bool_binary_operator compiler op,
+               int_expression compiler a,
+               int_expression compiler b)
+
+  let rec statement compiler s =
+    let assign a b = `assignment (a, b) in
+    match s with
+    | Do_nothing                 -> `empty
+    | Do_block          e        -> 
+      todo "Do_block"
+    | Do_if            (e, a, b) ->
+      `conditional (bool_expression compiler e,
+                    statement compiler a,
+                    statement compiler b)
+    | Do_while_loop    (e, a)    -> 
+      `while_loop (bool_expression compiler e, statement compiler a)
+    | Do_assign_int    (a, b) ->
+      assign (int_variable    a) (int_expression compiler    b)
+    | Do_assign_buffer (a, b) ->
+      assign (buffer_variable a) (buffer_expression compiler b)
+    | Do_assign_bool   (a, b) -> 
+      assign (bool_variable   a) (bool_expression compiler   b)
+    | Do_declare_var_int    (t, v) -> todo "Do_declare_var_int"
+    | Do_declare_var_bool       v  -> todo "Do_declare_var_bool"
+    | Do_declare_var_buffer (t, v) -> todo "Do_declare_var_buffer"
+      (* spr "%sDeclare %s as a %s;\n" cur_indent (buffer_variable v) (buffer_type t) *)
 
 
 end

@@ -10,6 +10,7 @@ type platform = {
 module C = struct
 
   let native_uint p = `unsigned_long
+  let uint_native = native_uint
   let size_of_native_uint p = p.word_size
 
   let uint8 p = `unsigned_char
