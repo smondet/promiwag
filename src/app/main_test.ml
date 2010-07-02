@@ -257,6 +257,53 @@ let test_packet_parsing () =
   printf "\n";
   ()
 
+let test_stiel () =
+  let module IL = Promiwag.Stiel in
+  let module Cons = IL.Construct in
+  let pr_int msg e = printf "%s: %s\n" msg (IL.To_string.int_expression e) in
+  let pr_bol msg e = printf "%s: %s\n" msg (IL.To_string.bool_expression e) in
+  let pr_stm msg e = printf "%s\n%s\n" msg (IL.To_string.statement e) in
+  pr_int "T1" (Cons.int (`Add (`U 42, `U 28)));
+  pr_int "T2" (Cons.int (`Mul (`U 42, `U 28)));
+  pr_int "Tbig" (Cons.int
+                   (`Minus (`Plus (`B2L (`L2B (`U 42))))));
+  pr_int "Tbigger" (Cons.int 
+                      (`Add (`Sub (`Mul (`Div (`U 2, `U 2),`Mod (`U 42, `U 2)),
+                                   `Band (`U 0xff, `Bor (`U 7, `U 5))),
+                             `Bxor (`U 0, `Bshl (`U 4, `U 5)))));
+  pr_int "Tbigstil" (Cons.int
+                       (`Bshr (`U 7, `Var "brout")));
+  pr_int "T64" (Cons.int (`U64 (Int64.max_int)));
+  pr_int "tt" (Cons.int (   `U8_at (Cons.buffer (`Var "buf"))));
+  pr_int "tt" (Cons.int (  `U16_at (Cons.buffer (`Var "buf"))));
+  pr_int "tt" (Cons.int (  `U32_at (Cons.buffer (`Var "buf"))));
+  pr_int "tt" (Cons.int (  `U64_at (Cons.buffer (`Offset (`Var "Buf", `U 42)))));
+  pr_int "tt" (Cons.int ( `Unat_at (Cons.buffer (`Var "buf"))));
+
+  pr_bol "Bool" (Cons.bool (`And (`T, `Or (`F, `Not `F))));
+  pr_bol "Bool" (Cons.bool (`Eq (`U 42, `U 42)));
+  pr_bol "Bool" (Cons.bool (`Neq(`U 42, `U 42)));
+  pr_bol "Bool" (Cons.bool (`Gt (`U 42, `U 42)));
+  pr_bol "Bool" (Cons.bool (`Lt (`U 42, `U 42)));
+  pr_bol "Bool" (Cons.bool (`Ge (`U 42, `U 42)));
+  pr_bol "Bool" (Cons.bool (`Le (`U 42, `U 42)));
+  let b = 
+    let nop = Cons.nop () in
+    Cons.block [
+      nop;
+      Cons.conditional (Cons.bool (`Eq (`U 42, `U 0)))
+        ~statement_then:(Cons.block [nop;nop;nop])
+        ~statement_else:nop;
+      Cons.while_loop (Cons.bool `T) (Cons.block [nop; nop]);
+      
+      Cons.assign_int    "var" (Cons.int (`U 42));
+      Cons.assign_buffer "var" (Cons.buffer (`Var "buf"));
+      Cons.assign_bool   "var" (Cons.bool `F);
+    ] in
+  pr_stm "Block:" b;
+  ()
+
+
 (* ocamlfind ocamlc -package "extlib" -linkpkg -g custom_ast.ml && ./a.out mp *)
 let test_pcap_parsing dev () =
   let module C = Promiwag.C_backend in
@@ -519,6 +566,7 @@ let () =
       | "pcap" ->  test_pcap_basic
       | "base" -> test_c_ast
       | "mp" -> test_packet_parsing
+      | "il" -> test_stiel
       | "mpp" -> test_pcap_parsing Sys.argv.(2)
       | s -> failwith (sprintf "Unknown test: %s\n" s)
     in
