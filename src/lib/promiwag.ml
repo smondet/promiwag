@@ -11,3 +11,5 @@ module Standard_packets = Promiwag_standard_packets
 
 module Platform = Promiwag_platform
 
+module Stiel = Promiwag_stiel
+

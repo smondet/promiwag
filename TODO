@@ -4,7 +4,7 @@ To do:
 
 * start using PolyComp
 * Promiwag_meta_packet: heavy testing (TCP and UDP packets)
-
+* Promiwag_stiel: use Genlex for expressions
 
 + a while+switch manager for parsing encapsulations of packets
 
@@ -12,9 +12,9 @@ To do:
 ? Promiwag_platform: Generate an "inspector.c" piece of code which
   retrives endianism, sizeof's, etc ... as OCaml code ...
 
-? A module _intermediate_language ?
+? A module _intermediate_language => Promiwag_stiel
   - C-like semantics but much simpler
   - without need to declare variables at the beginning
-  - interpretable/optimisable
+  - interpretable/optimisable (=> formally verifiable?)
   - types: int8, int16, int32, int64, float (= double),
            buffer (pointer + size)
