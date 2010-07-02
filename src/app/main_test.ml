@@ -295,7 +295,14 @@ let test_stiel () =
         ~statement_then:(Cons.block [nop;nop;nop])
         ~statement_else:nop;
       Cons.while_loop (Cons.bool `T) (Cons.block [nop; nop]);
-      
+      Cons.declare (`Sized_buffer ("buf", 42));
+      Cons.declare (`Pointer "pointer");
+      Cons.declare (`U8   "var");
+      Cons.declare (`U16  "var");
+      Cons.declare (`U32  "var");
+      Cons.declare (`U64  "var");
+      Cons.declare (`Unat "var");
+      Cons.declare (`Bool "var");
       Cons.assign_int    "var" (Cons.int (`U 42));
       Cons.assign_buffer "var" (Cons.buffer (`Var "buf"));
       Cons.assign_bool   "var" (Cons.bool `F);
