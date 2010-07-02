@@ -4,7 +4,10 @@ To do:
 
 * start using PolyComp
 * Promiwag_meta_packet: heavy testing (TCP and UDP packets)
-* Promiwag_stiel: use Genlex for expressions
+? Promiwag_stiel: use Genlex for expressions
+* Promiwag_stiel: transform to C
+* Promiwag_stiel: propagate_constants
+* Promiwag_stiel: interpret
 
 + a while+switch manager for parsing encapsulations of packets
 
