@@ -73,6 +73,7 @@ and bool_expression =
 
 type statement =
   | Do_nothing
+  | Do_comment of string
   (* | Do_int_evaluation of int_expression ---> expressions must keep
      purely functional hence, evaluation is useless *)
   | Do_block of statement list
@@ -105,6 +106,7 @@ module Construct = struct
   let assign_buffer a b  = Do_assign_buffer (a, b)
   let assign_bool   a b  = Do_assign_bool   (a, b)
 
+  let cmt s = Do_comment s
 
   let rec int = function
     | `U i -> Int_expr_literal (Int64.of_int i) 
@@ -283,6 +285,7 @@ module To_string = struct
     let indent = indent + 2 in
     function 
     | Do_nothing                 -> spr "%sNop;\n" cur_indent
+    | Do_comment        s        -> spr "%s(* %s *)\n" cur_indent s
     | Do_block          e        -> 
       spr "%s{\n%s%s}\n" cur_indent (catmap (statement ~indent) e) cur_indent
     | Do_if            (e, a, b) ->
@@ -455,6 +458,7 @@ module To_C = struct
     let assign a b = `assignment (`variable a, b) in
     match s with
     | Do_nothing                 -> `empty
+    | Do_comment               s -> `comment s
     | Do_block  e as b -> `block (block compiler b)
     | Do_if            (e, a, b) ->
       `conditional (bool_expression compiler e,

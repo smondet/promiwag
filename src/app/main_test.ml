@@ -320,6 +320,7 @@ let test_stiel () =
       Cons.declare (`U64  "varr");
       Cons.declare (`Unat "varq");
       Cons.declare (`Bool "vars");
+      Cons.cmt "Some comments...";
       Cons.assign_int    "var" (Cons.int (`U 42));
       Cons.assign_buffer "var" (Cons.buffer (`Var "buf"));
       Cons.assign_bool   "var" (Cons.bool `F);
