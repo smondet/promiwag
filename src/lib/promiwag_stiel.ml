@@ -229,8 +229,8 @@ module To_string = struct
     | Bool_binop_notequals         -> "!="      
     | Bool_binop_strictly_greater  -> ">"             
     | Bool_binop_strictly_lower    -> "<"           
-    | Bool_binop_equal_or_greater  -> "<="             
-    | Bool_binop_equal_or_lower    -> ">="           
+    | Bool_binop_equal_or_greater  -> ">="             
+    | Bool_binop_equal_or_lower    -> "<="           
 
   let get_int_at_buffer = function
     | Get_native         it -> spr "native-%s" (integer_type it)
@@ -311,10 +311,13 @@ module To_C = struct
   type compiler = {
     platform: Promiwag_platform.platform;
   }
-
+  let compiler ~platform =
+    { platform = platform; }
+      
   module Platform = Promiwag_platform
   module P = Promiwag_platform.C
   module C = Promiwag_c_backend.C_LightAST
+  module C_cons = Promiwag_c_backend.Construct
 
   let todo s = failwith (sprintf "Promiwag_stiel.To_C: %s: NOT IMPLEMENTED" s)
   let fail compiler s = failwith s
@@ -386,7 +389,7 @@ module To_C = struct
   let buffer_variable s = s
 
   let rec buffer_type compiler = function
-    | Type_sized_buffer   i -> `array (`literal_int i, `unsigned_char)
+    | Type_sized_buffer   i -> `array ([`literal_int i], `unsigned_char)
     | Type_pointer          -> `pointer `unsigned_char
     | Type_sizable_buffer s -> todo "Type_sizable_buffer"
 
@@ -397,7 +400,8 @@ module To_C = struct
       `binary (int_binary_operator compiler op,
                int_expression compiler ea, int_expression compiler eb)
     | Int_expr_variable  v            -> `variable (int_variable v)
-    | Int_expr_buffer_content (t, ex) -> get_int_at_buffer compiler t ex
+    | Int_expr_buffer_content (t, ex) ->
+      get_int_at_buffer compiler t (buffer_expression compiler ex)
     | Int_expr_literal        i64     -> `literal_int64 i64
 
   and buffer_expression compiler = function
@@ -421,13 +425,37 @@ module To_C = struct
       `binary (bool_binary_operator compiler op,
                int_expression compiler a,
                int_expression compiler b)
+        
+  let _check_and_reorder_block compiler stlist =
+    let decls = ref [] in
+    let vars = ref [] in
+    let add d v = decls := d :: !decls; vars := v :: !vars; false in
+    let non_decls =
+      Ls.filter stlist ~f:(function
+        | Do_declare_var_int    (t, v) as d -> add d v
+        | Do_declare_var_bool       v  as d -> add d v
+        | Do_declare_var_buffer (t, v) as d -> add d v
+        | _ -> true) in
+    let nb_vars = Ls.length !vars in
+    let nb_unique_vars = Ls.length (Ls.unique !vars) in
+    if nb_vars = nb_unique_vars then
+      ((Ls.rev !decls), non_decls)
+    else
+      fail compiler "There are two variables with the same name \
+                     in this block."
 
-  let rec statement compiler s =
-    let assign a b = `assignment (a, b) in
+  let rec block compiler = function
+    | Do_block          e        ->
+      let decls, stats = _check_and_reorder_block compiler e in
+      C_cons.block ~declarations:(Ls.map decls ~f:(declaration compiler))
+        ~statements:(Ls.map stats ~f:(statement compiler)) ()
+    | _ -> fail compiler "Called 'block' on a non-block statement"
+      
+  and statement compiler s =
+    let assign a b = `assignment (`variable a, b) in
     match s with
     | Do_nothing                 -> `empty
-    | Do_block          e        -> 
-      todo "Do_block"
+    | Do_block  e as b -> `block (block compiler b)
     | Do_if            (e, a, b) ->
       `conditional (bool_expression compiler e,
                     statement compiler a,
@@ -440,9 +468,17 @@ module To_C = struct
       assign (buffer_variable a) (buffer_expression compiler b)
     | Do_assign_bool   (a, b) -> 
       assign (bool_variable   a) (bool_expression compiler   b)
-    | Do_declare_var_int    (t, v) -> todo "Do_declare_var_int"
-    | Do_declare_var_bool       v  -> todo "Do_declare_var_bool"
-    | Do_declare_var_buffer (t, v) -> todo "Do_declare_var_buffer"
+    | Do_declare_var_int    _
+    | Do_declare_var_bool   _
+    | Do_declare_var_buffer _ -> 
+      fail compiler "Calling 'statement' on a declaration"
+  and declaration compiler = function
+    | Do_declare_var_int    (t, v) ->
+      `uninitialized (v, integer_type compiler t)
+    | Do_declare_var_bool       v  -> `uninitialized (v, `signed_int)
+    | Do_declare_var_buffer (t, v) -> 
+      `uninitialized (v, buffer_type compiler t)
+    | _ -> fail compiler "Calling 'declaration' on a non-declaration"
       (* spr "%sDeclare %s as a %s;\n" cur_indent (buffer_variable v) (buffer_type t) *)
 
 

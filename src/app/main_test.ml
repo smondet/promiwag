@@ -260,32 +260,50 @@ let test_packet_parsing () =
 let test_stiel () =
   let module IL = Promiwag.Stiel in
   let module Cons = IL.Construct in
-  let pr_int msg e = printf "%s: %s\n" msg (IL.To_string.int_expression e) in
-  let pr_bol msg e = printf "%s: %s\n" msg (IL.To_string.bool_expression e) in
-  let pr_stm msg e = printf "%s\n%s\n" msg (IL.To_string.statement e) in
-  pr_int "T1" (Cons.int (`Add (`U 42, `U 28)));
-  pr_int "T2" (Cons.int (`Mul (`U 42, `U 28)));
-  pr_int "Tbig" (Cons.int (`Minus (`Plus (`U 42))));
-  pr_int "Tbigger" (Cons.int 
-                      (`Add (`Sub (`Mul (`Div (`U 2, `U 2),`Mod (`U 42, `U 2)),
-                                   `Band (`U 0xff, `Bor (`U 7, `U 5))),
-                             `Bxor (`U 0, `Bshl (`U 4, `U 5)))));
-  pr_int "Tbigstil" (Cons.int
-                       (`Bshr (`U 7, `Var "brout")));
-  pr_int "T64" (Cons.int (`U64 (Int64.max_int)));
-  pr_int "tt" (Cons.int (   `U8_Big_at (Cons.buffer (`Var "buf"))));
-  pr_int "tt" (Cons.int (  `U16_Big_at (Cons.buffer (`Var "buf"))));
-  pr_int "tt" (Cons.int (  `U32_Big_at (Cons.buffer (`Var "buf"))));
-  pr_int "tt" (Cons.int (  `U64_Big_at (Cons.buffer (`Offset (`Var "Buf", `U 42)))));
-  pr_int "tt" (Cons.int ( `Unat_Little_at (Cons.buffer (`Var "buf"))));
+  let compiler =    IL.To_C.compiler ~platform:Promiwag.Platform.default in
+  let pr t =
+    try
+      Printexc.print (fun () ->
+        let str, c =
+          match t with
+          | `int e ->
+            (IL.To_string.int_expression e, 
+             C2S.expression  (IL.To_C.int_expression compiler e))
+          | `b e->
+            (IL.To_string.bool_expression e,
+             C2S.expression  (IL.To_C.bool_expression compiler e))
+          | `s e ->
+            (IL.To_string.statement e, "NO C there")
+          | `block e ->
+            (IL.To_string.statement e, 
+             C2S.statement (IL.To_C.statement compiler e))
+        in
+        printf "String: %s\n%!" str;
+        printf "  To_C: %s\n%!" c;
+      ) () 
+    with _ -> () in
+  pr$ `int  (Cons.int (`Add (`U 42, `U 28)));
+  pr$ `int  (Cons.int (`Mul (`U 42, `U 28)));
+  pr$ `int  (Cons.int (`Minus (`Plus (`U 42))));
+  pr$ `int  (Cons.int 
+               (`Add (`Sub (`Mul (`Div (`U 2, `U 2),`Mod (`U 42, `U 2)),
+                            `Band (`U 0xff, `Bor (`U 7, `U 5))),
+                      `Bxor (`U 0, `Bshl (`U 4, `U 5)))));
+  pr$ `int (Cons.int (`Bshr (`U 7, `Var "brout")));
+  pr$ `int (Cons.int (`U64 (Int64.max_int)));
+  pr$ `int (Cons.int (   `U8_Big_at (Cons.buffer (`Var "buf"))));
+  pr$ `int (Cons.int (  `U16_Big_at (Cons.buffer (`Var "buf"))));
+  pr$ `int (Cons.int (  `U32_Big_at (Cons.buffer (`Var "buf"))));
+  pr$ `int (Cons.int (  `U64_at (Cons.buffer (`Offset (`Var "Buf", `U 42)))));
+  pr$ `int (Cons.int ( `Unat_Little_at (Cons.buffer (`Var "buf"))));
 
-  pr_bol "Bool" (Cons.bool (`And (`T, `Or (`F, `Not `F))));
-  pr_bol "Bool" (Cons.bool (`Eq (`U 42, `U 42)));
-  pr_bol "Bool" (Cons.bool (`Neq(`U 42, `U 42)));
-  pr_bol "Bool" (Cons.bool (`Gt (`U 42, `U 42)));
-  pr_bol "Bool" (Cons.bool (`Lt (`U 42, `U 42)));
-  pr_bol "Bool" (Cons.bool (`Ge (`U 42, `U 42)));
-  pr_bol "Bool" (Cons.bool (`Le (`U 42, `U 42)));
+  pr$ `b   (Cons.bool (`And (`T, `Or (`F, `Not `F))));
+  pr$ `b   (Cons.bool (`Eq (`U 42, `U 42)));
+  pr$ `b   (Cons.bool (`Neq(`U 42, `U 42)));
+  pr$ `b   (Cons.bool (`Gt (`U 42, `U 42)));
+  pr$ `b   (Cons.bool (`Lt (`U 42, `U 42)));
+  pr$ `b   (Cons.bool (`Ge (`U 42, `U 42)));
+  pr$ `b   (Cons.bool (`Le (`U 42, `U 42)));
   let b = 
     let nop = Cons.nop () in
     Cons.block [
@@ -296,17 +314,17 @@ let test_stiel () =
       Cons.while_loop (Cons.bool `T) (Cons.block [nop; nop]);
       Cons.declare (`Sized_buffer ("buf", 42));
       Cons.declare (`Pointer "pointer");
-      Cons.declare (`U8   "var");
-      Cons.declare (`U16  "var");
-      Cons.declare (`U32  "var");
-      Cons.declare (`U64  "var");
-      Cons.declare (`Unat "var");
-      Cons.declare (`Bool "var");
+      Cons.declare (`U8   "vara");
+      Cons.declare (`U16  "varz");
+      Cons.declare (`U32  "vare");
+      Cons.declare (`U64  "varr");
+      Cons.declare (`Unat "varq");
+      Cons.declare (`Bool "vars");
       Cons.assign_int    "var" (Cons.int (`U 42));
       Cons.assign_buffer "var" (Cons.buffer (`Var "buf"));
       Cons.assign_bool   "var" (Cons.bool `F);
     ] in
-  pr_stm "Block:" b;
+  pr$ `block b;
   ()
 
 
