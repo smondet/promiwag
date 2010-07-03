@@ -5,9 +5,10 @@ To do:
 * start using PolyComp
 * Promiwag_meta_packet: heavy testing (TCP and UDP packets)
 ? Promiwag_stiel: use Genlex for expressions
-* Promiwag_stiel: transform to C
 * Promiwag_stiel: propagate_constants
 * Promiwag_stiel: interpret
+* Promiwag_stiel: Write_{int,...}_to_buffer i.e. a controled/typed
+  asignement of *buffer.
 
 + a while+switch manager for parsing encapsulations of packets
 
