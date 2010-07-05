@@ -288,38 +288,40 @@ let test_stiel () =
       Partial.environment ~do_symbolic_equality:true
         ~int_variables ~bool_variables () in
     let nope = "Not implemented or relevant" in
-    try
-      Printexc.print (fun () ->
-        let str, c, str_prop, str_prop_sym, str_prop_sym_vars =
-          match t with
-          | `int e ->
-            (str_ie e, 
-             C2S.expression  (IL.To_C.int_expression compiler e),
-             str_ie (Transfo.propagate_constants_in_int e),
-             str_ie (Transfo.propagate_constants_in_int ~do_symbolic_equality:true e),
-             str_ie (Partial.int_expression env e)
-            )
-          | `b e->
-            (str_be e,
-             C2S.expression  (IL.To_C.bool_expression compiler e),
-             str_be (Transfo.propagate_constants_in_bool e),
-             str_be 
-               (Transfo.propagate_constants_in_bool ~do_symbolic_equality:true e),
-             str_be (Partial.bool_expression env e)
-            )
-          | `s e ->
-            (IL.To_string.statement e, nope, nope, nope, nope)
-          | `block e ->
-            (IL.To_string.statement e, 
-             C2S.statement (IL.To_C.statement compiler e), nope, nope, nope)
-        in
-        printf "== Expr: %s\n%!" str;
-        printf "  To_C: %s\n%!" c;
-        printf "  Propagated: %s\n%!" str_prop;
-        printf "  Propagated(+symb): %s\n%!" str_prop_sym;
-        printf "  Propagated(+symb+env): %s\n%!" str_prop_sym_vars;
-      ) () 
-    with _ -> () in
+    let tryify s f e =
+      try s (f e) with
+      | exn -> 
+        sprintf "Expception: %s" (Printexc.to_string exn)
+    in
+    let str, c, str_prop, str_prop_sym, str_prop_sym_vars =
+      match t with
+      | `int e ->
+        (tryify str_ie (fun e -> e) e, 
+         tryify C2S.expression (IL.To_C.int_expression compiler) e,
+         tryify str_ie Transfo.propagate_constants_in_int e,
+         tryify str_ie 
+           (Transfo.propagate_constants_in_int ~do_symbolic_equality:true) e,
+         tryify str_ie (Partial.int_expression env) e)
+      | `b e->
+        (tryify str_be (fun e -> e) e, 
+         tryify C2S.expression (IL.To_C.bool_expression compiler) e,
+         tryify str_be Transfo.propagate_constants_in_bool e,
+         tryify str_be 
+           (Transfo.propagate_constants_in_bool ~do_symbolic_equality:true) e,
+         tryify str_be (Partial.bool_expression env) e)
+      | `s e ->
+        (tryify IL.To_string.statement (fun e -> e) e, nope, nope, nope, nope)
+      | `block e ->
+        (tryify IL.To_string.statement (fun e -> e) e, 
+         tryify C2S.statement (IL.To_C.statement compiler) e,
+         nope, nope, nope)
+    in
+    printf "== Expr: %s\n%!" str;
+    printf "  To_C: %s\n%!" c;
+    printf "  Propagated: %s\n%!" str_prop;
+    printf "  Propagated(+symb): %s\n%!" str_prop_sym;
+    printf "  Propagated(+symb+env): %s\n%!" str_prop_sym_vars;
+  in
   pr$ `int  (Cons.int (`Add (`U 42, `U 28)));
   pr$ `int  (Cons.int (`Mul (`U 42, `U 28)));
   pr$ `int  (Cons.int (`Minus (`Plus (`U 42))));
@@ -378,6 +380,87 @@ let test_stiel () =
       Cons.assign_bool   "var" (Cons.bool `F);
     ] in
   pr$ `block b;
+
+  printf "====== Testing partial evaluation:\n";
+
+  let v = (`Var "variable") in
+  let u = (`Var "unknown") in
+  let zero = `U 0 in
+  let one = `U 1 in
+
+  pr$ `int (Cons.int (`Bxor (u, v)));
+  pr$ `int (Cons.int (`Add  (u, one)));
+  pr$ `int (Cons.int (`Sub  (u, one)));
+  pr$ `int (Cons.int (`Mul  (u, one)));
+  pr$ `int (Cons.int (`Div  (u, one)));
+  pr$ `int (Cons.int (`Mod  (u, one)));
+  pr$ `int (Cons.int (`Band (u, one)));
+  pr$ `int (Cons.int (`Bor  (u, one)));
+  pr$ `int (Cons.int (`Bxor (u, one)));
+  pr$ `int (Cons.int (`Bshl (u, one)));
+  pr$ `int (Cons.int (`Bshr (u, one)));
+
+  pr$ `int (Cons.int (`Add  (one, u)));
+  pr$ `int (Cons.int (`Sub  (one, u)));
+  pr$ `int (Cons.int (`Mul  (one, u)));
+  pr$ `int (Cons.int (`Div  (one, u)));
+  pr$ `int (Cons.int (`Mod  (one, u)));
+  pr$ `int (Cons.int (`Band (one, u)));
+  pr$ `int (Cons.int (`Bor  (one, u)));
+  pr$ `int (Cons.int (`Bxor (one, u)));
+  pr$ `int (Cons.int (`Bshl (one, u)));
+  pr$ `int (Cons.int (`Bshr (one, u)));
+
+  pr$ `int (Cons.int (`Add  (zero, u)));
+  pr$ `int (Cons.int (`Sub  (zero, u)));
+  pr$ `int (Cons.int (`Mul  (zero, u)));
+  pr$ `int (Cons.int (`Div  (zero, u)));
+  pr$ `int (Cons.int (`Mod  (zero, u)));
+  pr$ `int (Cons.int (`Band (zero, u)));
+  pr$ `int (Cons.int (`Bor  (zero, u)));
+  pr$ `int (Cons.int (`Bxor (zero, u)));
+  pr$ `int (Cons.int (`Bshl (zero, u)));
+  pr$ `int (Cons.int (`Bshr (zero, u)));
+
+  pr$ `int (Cons.int (`Add  (u, zero)));
+  pr$ `int (Cons.int (`Sub  (u, zero)));
+  pr$ `int (Cons.int (`Mul  (u, zero)));
+  pr$ `int (Cons.int (`Div  (u, zero)));
+  pr$ `int (Cons.int (`Mod  (u, zero)));
+  pr$ `int (Cons.int (`Band (u, zero)));
+  pr$ `int (Cons.int (`Bor  (u, zero)));
+  pr$ `int (Cons.int (`Bxor (u, zero)));
+  pr$ `int (Cons.int (`Bshl (u, zero)));
+  pr$ `int (Cons.int (`Bshr (u, zero)));
+
+  let compa = (`Add  (u, (`Mod (v, `U 42)))) in
+  let compb = (`Sub  (u, (`Mod (v, `U 42)))) in
+
+  pr$ `int (Cons.int compa);
+  pr$ `int (Cons.int compb);
+
+  pr$ `int (Cons.int (`Add  (compa, compb)));
+  pr$ `int (Cons.int (`Sub  (compa, compb)));
+  pr$ `int (Cons.int (`Mul  (compa, compb)));
+  pr$ `int (Cons.int (`Div  (compa, compb)));
+  pr$ `int (Cons.int (`Mod  (compa, compb)));
+  pr$ `int (Cons.int (`Band (compa, compb)));
+  pr$ `int (Cons.int (`Bor  (compa, compb)));
+  pr$ `int (Cons.int (`Bxor (compa, compb)));
+  pr$ `int (Cons.int (`Bshl (compa, compb)));
+  pr$ `int (Cons.int (`Bshr (compa, compb)));
+
+  pr$ `int (Cons.int (`Add  (compa, compa)));
+  pr$ `int (Cons.int (`Sub  (compa, compa)));
+  pr$ `int (Cons.int (`Mul  (compa, compa)));
+  pr$ `int (Cons.int (`Div  (compa, compa)));
+  pr$ `int (Cons.int (`Mod  (compa, compa)));
+  pr$ `int (Cons.int (`Band (compa, compa)));
+  pr$ `int (Cons.int (`Bor  (compa, compa)));
+  pr$ `int (Cons.int (`Bxor (compa, compa)));
+  pr$ `int (Cons.int (`Bshl (compa, compa)));
+  pr$ `int (Cons.int (`Bshr (compa, compa)));
+
   ()
 
 

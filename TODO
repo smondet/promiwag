@@ -8,13 +8,20 @@ To do:
 * Promiwag_stiel: interpret
 * Promiwag_stiel: Write_{int,...}_to_buffer i.e. a controled/typed
   asignement of *buffer.
-* Promiwag_stiel: Boolean variables?
 * Promiwag_stiel: Max depth for variables
+
+* Promiwag_stiel: check that ints are positive
+* Promiwag_stiel:
+  - add the "Exception" int,bool expressions (?)
+  OR
+  - look_for_divisions which retrieves all denominators
+  and generates checks
 
 * use Format, or EasyFormat for printing C and Stiel
 
 * need datastructures:
-  - replace hashtables when order is needed
+  - replace hashtables when order is needed 
+  (also purity is useful for e.g. removing a variable from environment)
   - replace list when a lot of concatenations
 
 * module SafeInt64, with all bounds checkings

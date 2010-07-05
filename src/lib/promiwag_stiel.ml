@@ -512,6 +512,11 @@ module Transform = struct
       bool_variables: (bool_variable, bool_expression) Ht.t;
       do_symbolic_equality: bool;
     }
+
+    (*  WARNING:
+        do_symbolic_equality will absorb some side effects.
+        For now side effects are just the divisions/modulos by zero. *)
+
     let environment
         ?(do_symbolic_equality=false) ?int_variables ?bool_variables () =
       {int_variables = 
@@ -519,6 +524,8 @@ module Transform = struct
        bool_variables = 
           (match bool_variables with | Some s -> s | None -> Ht.create 0);
        do_symbolic_equality = do_symbolic_equality;}
+
+    exception Division_by_zero_in of int_expression
 
     let int_unary_operator environment = function
       | Int_unary_minus             -> Int64.neg
@@ -536,6 +543,74 @@ module Transform = struct
       | Int_binop_bin_shl -> (fun a b -> Int64.shift_left a (Int64.to_int b))
       | Int_binop_bin_shr -> (fun a b -> Int64.shift_right_logical a (Int64.to_int b))
       
+    let transform_int_binop environment op a b =
+      let try_commutative_with_zero op e dont_know =
+        match op with
+        | Int_binop_add | Int_binop_bin_or -> e
+        | Int_binop_mul | Int_binop_bin_and -> Int_expr_literal Int64.zero
+        | _ -> dont_know
+      in
+      let try_with_zero_on_the_right op e dont_know =
+        match op with
+        | Int_binop_sub | Int_binop_bin_shl | Int_binop_bin_shr -> e
+        | Int_binop_div | Int_binop_mod ->
+          raise (Division_by_zero_in dont_know)
+        | _ -> dont_know
+      in
+      let try_with_zero_on_the_left op e dont_know =
+        match op with
+        | Int_binop_div | Int_binop_mod -> Int_expr_literal Int64.zero
+        | _ -> dont_know
+      in
+      let try_commutative_with_one op e dont_know =
+        match op with
+        | Int_binop_mul -> e
+        | _ -> dont_know
+      in
+      let try_with_one_on_the_right op e dont_know =
+        match op with
+        | Int_binop_div -> e
+        | Int_binop_mod -> Int_expr_literal Int64.zero
+        | _ -> dont_know
+      in
+      let try_symbolic op a b dont_know =
+        match a = b, op with
+        | true, Int_binop_sub
+        | true, Int_binop_bin_xor -> Int_expr_literal Int64.zero
+        | true, Int_binop_add ->
+          Int_expr_binary (Int_binop_mul,
+                           Int_expr_literal (Int64.of_int 2), a)
+        | true, Int_binop_div -> Int_expr_literal Int64.one
+        | true, Int_binop_bin_and 
+        | true, Int_binop_bin_or -> a
+        | _ -> dont_know
+      in
+      let original = Int_expr_binary (op, a, b) in
+      begin match a, b with
+      | Int_expr_literal i64a, Int_expr_literal i64b -> 
+        Int_expr_literal ((int_binary_operator environment op) i64a i64b)
+      | Int_expr_literal i64a, pb when i64a = Int64.zero -> 
+        try_commutative_with_zero op pb original
+      | pa, Int_expr_literal i64b when i64b = Int64.zero ->
+        let after_commut =
+          try_commutative_with_zero op pa original in
+        let after_right_zero = 
+          try_with_zero_on_the_right op pa after_commut in
+        try_with_zero_on_the_left op pa after_right_zero
+      | Int_expr_literal i64a, pb when i64a = Int64.one -> 
+        try_commutative_with_one op pb original
+      | pa, Int_expr_literal i64b when i64b = Int64.one ->
+        let after_commut =
+          try_commutative_with_one op pa original in
+        try_with_one_on_the_right op pa after_commut
+      | pa, pb ->
+        if environment.do_symbolic_equality then
+          try_symbolic op pa pb (Int_expr_binary (op, pa, pb))
+        else
+          Int_expr_binary (op, pa, pb)
+      end
+
+
     let bool_binary_operator environment = function
       | Bool_binop_equals            -> (=)
       | Bool_binop_notequals         -> (<>)
@@ -557,11 +632,8 @@ module Transform = struct
         | pe -> Int_expr_unary  (op, pe)
         end
       | Int_expr_binary (op, ea, eb) -> 
-        begin match int_expression environment ea, int_expression environment eb with
-        | Int_expr_literal i64a, Int_expr_literal i64b -> 
-          Int_expr_literal ((int_binary_operator environment op) i64a i64b)
-        | pa, pb -> Int_expr_binary (op, pa, pb)
-        end
+        transform_int_binop environment op
+          (int_expression environment ea) (int_expression environment eb)
       | Int_expr_variable v as original ->
         begin match Ht.find_opt environment.int_variables v with
         | None -> original
