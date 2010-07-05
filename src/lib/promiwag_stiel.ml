@@ -481,10 +481,11 @@ end
 
 module Transform = struct
 
+
   module Partial_evaluation = struct
     type environment = {
-      int_variables: (int_variable, int_expression) Ht.t;
-      bool_variables: (bool_variable, bool_expression) Ht.t;
+      int_variables: (int_variable, int_expression) Environment.t;
+      bool_variables: (bool_variable, bool_expression) Environment.t;
       do_symbolic_equality: bool;
     }
 
@@ -492,12 +493,15 @@ module Transform = struct
         do_symbolic_equality will absorb some side effects.
         For now side effects are just the divisions/modulos by zero. *)
 
+
+    module Env = Environment
+
     let environment
         ?(do_symbolic_equality=false) ?int_variables ?bool_variables () =
       {int_variables = 
-          (match int_variables with | Some s -> s | None -> Ht.create 0);
+          (match int_variables with | Some s -> s | None -> Env.empty);
        bool_variables = 
-          (match bool_variables with | Some s -> s | None -> Ht.create 0);
+          (match bool_variables with | Some s -> s | None -> Env.empty);
        do_symbolic_equality = do_symbolic_equality;}
 
     exception Division_by_zero_in of int_expression
@@ -610,7 +614,7 @@ module Transform = struct
         transform_int_binop environment op
           (int_expression environment ea) (int_expression environment eb)
       | Int_expr_variable v as original ->
-        begin match Ht.find_opt environment.int_variables v with
+        begin match Env.find_opt environment.int_variables v with
         | None -> original
         | Some e -> int_expression environment e
         end
@@ -625,7 +629,7 @@ module Transform = struct
       | Bool_expr_true   -> Bool_expr_true 
       | Bool_expr_false  -> Bool_expr_false
       | Bool_expr_variable v as original ->
-        begin match Ht.find_opt environment.bool_variables v with
+        begin match Env.find_opt environment.bool_variables v with
         | None -> original
         | Some e -> bool_expression environment e
         end

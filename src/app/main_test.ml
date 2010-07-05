@@ -262,31 +262,36 @@ let test_stiel () =
   let module Cons = IL.Construct in
   let module Transfo = IL.Transform in
   let module Partial = Transfo.Partial_evaluation in
+  let module Env = Environment in
   let str_ie = IL.To_string.int_expression in
   let str_be = IL.To_string.bool_expression in
   let compiler =    IL.To_C.compiler ~platform:Promiwag.Platform.default in
-  let int_variables = Ht.create 42 in
+  let int_variables = ref Env.empty in
   let add_int_var v e =
-    Ht.add int_variables v e;
-    printf "+++ Int-env is now: [";
-    Ht.iter (fun v e ->
-      printf " (%s = %s) " v (IL.To_string.int_expression e);
-    ) int_variables;
-    printf "]\n";
+    int_variables := Env.add !int_variables v e;
+    printf "+++ Int-env is now: [\n";
+    let list_of_levels =
+      Env.metamap !int_variables
+        ~map:(fun (v, e) ->
+          sprintf "('%s' is %s)" v (IL.To_string.int_expression e))
+        ~reduce:(fun strlist -> 
+          sprintf "  [%s]" (Str.concat "; " strlist)) in
+    printf "+++ Int-env is now: {\n%s\n}\n"
+      (Str.concat "\n" list_of_levels);
   in
-  let bool_variables = Ht.create 42 in
+  let bool_variables = ref Env.empty in
   let add_bool_var v e =
-    Ht.add bool_variables v e;
+    bool_variables := Env.add !bool_variables v e;
     printf "+++ Bool-env is now: [";
-    Ht.iter (fun v e ->
+    Env.iter ~f:(fun (v, e) ->
       printf " (%s = %s) " v (IL.To_string.bool_expression e);
-    ) bool_variables;
+    ) !bool_variables;
     printf "]\n";
   in
   let pr t =
     let env =
       Partial.environment ~do_symbolic_equality:true
-        ~int_variables ~bool_variables () in
+        ~int_variables:!int_variables ~bool_variables:!bool_variables () in
     let nope = "Not implemented or relevant" in
     let tryify s f e =
       try s (f e) with
