@@ -66,6 +66,7 @@ and buffer_expression =
 and bool_expression =
   | Bool_expr_true        
   | Bool_expr_false       
+  | Bool_expr_variable of bool_variable
   | Bool_expr_and of bool_expression * bool_expression
   | Bool_expr_or of bool_expression * bool_expression
   | Bool_expr_not of bool_expression
@@ -149,6 +150,7 @@ module Construct = struct
   let rec bool = function
     | `T | `True  -> Bool_expr_true
     | `F | `False -> Bool_expr_false
+    | `Var v -> Bool_expr_variable v
     | `And (a, b) -> Bool_expr_and (bool a, bool b)
     | `Or  (a, b) -> Bool_expr_or  (bool a, bool b)
     | `Not  a     -> Bool_expr_not (bool a)
@@ -268,6 +270,7 @@ module To_string = struct
   and bool_expression = function
     | Bool_expr_true   -> "True"     
     | Bool_expr_false  -> "False"     
+    | Bool_expr_variable v -> spr "%s" (bool_variable v)
     | Bool_expr_and        (a, b)     ->
       spr "(%s And %s)" (bool_expression a) (bool_expression b)
     | Bool_expr_or         (a, b)     ->
@@ -416,6 +419,7 @@ module To_C = struct
   and bool_expression compiler = function
     | Bool_expr_true   -> `literal_int 1
     | Bool_expr_false  -> `literal_int 0
+    | Bool_expr_variable v -> `variable (bool_variable v)
     | Bool_expr_and        (a, b)     ->
       `binary (`bin_and, bool_expression compiler a,
                bool_expression compiler b)
@@ -491,11 +495,15 @@ module Transform = struct
   module Partial_evaluation = struct
     type environment = {
       int_variables: (int_variable, int_expression) Ht.t;
+      bool_variables: (bool_variable, bool_expression) Ht.t;
       do_symbolic_equality: bool;
     }
-    let environment ?(do_symbolic_equality=false) ?int_variables () =
+    let environment
+        ?(do_symbolic_equality=false) ?int_variables ?bool_variables () =
       {int_variables = 
           (match int_variables with | Some s -> s | None -> Ht.create 0);
+       bool_variables = 
+          (match bool_variables with | Some s -> s | None -> Ht.create 0);
        do_symbolic_equality = do_symbolic_equality;}
 
     let int_unary_operator environment = function
@@ -555,6 +563,11 @@ module Transform = struct
     and bool_expression environment = function
       | Bool_expr_true   -> Bool_expr_true 
       | Bool_expr_false  -> Bool_expr_false
+      | Bool_expr_variable v as original ->
+        begin match Ht.find_opt environment.bool_variables v with
+        | None -> original
+        | Some e -> bool_expression environment e
+        end
       | Bool_expr_and (a, b) ->
         let propa = bool_expression environment a in
         let propb = bool_expression environment b in

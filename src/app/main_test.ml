@@ -268,14 +268,25 @@ let test_stiel () =
   let int_variables = Ht.create 42 in
   let add_int_var v e =
     Ht.add int_variables v e;
-    printf "Env is now: [";
+    printf "+++ Int-env is now: [";
     Ht.iter (fun v e ->
       printf " (%s = %s) " v (IL.To_string.int_expression e);
     ) int_variables;
     printf "]\n";
   in
+  let bool_variables = Ht.create 42 in
+  let add_bool_var v e =
+    Ht.add bool_variables v e;
+    printf "+++ Bool-env is now: [";
+    Ht.iter (fun v e ->
+      printf " (%s = %s) " v (IL.To_string.bool_expression e);
+    ) bool_variables;
+    printf "]\n";
+  in
   let pr t =
-    let env = Partial.environment ~do_symbolic_equality:true ~int_variables () in
+    let env =
+      Partial.environment ~do_symbolic_equality:true
+        ~int_variables ~bool_variables () in
     let nope = "Not implemented or relevant" in
     try
       Printexc.print (fun () ->
@@ -331,7 +342,8 @@ let test_stiel () =
   pr$ `int (Cons.int (  `U64_at (Cons.buffer (`Offset (`Var "Buf", `U 42)))));
   pr$ `int (Cons.int ( `Unat_Little_at (Cons.buffer (`Var "buf"))));
 
-  pr$ `b   (Cons.bool (`And (`T, `Or (`F, `Not `F))));
+  add_bool_var "the_truth" (Cons.bool `T);
+  pr$ `b   (Cons.bool (`And (`T, `Or (`Var "the_truth", `Not `F))));
   pr$ `b   (Cons.bool (`Eq (`U 42, `U 42)));
   pr$ `b   (Cons.bool (`Neq(`U 42, `U 42)));
   pr$ `b   (Cons.bool (`Gt (`U 42, `U 42)));
