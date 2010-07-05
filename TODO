@@ -10,7 +10,10 @@ To do:
   asignement of *buffer.
 * Promiwag_stiel: Max depth for variables
 
-* Promiwag_stiel: check that ints are positive
+* Promiwag_stiel: Integer management
+  - module SafeInt64, with all bounds checkings
+  - check that ints are positive
+
 * Promiwag_stiel:
   - add the "Exception" int,bool expressions (?)
   OR
@@ -24,7 +27,6 @@ To do:
   (also purity is useful for e.g. removing a variable from environment)
   - replace list when a lot of concatenations
 
-* module SafeInt64, with all bounds checkings
 
 + a while+switch manager for parsing encapsulations of packets
 

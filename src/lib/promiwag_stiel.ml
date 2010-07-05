@@ -187,31 +187,6 @@ module Construct = struct
     | `Bool v -> Do_declare_var_bool v
 
 
-  module Input_language = struct
-
-    let lexer = 
-      Genlex.make_lexer
-        ["+";"-";"*";"/"; "%"; "("; ")";
-         "="; ">"; "<"; "<="; ">=";
-         "and"; "or"; "not";
-         "band"; "bor"; ">>"; "<<"; ]  
-
-    let expression_of_string str =
-      let s = Stream.of_string str in
-      let rec construct lexed =
-        match Stream.peek lexed with
-        | Some (Genlex.Kwd s) -> fail "Not implemented"
-        | Some (Genlex.Ident s) -> Int_expr_variable s
-        | Some (Genlex.Int o) ->  Int_expr_literal (Int64.of_int o)
-        | Some (Genlex.Float o) -> fail "floats not defined"
-        | Some (Genlex.String o) -> fail "string literals not defined"
-        | Some (Genlex.Char o) -> fail "chars not defined"
-        | _ -> fail "default fail"
-      in
-      construct (lexer s)
-
-  end
-
 end
 
 
