@@ -5,10 +5,19 @@ To do:
 * start using PolyComp
 * Promiwag_meta_packet: heavy testing (TCP and UDP packets)
 ? Promiwag_stiel: use Genlex for expressions
-* Promiwag_stiel: propagate_constants
 * Promiwag_stiel: interpret
 * Promiwag_stiel: Write_{int,...}_to_buffer i.e. a controled/typed
   asignement of *buffer.
+* Promiwag_stiel: Boolean variables?
+* Promiwag_stiel: Max depth for variables
+
+* use Format, or EasyFormat for printing C and Stiel
+
+* need datastructures:
+  - replace hashtables when order is needed
+  - replace list when a lot of concatenations
+
+* module SafeInt64, with all bounds checkings
 
 + a while+switch manager for parsing encapsulations of packets
 

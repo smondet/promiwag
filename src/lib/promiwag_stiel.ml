@@ -484,6 +484,129 @@ module To_C = struct
       `uninitialized (v, buffer_type compiler t)
     | _ -> fail compiler "Calling 'declaration' on a non-declaration"
       (* spr "%sDeclare %s as a %s;\n" cur_indent (buffer_variable v) (buffer_type t) *)
+end
+
+module Transform = struct
+
+  module Partial_evaluation = struct
+    type environment = {
+      int_variables: (int_variable, int_expression) Ht.t;
+      do_symbolic_equality: bool;
+    }
+    let environment ?(do_symbolic_equality=false) ?int_variables () =
+      {int_variables = 
+          (match int_variables with | Some s -> s | None -> Ht.create 0);
+       do_symbolic_equality = do_symbolic_equality;}
+
+    let int_unary_operator environment = function
+      | Int_unary_minus             -> Int64.neg
+      | Int_unary_plus              -> fun i -> i
+
+    let int_binary_operator environment = function
+      | Int_binop_add     -> Int64.add
+      | Int_binop_sub     -> Int64.sub
+      | Int_binop_mul     -> Int64.mul
+      | Int_binop_div     -> Int64.div
+      | Int_binop_mod     -> Int64.rem
+      | Int_binop_bin_and -> Int64.logand
+      | Int_binop_bin_or  -> Int64.logor
+      | Int_binop_bin_xor -> Int64.logxor
+      | Int_binop_bin_shl -> (fun a b -> Int64.shift_left a (Int64.to_int b))
+      | Int_binop_bin_shr -> (fun a b -> Int64.shift_right_logical a (Int64.to_int b))
+      
+    let bool_binary_operator environment = function
+      | Bool_binop_equals            -> (=)
+      | Bool_binop_notequals         -> (<>)
+      | Bool_binop_strictly_greater  -> (>)
+      | Bool_binop_strictly_lower    -> (<)
+      | Bool_binop_equal_or_greater  -> (>=)
+      | Bool_binop_equal_or_lower    -> (<=)
+
+    let rec buffer_type environment = function
+      | Type_sized_buffer   i -> Type_sized_buffer   i
+      | Type_pointer          -> Type_pointer         
+      | Type_sizable_buffer s -> Type_sizable_buffer s
+
+    and int_expression environment = function
+      | Int_expr_unary  (op, ex)        ->
+        begin match int_expression environment ex with
+        | Int_expr_literal i64 -> 
+          Int_expr_literal ((int_unary_operator environment op) i64)
+        | pe -> Int_expr_unary  (op, pe)
+        end
+      | Int_expr_binary (op, ea, eb) -> 
+        begin match int_expression environment ea, int_expression environment eb with
+        | Int_expr_literal i64a, Int_expr_literal i64b -> 
+          Int_expr_literal ((int_binary_operator environment op) i64a i64b)
+        | pa, pb -> Int_expr_binary (op, pa, pb)
+        end
+      | Int_expr_variable v as original ->
+        begin match Ht.find_opt environment.int_variables v with
+        | None -> original
+        | Some e -> int_expression environment e
+        end
+      | Int_expr_buffer_content (_, _) as original -> original
+      | (Int_expr_literal _) as original -> original
+
+    and buffer_expression environment = function
+      | Buf_expr_variable _ as original -> original
+      | Buf_expr_offset (_, _) as original -> original
+        
+    and bool_expression environment = function
+      | Bool_expr_true   -> Bool_expr_true 
+      | Bool_expr_false  -> Bool_expr_false
+      | Bool_expr_and (a, b) ->
+        let propa = bool_expression environment a in
+        let propb = bool_expression environment b in
+        begin match propa, propb with
+        | Bool_expr_true, anything -> anything
+        | anything, Bool_expr_true -> anything
+        | Bool_expr_false, anything -> Bool_expr_false
+        | anything, Bool_expr_false -> Bool_expr_false
+        | pa, pb -> Bool_expr_and (pa, pb)
+        end
+    | Bool_expr_or         (a, b)     ->
+        let propa = bool_expression environment a in
+        let propb = bool_expression environment b in
+        begin match propa, propb with
+        | Bool_expr_true, anything -> Bool_expr_true
+        | anything, Bool_expr_true -> Bool_expr_true
+        | Bool_expr_false, anything -> anything
+        | anything, Bool_expr_false -> anything
+        | pa, pb -> Bool_expr_or (pa, pb)
+        end
+    | Bool_expr_not        ex         ->
+      begin match bool_expression environment ex with
+      | Bool_expr_true -> Bool_expr_false
+      | Bool_expr_false -> Bool_expr_true
+      | pex -> Bool_expr_not pex
+      end
+    | Bool_expr_binary_int (op, a, b) ->
+      let comp = bool_binary_operator environment op in
+      let propa = int_expression environment a in
+      let propb = int_expression environment b in
+      begin match propa, propb with
+      | Int_expr_literal a64, Int_expr_literal b64 ->
+        if comp a64 b64 then Bool_expr_true else Bool_expr_false
+      | pa, pb -> 
+        if op =  Bool_binop_equals && environment.do_symbolic_equality then
+          if pa = pb then Bool_expr_true else Bool_expr_binary_int (op, pa, pb)
+        else
+          Bool_expr_binary_int (op, pa, pb)
+      end
+  end
+
+  let propagate_constants_in_int ?(do_symbolic_equality=false) expr =
+    let env = 
+      Partial_evaluation.environment ~do_symbolic_equality () in
+    Partial_evaluation.int_expression env expr
+      
+  let propagate_constants_in_bool ?(do_symbolic_equality=false) expr =
+    let env = 
+      Partial_evaluation.environment ~do_symbolic_equality () in
+    Partial_evaluation.bool_expression env expr
 
 
 end
+
+

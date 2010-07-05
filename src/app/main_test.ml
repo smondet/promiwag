@@ -260,26 +260,53 @@ let test_packet_parsing () =
 let test_stiel () =
   let module IL = Promiwag.Stiel in
   let module Cons = IL.Construct in
+  let module Transfo = IL.Transform in
+  let module Partial = Transfo.Partial_evaluation in
+  let str_ie = IL.To_string.int_expression in
+  let str_be = IL.To_string.bool_expression in
   let compiler =    IL.To_C.compiler ~platform:Promiwag.Platform.default in
+  let int_variables = Ht.create 42 in
+  let add_int_var v e =
+    Ht.add int_variables v e;
+    printf "Env is now: [";
+    Ht.iter (fun v e ->
+      printf " (%s = %s) " v (IL.To_string.int_expression e);
+    ) int_variables;
+    printf "]\n";
+  in
   let pr t =
+    let env = Partial.environment ~do_symbolic_equality:true ~int_variables () in
+    let nope = "Not implemented or relevant" in
     try
       Printexc.print (fun () ->
-        let str, c =
+        let str, c, str_prop, str_prop_sym, str_prop_sym_vars =
           match t with
           | `int e ->
-            (IL.To_string.int_expression e, 
-             C2S.expression  (IL.To_C.int_expression compiler e))
+            (str_ie e, 
+             C2S.expression  (IL.To_C.int_expression compiler e),
+             str_ie (Transfo.propagate_constants_in_int e),
+             str_ie (Transfo.propagate_constants_in_int ~do_symbolic_equality:true e),
+             str_ie (Partial.int_expression env e)
+            )
           | `b e->
-            (IL.To_string.bool_expression e,
-             C2S.expression  (IL.To_C.bool_expression compiler e))
+            (str_be e,
+             C2S.expression  (IL.To_C.bool_expression compiler e),
+             str_be (Transfo.propagate_constants_in_bool e),
+             str_be 
+               (Transfo.propagate_constants_in_bool ~do_symbolic_equality:true e),
+             str_be (Partial.bool_expression env e)
+            )
           | `s e ->
-            (IL.To_string.statement e, "NO C there")
+            (IL.To_string.statement e, nope, nope, nope, nope)
           | `block e ->
             (IL.To_string.statement e, 
-             C2S.statement (IL.To_C.statement compiler e))
+             C2S.statement (IL.To_C.statement compiler e), nope, nope, nope)
         in
-        printf "String: %s\n%!" str;
+        printf "== Expr: %s\n%!" str;
         printf "  To_C: %s\n%!" c;
+        printf "  Propagated: %s\n%!" str_prop;
+        printf "  Propagated(+symb): %s\n%!" str_prop_sym;
+        printf "  Propagated(+symb+env): %s\n%!" str_prop_sym_vars;
       ) () 
     with _ -> () in
   pr$ `int  (Cons.int (`Add (`U 42, `U 28)));
@@ -289,11 +316,18 @@ let test_stiel () =
                (`Add (`Sub (`Mul (`Div (`U 2, `U 2),`Mod (`U 42, `U 2)),
                             `Band (`U 0xff, `Bor (`U 7, `U 5))),
                       `Bxor (`U 0, `Bshl (`U 4, `U 5)))));
-  pr$ `int (Cons.int (`Bshr (`U 7, `Var "brout")));
+  pr$ `int (Cons.int (`Bshr (`U 17, `Var "brout")));
+  add_int_var "brout" (Cons.int (`U 3));
+  pr$ `int (Cons.int (`Bshr (`U 17, `Var "brout")));
+  add_int_var "with_var" (Cons.int (`Add (`U 2, `Var "other_var")));
+  pr$ `int (Cons.int (`Mul (`U 2, `Var "with_var")));
+  add_int_var "other_var" (Cons.int (`Add (`U 2, `U 8)));
+  pr$ `int (Cons.int (`Mul (`U 2, `Var "with_var")));
   pr$ `int (Cons.int (`U64 (Int64.max_int)));
-  pr$ `int (Cons.int (   `U8_Big_at (Cons.buffer (`Var "buf"))));
-  pr$ `int (Cons.int (  `U16_Big_at (Cons.buffer (`Var "buf"))));
-  pr$ `int (Cons.int (  `U32_Big_at (Cons.buffer (`Var "buf"))));
+  pr$ `b   (Cons.bool (`Eq (`U8_Big_at (Cons.buffer (`Var "buf")),
+                            `U8_Big_at (Cons.buffer (`Var "buf")))));
+  pr$ `b   (Cons.bool (`Eq (`U16_Big_at (Cons.buffer (`Var "buf")), 
+                            `U32_Big_at (Cons.buffer (`Var "buf")))));
   pr$ `int (Cons.int (  `U64_at (Cons.buffer (`Offset (`Var "Buf", `U 42)))));
   pr$ `int (Cons.int ( `Unat_Little_at (Cons.buffer (`Var "buf"))));
 
