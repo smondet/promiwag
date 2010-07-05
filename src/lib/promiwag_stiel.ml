@@ -114,9 +114,19 @@ module Construct = struct
     | `U64  i -> Int_expr_literal i 
     | `Minus m   -> Int_expr_unary (Int_unary_minus, int m)
     | `Plus  m   -> Int_expr_unary (Int_unary_plus , int m)
+
     | `Add     (a, b) -> Int_expr_binary (Int_binop_add    , int a, int b)
+    | `LsAdd (h :: t) -> Int_expr_binary (Int_binop_add    , int h, int (`LsAdd t))
+    | `LsAdd []       -> Int_expr_literal Int64.zero
+    | `Sum l -> int (`LsAdd l)
+
     | `Sub     (a, b) -> Int_expr_binary (Int_binop_sub    , int a, int b)
+
     | `Mul     (a, b) -> Int_expr_binary (Int_binop_mul    , int a, int b)
+    | `LsMul (h :: t) -> Int_expr_binary (Int_binop_mul    , int h, int (`LsMul t))
+    | `LsMul []       -> Int_expr_literal Int64.one
+    | `Prod l -> int (`LsMul l)
+
     | `Div     (a, b) -> Int_expr_binary (Int_binop_div    , int a, int b)
     | `Mod     (a, b) -> Int_expr_binary (Int_binop_mod    , int a, int b)
     | `Band    (a, b) -> Int_expr_binary (Int_binop_bin_and, int a, int b)
@@ -153,6 +163,10 @@ module Construct = struct
     | `Var v -> Bool_expr_variable v
     | `And (a, b) -> Bool_expr_and (bool a, bool b)
     | `Or  (a, b) -> Bool_expr_or  (bool a, bool b)
+    | `LsAnd (h :: t) -> Bool_expr_and (bool h, bool (`LsAnd t))
+    | `LsAnd []       -> Bool_expr_true
+    | `LsOr  (h :: t) -> Bool_expr_or  (bool h, bool (`LsOr t))
+    | `LsOr  []     -> Bool_expr_false
     | `Not  a     -> Bool_expr_not (bool a)
     | `Eq (a, b) -> Bool_expr_binary_int (Bool_binop_equals           , int a, int b)
     | `Neq(a, b) -> Bool_expr_binary_int (Bool_binop_notequals        , int a, int b)

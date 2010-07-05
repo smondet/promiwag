@@ -335,6 +335,9 @@ let test_stiel () =
   add_int_var "other_var" (Cons.int (`Add (`U 2, `U 8)));
   pr$ `int (Cons.int (`Mul (`U 2, `Var "with_var")));
   pr$ `int (Cons.int (`U64 (Int64.max_int)));
+
+  pr$ `int (Cons.int (`LsAdd [`U 1; `U 1; `Var "with_var"]));
+  pr$ `int (Cons.int (`Prod  [`U 2; `U 2; `Var "with_var"]));
   pr$ `b   (Cons.bool (`Eq (`U8_Big_at (Cons.buffer (`Var "buf")),
                             `U8_Big_at (Cons.buffer (`Var "buf")))));
   pr$ `b   (Cons.bool (`Eq (`U16_Big_at (Cons.buffer (`Var "buf")), 
@@ -350,6 +353,9 @@ let test_stiel () =
   pr$ `b   (Cons.bool (`Lt (`U 42, `U 42)));
   pr$ `b   (Cons.bool (`Ge (`U 42, `U 42)));
   pr$ `b   (Cons.bool (`Le (`U 42, `U 42)));
+  pr$ `b   (Cons.bool (`LsAnd [`T; `T; `T; `Var "unknown"]));
+  pr$ `b   (Cons.bool (`LsOr [`T; `T; `Var "the_truth"]));
+
   let b = 
     let nop = Cons.nop () in
     Cons.block [
