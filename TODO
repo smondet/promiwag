@@ -8,7 +8,12 @@ To do:
 * Promiwag_stiel: interpret
 * Promiwag_stiel: Write_{int,...}_to_buffer i.e. a controled/typed
   asignement of *buffer.
-* Promiwag_stiel: Max depth for variables
+
+* Promiwag_stiel.Verify:
+  - recursivity for variables
+  - variables defined twice
+  - retrive checks to do on buffer accesses
+
 
 * Promiwag_stiel: Integer management
   - module SafeInt64, with all bounds checkings
@@ -16,7 +21,7 @@ To do:
 
 * Promiwag_stiel:
   - add the "Exception" int,bool expressions (?)
-  OR
+  AND/OR
   - look_for_divisions which retrieves all denominators
   and generates checks
 

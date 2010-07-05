@@ -226,9 +226,9 @@ module To_string = struct
     | Bool_binop_equal_or_lower    -> "<="           
 
   let get_int_at_buffer = function
-    | Get_native         it -> spr "native-%s" (integer_type it)
-    | Get_big_endian     it -> spr "bigend-%s" (integer_type it)
-    | Get_little_endian  it -> spr "ltlend-%s" (integer_type it)
+    | Get_native         it -> spr "get-native-%s" (integer_type it)
+    | Get_big_endian     it -> spr "get-bigend-%s" (integer_type it)
+    | Get_little_endian  it -> spr "get-ltlend-%s" (integer_type it)
 
 
   let int_variable    s = s
@@ -236,9 +236,9 @@ module To_string = struct
   let buffer_variable s = s
 
   let rec buffer_type = function
-    | Type_sized_buffer   i -> spr "buffer[%d]" i
+    | Type_sized_buffer   i -> spr "buffer-of-size-[%d]" i
     | Type_pointer          -> spr "pointer"
-    | Type_sizable_buffer s -> spr "buffer[%s]" (int_expression s)
+    | Type_sizable_buffer s -> spr "buffer-of-size-[%s]" (int_expression s)
 
   and int_expression = function
     | Int_expr_unary  (op, ex)        ->
@@ -315,7 +315,8 @@ module To_C = struct
   module C_cons = Promiwag_c_backend.Construct
 
   let todo s = failwith (sprintf "Promiwag_stiel.To_C: %s: NOT IMPLEMENTED" s)
-  let fail compiler s = failwith s
+  let fail compiler s =
+    failwith (sprintf "Promiwag_stiel.To_C: ERROR: %s" s)
   let spr = Printf.sprintf
 
   let  integer_type compiler = function
@@ -476,7 +477,7 @@ module To_C = struct
     | Do_declare_var_buffer (t, v) -> 
       `uninitialized (v, buffer_type compiler t)
     | _ -> fail compiler "Calling 'declaration' on a non-declaration"
-      (* spr "%sDeclare %s as a %s;\n" cur_indent (buffer_variable v) (buffer_type t) *)
+
 end
 
 module Transform = struct
@@ -687,4 +688,30 @@ module Transform = struct
 
 end
 
+module Verify = struct
 
+  type problem =
+    | Ok
+    | Double_defined_variables of string list
+        
+  let check_block_for_double_vriables compiler stlist =
+    let vars = ref [] in
+    Ls.iter stlist ~f:(function
+      | Do_declare_var_int    (t, v)  -> vars := v :: !vars;
+      | Do_declare_var_bool       v   -> vars := v :: !vars;
+      | Do_declare_var_buffer (t, v)  -> vars := v :: !vars;
+      | _ -> ());
+    let nb_vars = Ls.length !vars in
+    let nb_unique_vars = Ls.length (Ls.unique !vars) in
+    if nb_vars = nb_unique_vars then
+      Ok
+    else
+      Double_defined_variables !vars
+
+  let rec block compiler = function
+    | Do_block          e        ->
+      check_block_for_double_vriables compiler e
+    | _ -> Ok
+
+
+end
