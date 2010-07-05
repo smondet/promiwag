@@ -22,10 +22,6 @@ To do:
 
 * use Format, or EasyFormat for printing C and Stiel
 
-* need datastructures:
-  - replace hashtables when order is needed 
-  (also purity is useful for e.g. removing a variable from environment)
-  - replace list when a lot of concatenations
 
 
 + a while+switch manager for parsing encapsulations of packets
