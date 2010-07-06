@@ -391,6 +391,11 @@ let test_stiel ?(out=`term) () =
 
   let b = 
     let nop = Cons.nop () in
+    let a, b, c =
+      Cons.expr_unat    (Cons.int (`U 42)),
+      Cons.expr_pointer (Cons.buffer (`Var "buf")),
+      Cons.expr_bool    (Cons.bool `F) in
+
     Cons.block [
       nop;
       Cons.conditional (Cons.bool (`Eq (`U 42, `U 0)))
@@ -409,6 +414,9 @@ let test_stiel ?(out=`term) () =
       Cons.assignment "var" $ Cons.expr_unat    (Cons.int (`U 42));
       Cons.assignment "var" $ Cons.expr_pointer (Cons.buffer (`Var "buf"));
       Cons.assignment "var" $ Cons.expr_bool    (Cons.bool `F);
+      Cons.log "log none with three arobases: @@ @@ @@" [];
+      Cons.log "log two: @expr = @hex" [a; a];
+      Cons.log "log three: @int @@ @int @@@int" [a; b; c];
   ] in
   pr$ `block b;
 

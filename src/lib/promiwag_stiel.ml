@@ -4,10 +4,10 @@
 open Promiwag_std
 
 type integer_type =
-  | Type_uint8
-  | Type_uint16
-  | Type_uint32
-  | Type_uint64
+  | Type_uint8       
+  | Type_uint16      
+  | Type_uint32      
+  | Type_uint64       
   | Type_uint_native
 
 
@@ -564,6 +564,42 @@ module To_C = struct
     | Kind_bool     -> `signed_int
     | Kind_buffer t -> buffer_type compiler t
 
+  let printf_of_log compiler format te_list =
+    let escape = "AROBASEESCAPE4732992387737238292933" in
+    let fmt = ref (Str.multi_replace ~str:format ~sub:"@@" ~by:escape) in
+    let arg_list =
+      Ls.map te_list ~f:(fun te ->
+        let type_fmt lfmt =
+          let ux =
+            match te with
+            | Typed_int (Type_uint8      , _) -> ("%hhu", "%02hhx")
+            | Typed_int (Type_uint16     , _) -> ("%hu" , "%04hx")
+            | Typed_int (Type_uint32     , _) -> ("%u"  , "%08x")
+            | Typed_int (Type_uint64     , _) -> ("%llu", "%16llx")
+            | Typed_int (Type_uint_native, _) -> ("%lu" , "%16lx")
+            | Typed_bool       _  -> ("%d", "%x")
+            | Typed_buffer (t, _) ->  ("%lu", "%lx") in
+          match lfmt with
+          | "@int" -> fst ux
+          | "@hex" -> snd ux 
+          | "@expr" -> "%s"
+          | _ -> fail compiler "Do_log: should not be here (type_fmt)" in
+        let result = 
+          Ls.find_opt ["@int"; "@hex"; "@expr" ] ~f:(fun sub ->
+            let by = type_fmt sub in
+            let found, new_str = Str.replace ~str:!fmt ~sub ~by in
+            if found then (fmt := new_str; true)
+            else false) in
+        match result with
+        | None -> fail compiler "Do_log: format does not match arg list"
+        | Some "@int" | Some "@hex" -> typed_expression compiler te
+        | Some "@expr" -> `literal_string (To_string.typed_expression te)
+        | Some s -> 
+          fail compiler (sprintf "Do_log: should not be here (arg_list): %s" s)
+      ) in
+    fmt := (Str.multi_replace ~str:!fmt ~sub:escape ~by:"@");
+    (`expression (`cast (`void, `call (`variable "eprintf", 
+                                       (`literal_string !fmt) :: arg_list))))
 
   let rec block compiler = function
     | Do_block          e        ->
@@ -588,7 +624,7 @@ module To_C = struct
       assign (variable_name a) (typed_expression compiler b)
     | Do_declaration _ -> 
       fail compiler "Calling 'statement' on a declaration"
-    | Do_log (_, _) -> todo "Do_log"
+    | Do_log (f, l) -> printf_of_log compiler f l
   and declaration compiler = function
     | Do_declaration typed_var ->
       `uninitialized (typed_var.name,

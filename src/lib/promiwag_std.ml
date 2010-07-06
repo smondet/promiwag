@@ -25,6 +25,19 @@ module Str = struct
   include ExtString
   include ExtString.String
   (* include StringLabels *)
+
+  let multi_replace ~str ~sub ~by =
+    let s = ref (copy str) in
+    let rec loop () =
+      let f, ns = replace ~str:!s ~sub ~by in
+      if f then (
+        s := ns;
+        loop ();
+      );
+    in 
+    loop ();
+    !s
+
 end
 
 module Ht = struct
