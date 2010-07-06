@@ -397,19 +397,19 @@ let test_stiel ?(out=`term) () =
         ~statement_then:(Cons.block [nop;nop;nop])
         ~statement_else:nop;
       Cons.while_loop (Cons.bool `T) (Cons.block [nop; nop]);
-(*      Cons.declare (`Sized_buffer ("buf", 42));
-      Cons.declare (`Pointer "pointer");
-      Cons.declare (`U8   "vara");
-      Cons.declare (`U16  "varz");
-      Cons.declare (`U32  "vare");
-      Cons.declare (`U64  "varr");
-      Cons.declare (`Unat "varq");
-      Cons.declare (`Bool "vars"); *)
+      Cons.declare $ Cons.var (`Sized_buffer ("buf", 42));
+      Cons.declare $ Cons.var (`Pointer "pointer");
+      Cons.declare $ Cons.var (`U8   "vara");
+      Cons.declare $ Cons.var (`U16  "varz");
+      Cons.declare $ Cons.var (`U32  "vare");
+      Cons.declare $ Cons.var (`U64  "varr");
+      Cons.declare $ Cons.var (`Unat "varq");
+      Cons.declare $ Cons.var (`Bool "vars");
       Cons.cmt "Some comments...";
-(*      Cons.assignment "var" (Cons.int (`U 42));
-      Cons.assignment "var" (Cons.buffer (`Var "buf"));
-      Cons.assignment "var" (Cons.bool `F);
-*)  ] in
+      Cons.assignment "var" $ Cons.expr_unat    (Cons.int (`U 42));
+      Cons.assignment "var" $ Cons.expr_pointer (Cons.buffer (`Var "buf"));
+      Cons.assignment "var" $ Cons.expr_bool    (Cons.bool `F);
+  ] in
   pr$ `block b;
 
   printf "====== Testing partial evaluation:\n";

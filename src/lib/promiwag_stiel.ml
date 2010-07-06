@@ -93,123 +93,12 @@ type statement =
   | Do_assignment  of variable_name * typed_expression
   | Do_declaration of typed_variable
   | Do_log of string * typed_expression list
-(*
-module Int_expression = struct
-
-  type t = {
-    expression: int_expression;
-    int_type: integer_type;
-  }
-  let create int_type expression =
-    {int_type = int_type; expression = expression}
-  let expression t = t.expression
-  let int_type t = t.int_type
-
-end
-
-module Bool_expression = struct
-
-  type t = bool_expression
-  let create t = t
-  let expression t = t
-
-end
-
-module Buffer_expression = struct
-
-  type t = {
-    expression: buffer_expression;
-    buffer_type: buffer_type;
-  }
-  let create buffer_type expression =
-    {buffer_type = buffer_type; expression = expression}
-  let expression t = t.expression
-  let buffer_type t = t.buffer_type
-
-end
-
-module Int_variable = struct
-
-  type t = {
-    name: string;
-    int_type: integer_type;
-  }
-  let create      ?(unique=true) name itype =
-    { name = if unique then Unique.name name else name; int_type = itype }
-  let uint8       ?(unique=true) name  = create ~unique name  Type_uint8      
-  let uint16      ?(unique=true) name  = create ~unique name  Type_uint16     
-  let uint32      ?(unique=true) name  = create ~unique name  Type_uint32     
-  let uint64      ?(unique=true) name  = create ~unique name  Type_uint64     
-  let uint_native ?(unique=true) name  = create ~unique name  Type_uint_native
-
-  let declaration t =  Do_declare_var_int    (t.int_type, t.name)
-  let name t = t.name
-
-  let assignment t e = Do_assign_int (t.name, e)
-
-  let int_expression t = 
-    Int_expression.create t.int_type (Int_expr_variable t.name)
-
-end
-
-module Bool_variable = struct
-
-  type t = {
-    name: string;
-  }
-  let create ?(unique=true) name =
-    { name = if unique then Unique.name name else name }
-  let declaration t =  Do_declare_var_bool t.name
-  let name t = t.name
-  let assignment t e = Do_assign_bool (t.name, e)
-  let bool_expression t = 
-    Bool_expression.create (Bool_expr_variable t.name)
-
-end
-
-module Buffer_variable = struct
-
-  type t = {
-    name: string;
-    buffer_type: buffer_type;
-  }
-  let create ?(unique=true) name btype =
-    { name = if unique then Unique.name name else name;
-      buffer_type = btype }
-  let buffer ?size ?(unique=true) name =
-    let btype =
-      match size with None -> Type_pointer | Some s -> Type_sized_buffer s in
-    create ~unique name btype
-
-
-  let declaration t =  Do_declare_var_buffer (t.buffer_type, t.name)
-  let name t = t.name
-  let assignment t e = Do_assign_buffer (t.name, e)
-
-  let buffer_expression t = 
-    Buffer_expression.create t.buffer_type (Buffer_expr_variable t.name)
-
-end
-*)
 
 module Construct = struct
 
   exception Stiel_construction_error of string
   let fail s = raise (Stiel_construction_error ("STIEL.Construct: " ^ s))
 
-  let nop () = Do_nothing
-
-  let block l = Do_block l
-
-  let conditional ?(statement_then=Do_nothing) ?(statement_else=Do_nothing)
-      condition =
-    Do_if (condition, statement_then, statement_else)
-
-  let while_loop c s = Do_while_loop (c, s)
-
-  let assignment a b  = Do_assignment (a, b)
-
-  let cmt s = Do_comment s
 
   let rec int = function
     | `U i -> Int_expr_literal (Int64.of_int i) 
@@ -252,12 +141,46 @@ module Construct = struct
     |  `U32_Little_at b -> Int_expr_buffer_content (Get_little_endian Type_uint32      ,  b)
     |  `U64_Little_at b -> Int_expr_buffer_content (Get_little_endian Type_uint64      ,  b)
     | `Unat_Little_at b -> Int_expr_buffer_content (Get_little_endian Type_uint_native ,  b)
+    | `E e -> e
 
+  let uint i = Int_expr_literal (Int64.of_int i) 
+  let u64  i = Int_expr_literal i 
+  let minus m = Int_expr_unary (Int_unary_minus, m)
+  let sum l = int (`LsAdd (Ls.map (fun e -> `E e) l))
+  let add a b = Int_expr_binary (Int_binop_add, a, b)
+  let sub a b = Int_expr_binary (Int_binop_sub, a, b)
+  let mul a b = Int_expr_binary (Int_binop_mul, a, b)
+  let prod l  =  int (`LsMul (Ls.map (fun e -> `E e) l))
+  let div a b = Int_expr_binary (Int_binop_div, a, b)
+  let (mod) a b = Int_expr_binary (Int_binop_mod, a, b)
+  let modulo a b = Int_expr_binary (Int_binop_mod, a, b)
+  let bin_and a b = Int_expr_binary (Int_binop_bin_and, a, b)
+  let bin_or  a b = Int_expr_binary (Int_binop_bin_or , a, b)
+  let bin_xor a b = Int_expr_binary (Int_binop_bin_xor, a, b)
+  let bin_shl a b = Int_expr_binary (Int_binop_bin_shl, a, b)
+  let bin_shr a b = Int_expr_binary (Int_binop_bin_shr, a, b)
+  let int_var v =   Int_expr_variable v
+  let get_style s t = match s with
+    | `big -> Get_big_endian t
+    | `little -> Get_little_endian t
+    | `native -> Get_native t
+  let u8_at   ?(how=`big) b =
+    Int_expr_buffer_content (get_style how Type_uint8       ,  b)
+  let u16_at  ?(how=`big) b =
+    Int_expr_buffer_content (get_style how Type_uint16      ,  b)
+  let u32_at  ?(how=`big) b =
+    Int_expr_buffer_content (get_style how Type_uint32      ,  b)
+  let u64_at  ?(how=`big) b =
+    Int_expr_buffer_content (get_style how Type_uint64      ,  b)
+  let unat_at ?(how=`big) b =
+    Int_expr_buffer_content (get_style how Type_uint_native ,  b)
 
+  let rec buffer = function
+    | `Var v -> Buffer_expr_variable v
+    | `Offset (b, i) -> Buffer_expr_offset (buffer b, int i)
 
- let rec buffer = function
-   | `Var v -> Buffer_expr_variable v
-   | `Offset (b, i) -> Buffer_expr_offset (buffer b, int i)
+  let buffer_var v = Buffer_expr_variable v
+  let offset b i =  Buffer_expr_offset (b, i)
 
   let rec bool = function
     | `T | `True  -> Bool_expr_true
@@ -276,19 +199,103 @@ module Construct = struct
     | `Lt (a, b) -> Bool_expr_binary_int (Bool_binop_strictly_lower   , int a, int b)
     | `Ge (a, b) -> Bool_expr_binary_int (Bool_binop_equal_or_greater , int a, int b)
     | `Le (a, b) -> Bool_expr_binary_int (Bool_binop_equal_or_lower   , int a, int b)
+    | `E e -> e
 
-(*  let declare = function
-    | `Sized_buffer (v, i) -> Do_declare_var_buffer (Type_sized_buffer   i, v)
-    | `Pointer v           -> Do_declare_var_buffer (Type_pointer         , v)
-    (* | `Sizable s -> Type_sizable_buffer s *)
-    | `U8   v -> Do_declare_var_int (Type_uint8       , v)
-    | `U16  v -> Do_declare_var_int (Type_uint16      , v)  
-    | `U32  v -> Do_declare_var_int (Type_uint32      , v) 
-    | `U64  v -> Do_declare_var_int (Type_uint64      , v) 
-    | `Unat v -> Do_declare_var_int (Type_uint_native , v)
-    | `Bool v -> Do_declare_var_bool v
+  let t = Bool_expr_true
+  let f = Bool_expr_false
+  let bool_var v = Bool_expr_variable v
+  let ls_and l = bool (`LsAnd (Ls.map (fun e -> `E e) l))
+  let ls_or  l = bool (`LsOr  (Ls.map (fun e -> `E e) l))
+  let not  a   = Bool_expr_not a
+  let eq  a b = Bool_expr_binary_int (Bool_binop_equals           , a, b)
+  let neq a b = Bool_expr_binary_int (Bool_binop_notequals        , a, b)
+  let gt  a b = Bool_expr_binary_int (Bool_binop_strictly_greater , a, b)
+  let lt  a b = Bool_expr_binary_int (Bool_binop_strictly_lower   , a, b)
+  let ge  a b = Bool_expr_binary_int (Bool_binop_equal_or_greater , a, b)
+  let le  a b = Bool_expr_binary_int (Bool_binop_equal_or_lower   , a, b)
 
-*)
+
+  let expr = function
+    |   `U8  e -> Typed_int (Type_uint8      , int e)
+    |  `U16  e -> Typed_int (Type_uint16     , int e)
+    |  `U32  e -> Typed_int (Type_uint32     , int e)
+    |  `U64  e -> Typed_int (Type_uint64     , int e)
+    | `Unat  e -> Typed_int (Type_uint_native, int e)
+    |   `U8E e -> Typed_int (Type_uint8      ,     e)
+    |  `U16E e -> Typed_int (Type_uint16     ,     e)
+    |  `U32E e -> Typed_int (Type_uint32     ,     e)
+    |  `U64E e -> Typed_int (Type_uint64     ,     e)
+    | `UnatE e -> Typed_int (Type_uint_native,     e)
+    | `Bool  e -> Typed_bool e
+    | `BoolE e -> Typed_bool (bool e)
+    | `Sized    (i, e) -> Typed_buffer (Type_sized_buffer i, buffer e)
+    | `Pointer      e  -> Typed_buffer (Type_pointer,        buffer e)
+    | `SizedE   (i, e) -> Typed_buffer (Type_sized_buffer i,        e)
+    | `PointerE     e  -> Typed_buffer (Type_pointer,               e)
+
+  let expr_u8    e = Typed_int (Type_uint8      , e)
+  let expr_u16   e = Typed_int (Type_uint16     , e)
+  let expr_u32   e = Typed_int (Type_uint32     , e)
+  let expr_u64   e = Typed_int (Type_uint64     , e)
+  let expr_unat  e = Typed_int (Type_uint_native, e)
+  let expr_bool  e = Typed_bool e
+  let expr_pointer e = Typed_buffer (Type_pointer, e)
+
+
+  let typed_variable ?(unique=true) name kind =
+    { name = if unique then Unique.name name else name;
+      kind = kind}
+
+  let tv = typed_variable
+
+  let var = 
+    function
+      | `Sized_buffer (v, i) -> tv v $ Kind_buffer (Type_sized_buffer i)
+      | `Pointer v           -> tv v $ Kind_buffer Type_pointer    
+      | `U8   v              -> tv v $ Kind_int    Type_uint8      
+      | `U16  v              -> tv v $ Kind_int    Type_uint16     
+      | `U32  v              -> tv v $ Kind_int    Type_uint32     
+      | `U64  v              -> tv v $ Kind_int    Type_uint64     
+      | `Unat v              -> tv v $ Kind_int    Type_uint_native
+      | `Bool v              -> tv v $ Kind_bool   
+
+  let var_sized_buffer i v = tv v $ Kind_buffer (Type_sized_buffer i)
+  let var_pointer        v = tv v $ Kind_buffer Type_pointer           
+  let var_u8             v = tv v $ Kind_int    Type_uint8             
+  let var_u16            v = tv v $ Kind_int    Type_uint16            
+  let var_u32            v = tv v $ Kind_int    Type_uint32            
+  let var_u64            v = tv v $ Kind_int    Type_uint64            
+  let var_unat           v = tv v $ Kind_int    Type_uint_native       
+  let var_bool           v = tv v $ Kind_bool   
+
+  let expr_var tv =
+    match tv.kind with
+    | Kind_bool -> Typed_bool (Bool_expr_variable tv.name)
+    | Kind_int t -> Typed_int (t, Int_expr_variable tv.name)
+    | Kind_buffer t -> Typed_buffer (t, Buffer_expr_variable tv.name)
+
+  let assign v te = Do_assignment (v.name, te)
+  let assignment a b  = Do_assignment (a, b)
+
+  let log f l = Do_log (f, l)
+
+  let var_name t = t.name
+
+  let declare v = Do_declaration v
+  let declaration n t = Do_declaration (tv ~unique:false n t)
+
+  let nop () = Do_nothing
+
+  let block l = Do_block l
+
+  let conditional ?(statement_then=Do_nothing) ?(statement_else=Do_nothing)
+      condition =
+    Do_if (condition, statement_then, statement_else)
+
+  let while_loop c s = Do_while_loop (c, s)
+
+  let cmt s = Do_comment s
+
 
 end
 
@@ -333,7 +340,7 @@ module To_string = struct
     | Get_big_endian     it -> spr "get-bigend-%s" (integer_type it)
     | Get_little_endian  it -> spr "get-ltlend-%s" (integer_type it)
 
-  let variable_name s = spr "var:%s" s
+  let variable_name s = spr "[var:%s]" s
 
   let rec buffer_type = function
     | Type_sized_buffer   i -> spr "buffer-of-size-[%d]" i
@@ -370,9 +377,9 @@ module To_string = struct
         (bool_binary_operator op) (int_expression b)
 
   let typed_expression = function
-    | Typed_int    (t, e) -> spr "%s  :%s" (integer_type t) (int_expression e)
-    | Typed_bool       e  -> spr "%s  :bool" (bool_expression e)
-    | Typed_buffer (t, e) -> spr "%s  :%s" (buffer_type t) (buffer_expression e)
+    | Typed_int    (t, e) -> spr "[%s: %s]" (integer_type t) (int_expression e)
+    | Typed_bool       e  -> spr "[bool: %s]" (bool_expression e)
+    | Typed_buffer (t, e) -> spr "[%s: %s]" (buffer_type t) (buffer_expression e)
 
   let typed_variable_kind = function
     | Kind_int     t -> spr "%s" (integer_type t)
