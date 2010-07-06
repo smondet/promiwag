@@ -14,7 +14,6 @@ To do:
   - variables defined twice
   - retrive checks to do on buffer accesses
 
-
 * Promiwag_stiel: Integer management
   - module SafeInt64, with all bounds checkings
   - check that ints are positive

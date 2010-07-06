@@ -487,22 +487,27 @@ module Transform = struct
     type environment = {
       int_variables: (int_variable, int_expression) Environment.t;
       bool_variables: (bool_variable, bool_expression) Environment.t;
+      use_purity: bool;
       do_symbolic_equality: bool;
     }
 
     (*  WARNING:
-        do_symbolic_equality will absorb some side effects.
-        For now side effects are just the divisions/modulos by zero. *)
+        do_symbolic_equality and use_purity will absorb some side effects.
+
+        For now side effects are just the divisions/modulos by zero.
+    *)
 
 
     module Env = Environment
 
     let environment
-        ?(do_symbolic_equality=false) ?int_variables ?bool_variables () =
+        ?(do_symbolic_equality=false) ?(use_purity=false)
+        ?int_variables ?bool_variables () =
       {int_variables = 
           (match int_variables with | Some s -> s | None -> Env.empty);
        bool_variables = 
           (match bool_variables with | Some s -> s | None -> Env.empty);
+       use_purity = use_purity;
        do_symbolic_equality = do_symbolic_equality;}
 
     exception Division_by_zero_in of int_expression
@@ -560,31 +565,33 @@ module Transform = struct
         | true, Int_binop_add ->
           Int_expr_binary (Int_binop_mul,
                            Int_expr_literal (Int64.of_int 2), a)
-        | true, Int_binop_div -> Int_expr_literal Int64.one
+        | true, Int_binop_div -> Int_expr_literal Int64.one 
+        | true, Int_binop_mod -> Int_expr_literal Int64.zero
         | true, Int_binop_bin_and 
         | true, Int_binop_bin_or -> a
         | _ -> dont_know
       in
       let original = Int_expr_binary (op, a, b) in
+      let use_purity = environment.use_purity in
       begin match a, b with
       | Int_expr_literal i64a, Int_expr_literal i64b -> 
         Int_expr_literal ((int_binary_operator environment op) i64a i64b)
-      | Int_expr_literal i64a, pb when i64a = Int64.zero -> 
+      | Int_expr_literal i64a, pb when i64a = Int64.zero && use_purity -> 
         try_commutative_with_zero op pb original
-      | pa, Int_expr_literal i64b when i64b = Int64.zero ->
+      | pa, Int_expr_literal i64b when i64b = Int64.zero && use_purity ->
         let after_commut =
           try_commutative_with_zero op pa original in
         let after_right_zero = 
           try_with_zero_on_the_right op pa after_commut in
         try_with_zero_on_the_left op pa after_right_zero
-      | Int_expr_literal i64a, pb when i64a = Int64.one -> 
+      | Int_expr_literal i64a, pb when i64a = Int64.one && use_purity -> 
         try_commutative_with_one op pb original
-      | pa, Int_expr_literal i64b when i64b = Int64.one ->
+      | pa, Int_expr_literal i64b when i64b = Int64.one && use_purity ->
         let after_commut =
           try_commutative_with_one op pa original in
         try_with_one_on_the_right op pa after_commut
       | pa, pb ->
-        if environment.do_symbolic_equality then
+        if environment.do_symbolic_equality && use_purity then
           try_symbolic op pa pb (Int_expr_binary (op, pa, pb))
         else
           Int_expr_binary (op, pa, pb)
@@ -626,7 +633,13 @@ module Transform = struct
       | Buf_expr_variable _ as original -> original
       | Buf_expr_offset (_, _) as original -> original
         
-    and bool_expression environment = function
+    and bool_expression environment expr =
+      let allowed e =
+        if environment.use_purity then
+          true
+        else
+          (e = Bool_expr_true) || (e = Bool_expr_false) in
+      match expr with
       | Bool_expr_true   -> Bool_expr_true 
       | Bool_expr_false  -> Bool_expr_false
       | Bool_expr_variable v as original ->
@@ -638,51 +651,56 @@ module Transform = struct
         let propa = bool_expression environment a in
         let propb = bool_expression environment b in
         begin match propa, propb with
-        | Bool_expr_true, anything -> anything
-        | anything, Bool_expr_true -> anything
-        | Bool_expr_false, anything -> Bool_expr_false
-        | anything, Bool_expr_false -> Bool_expr_false
+        | Bool_expr_true, anything  when allowed anything -> anything
+        | anything, Bool_expr_true  when allowed anything -> anything
+        | Bool_expr_false, anything when allowed anything -> Bool_expr_false
+        | anything, Bool_expr_false when allowed anything -> Bool_expr_false
         | pa, pb -> Bool_expr_and (pa, pb)
         end
-    | Bool_expr_or         (a, b)     ->
+      | Bool_expr_or         (a, b)     ->
         let propa = bool_expression environment a in
         let propb = bool_expression environment b in
         begin match propa, propb with
-        | Bool_expr_true, anything -> Bool_expr_true
-        | anything, Bool_expr_true -> Bool_expr_true
-        | Bool_expr_false, anything -> anything
-        | anything, Bool_expr_false -> anything
+        | Bool_expr_true, anything  when allowed anything -> Bool_expr_true
+        | anything, Bool_expr_true  when allowed anything -> Bool_expr_true
+        | Bool_expr_false, anything when allowed anything -> anything
+        | anything, Bool_expr_false when allowed anything -> anything
         | pa, pb -> Bool_expr_or (pa, pb)
         end
-    | Bool_expr_not        ex         ->
-      begin match bool_expression environment ex with
-      | Bool_expr_true -> Bool_expr_false
-      | Bool_expr_false -> Bool_expr_true
-      | pex -> Bool_expr_not pex
-      end
-    | Bool_expr_binary_int (op, a, b) ->
-      let comp = bool_binary_operator environment op in
-      let propa = int_expression environment a in
-      let propb = int_expression environment b in
-      begin match propa, propb with
-      | Int_expr_literal a64, Int_expr_literal b64 ->
-        if comp a64 b64 then Bool_expr_true else Bool_expr_false
-      | pa, pb -> 
-        if op =  Bool_binop_equals && environment.do_symbolic_equality then
-          if pa = pb then Bool_expr_true else Bool_expr_binary_int (op, pa, pb)
-        else
-          Bool_expr_binary_int (op, pa, pb)
-      end
+      | Bool_expr_not        ex         ->
+        begin match bool_expression environment ex with
+        | Bool_expr_true  -> Bool_expr_false
+        | Bool_expr_false -> Bool_expr_true
+        | pex -> Bool_expr_not pex
+        end
+      | Bool_expr_binary_int (op, a, b) ->
+        let comp = bool_binary_operator environment op in
+        let propa = int_expression environment a in
+        let propb = int_expression environment b in
+        begin match propa, propb with
+        | Int_expr_literal a64, Int_expr_literal b64 ->
+          if comp a64 b64 then Bool_expr_true else Bool_expr_false
+        | pa, pb -> 
+          if op =  Bool_binop_equals &&
+            environment.use_purity &&
+            environment.do_symbolic_equality
+          then
+            if pa = pb then Bool_expr_true else Bool_expr_binary_int (op, pa, pb)
+          else
+            Bool_expr_binary_int (op, pa, pb)
+        end
   end
 
-  let propagate_constants_in_int ?(do_symbolic_equality=false) expr =
+  let propagate_constants_in_int
+      ?(use_purity=false) ?(do_symbolic_equality=false) expr =
     let env = 
-      Partial_evaluation.environment ~do_symbolic_equality () in
+      Partial_evaluation.environment ~do_symbolic_equality ~use_purity () in
     Partial_evaluation.int_expression env expr
       
-  let propagate_constants_in_bool ?(do_symbolic_equality=false) expr =
+  let propagate_constants_in_bool
+      ?(use_purity=false) ?(do_symbolic_equality=false) expr =
     let env = 
-      Partial_evaluation.environment ~do_symbolic_equality () in
+      Partial_evaluation.environment ~do_symbolic_equality ~use_purity () in
     Partial_evaluation.bool_expression env expr
 
 
