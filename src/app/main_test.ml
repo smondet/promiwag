@@ -257,75 +257,101 @@ let test_packet_parsing () =
   printf "\n";
   ()
 
-let test_stiel () =
+let test_stiel ?(out=`term) () =
+
+
   let module IL = Promiwag.Stiel in
   let module Cons = IL.Construct in
   let module Transfo = IL.Transform in
   let module Partial = Transfo.Partial_evaluation in
   let module Env = Environment in
-  let str_ie = IL.To_string.int_expression in
-  let str_be = IL.To_string.bool_expression in
+  
+  let ( *** ) f g x = f (g x) in
+  let out_tt s = if out = `term then s else sprintf "{t|{text}%s{end}}" s in
+  let out_sec s =
+    match out with
+    | `term -> sprintf "==== %s ====\n" s
+    | `brtx -> sprintf "{section|%s}\n" s in
+  let out_par = match out with | `term -> "\n" | `brtx -> "{p}" in
+  let out_code s = if out = `term then s else sprintf "{code endcode}%s{endcode}" s in
+
+  let str_ie = out_tt *** IL.To_string.int_expression in
+  let str_be = out_tt *** IL.To_string.bool_expression in
+
   let compiler =    IL.To_C.compiler ~platform:Promiwag.Platform.default in
   let int_variables = ref Env.empty in
   let add_int_var v e =
     int_variables := Env.add !int_variables v e;
-    printf "+++ Int-env is now: [\n";
+    printf "%s" (out_sec "Integer-environment");
     let list_of_levels =
       Env.metamap !int_variables
         ~map:(fun (v, e) ->
-          sprintf "('%s' is %s)" v (IL.To_string.int_expression e))
+          sprintf "('%s' is %s)" v (str_ie e))
         ~reduce:(fun strlist -> 
           sprintf "  [%s]" (Str.concat "; " strlist)) in
-    printf "+++ Int-env is now: {\n%s\n}\n"
-      (Str.concat "\n" list_of_levels);
+    printf "[\n%s\n]\n" (Str.concat "\n" list_of_levels);
   in
   let bool_variables = ref Env.empty in
   let add_bool_var v e =
     bool_variables := Env.add !bool_variables v e;
-    printf "+++ Bool-env is now: [";
+    printf "%s [\n" (out_sec "Boolean-environment");
     Env.iter ~f:(fun (v, e) ->
-      printf " (%s = %s) " v (IL.To_string.bool_expression e);
+      printf " (%s = %s) " v (str_be e);
     ) !bool_variables;
     printf "]\n";
   in
   let pr t =
     let env =
-      Partial.environment ~do_symbolic_equality:true
+      Partial.environment ~do_symbolic_equality:true ~use_purity:true
         ~int_variables:!int_variables ~bool_variables:!bool_variables () in
     let nope = "Not implemented or relevant" in
     let tryify s f e =
       try s (f e) with
       | exn -> 
-        sprintf "Expception: %s" (Printexc.to_string exn)
+        sprintf "Expception: %s" (out_tt (Printexc.to_string exn))
     in
-    let str, c, str_prop, str_prop_sym, str_prop_sym_vars =
+    let title, str, c, str_prop, str_prop_pure, str_prop_eqsym, str_part =
+      let i_prop =  Transfo.propagate_constants_in_int in
+      let i_prop_pure = Transfo.propagate_constants_in_int ~use_purity:true in
+      let i_prop_eqsym =
+        Transfo.propagate_constants_in_int ~use_purity:true
+          ~do_symbolic_equality:true in
+      let i_part = Partial.int_expression env in
+      let b_prop =  Transfo.propagate_constants_in_bool in
+      let b_prop_pure = Transfo.propagate_constants_in_bool ~use_purity:true in
+      let b_prop_eqsym =
+        Transfo.propagate_constants_in_bool ~use_purity:true
+          ~do_symbolic_equality:true in
+      let b_part = Partial.bool_expression env in
       match t with
       | `int e ->
-        (tryify str_ie (fun e -> e) e, 
-         tryify C2S.expression (IL.To_C.int_expression compiler) e,
-         tryify str_ie Transfo.propagate_constants_in_int e,
-         tryify str_ie 
-           (Transfo.propagate_constants_in_int ~do_symbolic_equality:true) e,
-         tryify str_ie (Partial.int_expression env) e)
+        ("Integer Expression",
+         tryify str_ie (fun e -> e) e, 
+         tryify (out_tt *** C2S.expression) (IL.To_C.int_expression compiler) e,
+         tryify str_ie i_prop e,
+         tryify str_ie i_prop_pure e,
+         tryify str_ie i_prop_eqsym e,
+         tryify str_ie i_part e)
       | `b e->
-        (tryify str_be (fun e -> e) e, 
-         tryify C2S.expression (IL.To_C.bool_expression compiler) e,
-         tryify str_be Transfo.propagate_constants_in_bool e,
-         tryify str_be 
-           (Transfo.propagate_constants_in_bool ~do_symbolic_equality:true) e,
-         tryify str_be (Partial.bool_expression env) e)
-      | `s e ->
-        (tryify IL.To_string.statement (fun e -> e) e, nope, nope, nope, nope)
+        ("Boolean Expression",
+         tryify str_be (fun e -> e) e, 
+         tryify (out_tt *** C2S.expression) (IL.To_C.bool_expression compiler) e,
+         tryify str_be b_prop e,
+         tryify str_be b_prop_pure e,
+         tryify str_be b_prop_eqsym e,
+         tryify str_be b_part e)
       | `block e ->
-        (tryify IL.To_string.statement (fun e -> e) e, 
-         tryify C2S.statement (IL.To_C.statement compiler) e,
-         nope, nope, nope)
+        ("Block",
+         tryify (out_code *** IL.To_string.statement) (fun e -> e) e, 
+         tryify (out_code *** C2S.statement) (IL.To_C.statement compiler) e,
+         nope, nope, nope, nope)
     in
-    printf "== Expr: %s\n%!" str;
-    printf "  To_C: %s\n%!" c;
-    printf "  Propagated: %s\n%!" str_prop;
-    printf "  Propagated(+symb): %s\n%!" str_prop_sym;
-    printf "  Propagated(+symb+env): %s\n%!" str_prop_sym_vars;
+    printf "\n%s\n%s%s%!" (out_sec title) str out_par;
+    printf "  To_C: %s%s%!" c out_par;
+    printf "  Propagated: %s%s%!" str_prop out_par;
+    printf "  Propagated(+purity): %s%s%!" str_prop_pure out_par;
+    printf "  Propagated(+purity+eqsymb): %s%s%!" str_prop_eqsym out_par;
+    printf "  Propagated(+purity+eqsymb+env): %s%s%!" str_part out_par;
   in
   pr$ `int  (Cons.int (`Add (`U 42, `U 28)));
   pr$ `int  (Cons.int (`Mul (`U 42, `U 28)));
@@ -731,7 +757,8 @@ let () =
       | "pcap" ->  test_pcap_basic
       | "base" -> test_c_ast
       | "mp" -> test_packet_parsing
-      | "il" -> test_stiel
+      | "il" -> test_stiel ~out:`term
+      | "ilbrtx" -> test_stiel ~out:`brtx
       | "mpp" -> test_pcap_parsing Sys.argv.(2)
       | s -> failwith (sprintf "Unknown test: %s\n" s)
     in
