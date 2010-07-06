@@ -99,6 +99,14 @@ module Construct = struct
   exception Stiel_construction_error of string
   let fail s = raise (Stiel_construction_error ("STIEL.Construct: " ^ s))
 
+  let fitted_uint ?(fail=failwith) i =
+    if 1 <= i && i <= 8 then (Type_uint8, 8)
+    else if   9 <= i && i <= 16 then (Type_uint16, 16)
+    else if  17 <= i && i <= 32 then (Type_uint32, 32)
+    else if  33 <= i && i <= 64 then (Type_uint64, 64)
+    else 
+      fail (sprintf "fitted_uint: too long integer: %d" i)
+
 
   let rec int = function
     | `U i -> Int_expr_literal (Int64.of_int i) 
@@ -175,6 +183,20 @@ module Construct = struct
   let unat_at ?(how=`big) b =
     Int_expr_buffer_content (get_style how Type_uint_native ,  b)
 
+  let ufitted_at ~size ~how b =
+    match size with
+    | 8  ->  u8_at ~how b
+    | 16 -> u16_at ~how b
+    | 32 -> u32_at ~how b
+    | 64 -> u64_at ~how b
+    | _ -> fail "ufit_at: size not in {8, 16, 32, 64}"
+
+  let ones size =
+    if  Int64.to_float Int64.max_int < (2. ** (float size)) then
+      failwith "ones: Too big int64 !"
+    else
+      u64 (Int64.sub (Int64.shift_left 1L size) 1L)
+
   let rec buffer = function
     | `Var v -> Buffer_expr_variable v
     | `Offset (b, i) -> Buffer_expr_offset (buffer b, int i)
@@ -242,6 +264,13 @@ module Construct = struct
   let expr_pointer e = Typed_buffer (Type_pointer, e)
 
 
+  let int_expr = function
+    | Typed_int (_, e) -> e
+    | _ -> fail "This typed expression is not an integer one"
+  let buffer_expr = function
+    | Typed_buffer (_, e) -> e
+    | _ -> fail "This typed expression is not a buffer one"
+
   let typed_variable ?(unique=true) name kind =
     { name = if unique then Unique.name name else name;
       kind = kind}
@@ -259,20 +288,25 @@ module Construct = struct
       | `Unat v              -> tv v $ Kind_int    Type_uint_native
       | `Bool v              -> tv v $ Kind_bool   
 
-  let var_sized_buffer i v = tv v $ Kind_buffer (Type_sized_buffer i)
-  let var_pointer        v = tv v $ Kind_buffer Type_pointer           
-  let var_u8             v = tv v $ Kind_int    Type_uint8             
-  let var_u16            v = tv v $ Kind_int    Type_uint16            
-  let var_u32            v = tv v $ Kind_int    Type_uint32            
-  let var_u64            v = tv v $ Kind_int    Type_uint64            
-  let var_unat           v = tv v $ Kind_int    Type_uint_native       
-  let var_bool           v = tv v $ Kind_bool   
+  let var_sized_buffer ?unique i v = tv ?unique v $ Kind_buffer (Type_sized_buffer i)
+  let var_pointer      ?unique   v = tv ?unique v $ Kind_buffer Type_pointer           
+  let var_u8           ?unique   v = tv ?unique v $ Kind_int    Type_uint8             
+  let var_u16          ?unique   v = tv ?unique v $ Kind_int    Type_uint16            
+  let var_u32          ?unique   v = tv ?unique v $ Kind_int    Type_uint32            
+  let var_u64          ?unique   v = tv ?unique v $ Kind_int    Type_uint64            
+  let var_unat         ?unique   v = tv ?unique v $ Kind_int    Type_uint_native       
+  let var_bool         ?unique   v = tv ?unique v $ Kind_bool   
 
   let expr_var tv =
     match tv.kind with
     | Kind_bool -> Typed_bool (Bool_expr_variable tv.name)
     | Kind_int t -> Typed_int (t, Int_expr_variable tv.name)
     | Kind_buffer t -> Typed_buffer (t, Buffer_expr_variable tv.name)
+
+  let kind_of_expr = function
+    | Typed_bool _        -> Kind_bool 
+    | Typed_int (t, _)    -> Kind_int t
+    | Typed_buffer (t, _) -> Kind_buffer t
 
   let assign v te = Do_assignment (v.name, te)
   let assignment a b  = Do_assignment (a, b)

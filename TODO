@@ -4,7 +4,6 @@ To do:
 
 * Promiwag_meta_packet: 
   - TCP packets
-  - Stage_2_stiel -> Stage_3_C
 
 * Promiwag_stiel.Verify:
   - recursivity for variables
@@ -21,8 +20,6 @@ To do:
   - procedures  and call statement
   - external procedures, defined with functions to transform parameters
   - Write_{int,...}_to_buffer i.e. a controled/typed asignement of *buffer.
-  - put types in epxressions?
-  - add log_printf statement
 
 * Promiwag_stiel: Future
   - full interpreter

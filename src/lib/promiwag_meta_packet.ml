@@ -434,6 +434,388 @@ module Parser_generator = struct
 
   end
 
+  module Stage_2_stiel = struct
+    
+    open Packet_structure
+
+    module Stiel_types = Promiwag_stiel
+    module Stiel = Stiel_types.Construct
+    module Stiel_to_str = Promiwag_stiel.To_string
+
+    type variable_creation_preference =
+      [`minimalistically (** Only when absolutely needed, this may mean 
+                             duplication of computations. *)
+      | `as_needed (** Normal behaviour: create variables when
+                       absolutely needed, to save intermediary
+                       results, and avoid duplication of
+                       computations. *)
+      | `for_all (** Create variables for everything that has to be
+                     compiled, in particular, all the typed
+                     expressions passed to [make_user_block] will be
+                     of the kind [`variable "name"]. *)
+      ]
+
+
+    exception Compilation_error of string
+
+    (* Internal representations: *)
+
+    type compiled =
+      | Stiel_variable of
+          Stiel_types.typed_variable * Stiel_types.typed_expression
+      | Stiel_expression of Stiel_types.typed_expression
+      | Stiel_not_compiled
+
+    type compiled_entity = {
+      value:   compiled;
+      offset:  compiled;
+      pointer: compiled;
+      size:    compiled;
+      stage_1_expression: Stage_1.stage_1_compiled_expression;
+      buffer_access: Stiel_types.int_expression * int;
+    }
+
+    type compiler = {
+      stage_1: Stage_1.result;
+      compiled_entities: (string, compiled_entity) Ht.t;
+      variable_creation_preference: variable_creation_preference;
+      mutable location: string option;
+    }
+        
+    let error_prefix = "Meta_packet.Parser_generator.Stage_2_stiel"
+      
+    let to_do s =
+      failwith (sprintf "%s; %s: NOT IMPLEMENTED" error_prefix s)
+
+    let fail compiler s =
+      let field_str = 
+        match compiler.location with | None -> "" | Some s -> s in
+      failwith (sprintf "%s%s: COMPILER-ERROR %s" error_prefix field_str s)
+
+    let error compiler s =
+      let field_str =
+        match compiler.location with | None -> "" | Some s -> s in
+      raise (Compilation_error (sprintf "%s%s: %s" error_prefix field_str s))
+
+
+    let set_location_field compiler field =
+      compiler.location <- Some (sprintf "{Compiling field  %s]" field)
+        
+    let get_stiel_expression compiler cc =
+      match cc with
+      | Stiel_variable (v, ev) -> Stiel.expr_var v
+      | Stiel_expression e -> e
+      | _ -> fail compiler "asking for a non-compiled part of entity"
+        
+    let get_stiel_dependency compiler needed_as name =
+      match Ht.find_opt compiler.compiled_entities name with
+      | None -> fail compiler "asking for a non-compiled entitie"
+      | Some ce ->
+        begin match needed_as with
+        | `value ->   get_stiel_expression compiler ce.value
+        | `offset ->  get_stiel_expression compiler ce.offset 
+        | `pointer -> get_stiel_expression compiler ce.pointer
+        | `size ->    get_stiel_expression compiler ce.size
+        end
+
+    let get_stiel_dependency_int_expression c n a =
+      Stiel.int_expr (get_stiel_dependency c n a)
+        
+
+    let int_op_of_size_op = function
+      | Op_add -> Stiel_types.Int_binop_add
+      | Op_sub -> Stiel_types.Int_binop_sub
+      | Op_mul -> Stiel_types.Int_binop_mul
+      | Op_div -> Stiel_types.Int_binop_div
+
+    let rec compile_size compiler needed_as = function
+      | Size_fixed s -> Stiel.uint s
+      | Size_variable v ->
+        if needed_as = `size then 
+          get_stiel_dependency_int_expression compiler `value v
+        else
+          get_stiel_dependency_int_expression compiler needed_as v
+      | Size_binary_expression (op, size_a, size_b) ->
+        Stiel_types.Int_expr_binary (int_op_of_size_op op,
+                                     compile_size compiler needed_as size_a,
+                                     compile_size compiler needed_as size_b)
+      | Size_alignment (i, s) ->
+        let c = compile_size compiler needed_as s in
+        (* `binary (`bin_add, c, `binary (`bin_mod, c, `literal_int i)) *)
+        Stiel.int (`Add (`E c, `Mod (`E c, `U i)))
+      | Size_offset_of v ->
+        get_stiel_dependency_int_expression compiler `offset v
+      | Size_unknown -> 
+        fail compiler "Trying to compile unknown size"
+
+    let offset compiler byte_offset =
+      Stiel.expr_unat (compile_size compiler `value byte_offset)
+        
+    let pointer_in_packet compiler packet byte_offset =
+      (* let packet_as_buffer =  *)
+      (*   `cast (`pointer `unsigned_char, *)
+      (*          Typed_expression.expression packet) in *)
+      let int_offset = compile_size compiler `value byte_offset in
+      Stiel.expr_pointer (Stiel.offset packet int_offset)
+      (* let the_address_at_offset = *)
+      (*   `binary (`bin_add, packet_as_buffer, c_offset) in *)
+      (* Typed_expression.create ~expression:the_address_at_offset *)
+      (*   ~c_type:(`pointer `unsigned_char) () *)
+        
+
+    let size  compiler final =
+      let size =
+        match final with
+        | Stage_1.Finally_get_integer (_, _, sz) -> sz
+        | Stage_1.Finally_get_string sz -> 
+          Size_binary_expression (Op_mul, sz, Size_fixed 8) in
+      let expression = 
+        compile_size compiler `size
+          (Stage_1.propagate_constants_in_size size) in
+      Stiel.expr_unat expression
+        
+    let value_type_of_size compiler = function
+      | Size_fixed i -> Stiel.fitted_uint  i
+      | _ ->
+        (* Emit warning ??? *)
+        error compiler "Cannot type value non-fixed size"
+
+    let value  compiler pointer bit_offset final =
+      let (endianism, signedism, sz) =
+        (* [`big | `little] * [`signed | `unsigned] * size *)
+        match final with
+        | Stage_1.Finally_get_integer (e,s,c) -> (e,s,c)
+        | Stage_1.Finally_get_string _ ->
+          error compiler "Cannot compile the 'value' of a string/payload" in
+      let stiel_type, type_size =
+        match signedism with
+        | `unsigned -> value_type_of_size compiler sz 
+        | `signed -> to_do "Signed integers" in
+      let get_integer e = Stiel.ufitted_at ~how:endianism ~size:type_size e in
+      let the_bits =
+        match bit_offset, sz with
+        | Size_fixed bofs, Size_fixed psz ->
+          begin match bofs + psz with
+          | 0 -> Stiel.uint 0
+          | s when 1 <= s && s <= 32 ->
+            let pointer_expr = Stiel.buffer_expr pointer in
+            let value_at_pointer = get_integer pointer_expr in
+            let aligned =
+              Stiel.bin_shr value_at_pointer
+                (Stiel.uint (type_size - bofs - psz)) in
+            Stiel.bin_and aligned (Stiel.ones psz)
+          | s ->
+            to_do (sprintf "Integer's offset + size = %d (>= 32)" s)
+          end
+        | _, _ ->
+          to_do "Integer's offset or size not resolved to constants"
+      in
+      (Stiel_types.Typed_int (stiel_type, the_bits), type_size)
+      
+    let compile_expression compiler packet expression = 
+      let (field, 
+           byte_offset,
+           bit_offset,
+           final,
+           dependencies,
+           needed_as_by) =
+        Stage_1.explode_stage_1_compiled_expression expression in
+      set_location_field compiler field;
+      let compile_value_to, compile_offset_to, 
+        compile_pointer_to, compile_size_to =
+        let value_needness, offset_needness, pointer_needness, size_needness =
+          Ls.fold_left ~f:(fun (v, o, p, s) nab ->
+            match nab with
+            | `value _ -> (1 + v, o, p, s)
+            | `offset _ -> (v, o + 1, p, s)
+            | `size _ -> (v, o, p, s + 1)
+            | `pointer _ -> (v, o, p + 1, s))
+            ~init:(0, 0, 0, 0) needed_as_by in
+        let comp n = match n, compiler.variable_creation_preference with
+          | 0, _ -> `none
+          | _, `for_all -> `variable
+          | 1, `as_needed -> `expression
+          | n, `minimalistically -> `expression
+          | n, `as_needed -> `variable
+        in
+        (comp value_needness, comp offset_needness,
+         comp pointer_needness, comp size_needness) in
+      let offset = offset compiler byte_offset in
+      let pointer = pointer_in_packet compiler packet byte_offset in
+
+      let compiled_offset =
+        match compile_offset_to with
+        | `none -> Stiel_not_compiled
+        | `expression -> Stiel_expression offset
+        | `variable ->
+          let stiel_var =
+            Stiel.typed_variable (sprintf "offset_of_%s" field)
+              (Stiel.kind_of_expr offset) in
+          Stiel_variable (stiel_var, offset)
+      in
+      let compiled_pointer =
+        match compile_pointer_to with
+        | `none -> Stiel_not_compiled
+        | `expression -> Stiel_expression pointer
+        | `variable ->
+          let stiel_var =
+            Stiel.typed_variable (sprintf "pointer_to_%s" field)
+              (Stiel.kind_of_expr pointer) in
+          Stiel_variable (stiel_var, pointer)
+      in
+      let compiled_size =
+        match compile_size_to with
+        | `none -> Stiel_not_compiled
+        | `expression -> Stiel_expression (size compiler final)
+        | `variable ->
+          let te = size compiler final in
+          let stiel_var =
+            Stiel.typed_variable (sprintf "size_of_%s" field)
+              (Stiel.kind_of_expr te) in
+          Stiel_variable (stiel_var, te)
+      in
+      (* Things related to the size are a bit redundant here: *)
+      let compiled_value, access_size =
+        match compile_value_to with
+        | `none -> (Stiel_not_compiled, 0)
+        | `expression ->
+          let value, size = value compiler pointer bit_offset final in
+          (Stiel_expression value, size)
+        | `variable ->
+          let value, size = value compiler pointer bit_offset final in
+          let stiel_var =
+            Stiel.typed_variable 
+              (sprintf "value_of_%s" field) (Stiel.kind_of_expr value) in
+          (Stiel_variable (stiel_var, value), size)
+      in
+      let entity =
+        {value = compiled_value;
+         offset = compiled_offset;
+         pointer = compiled_pointer;
+         size = compiled_size;
+         stage_1_expression = expression;
+         buffer_access = (Stiel.int_expr offset, access_size);} in
+      Ht.add compiler.compiled_entities field entity;
+      entity
+
+    let generate_constant_size_checks compiler entities
+        size_expression escape_block =
+      let maximal_constant_access=
+        Ls.fold_left ~init:(-1) entities ~f:(fun m e ->
+          match e.buffer_access with
+          | (Stiel_types.Int_expr_literal i64, s) ->
+            let i = Int64.to_int i64 in
+            max m (i + (s / 8))
+          | _ -> m) in
+      debug$ sprintf "Maximal: %d" maximal_constant_access;
+      let size = Stiel.int_expr size_expression in
+      let stop_now, size_is_literal =
+        match size with
+        | Stiel_types.Int_expr_literal i64 ->
+          ((Int64.compare i64 (Int64.of_int maximal_constant_access)) <= 0,
+           true)
+        | _ -> (false, false)
+      in
+      if stop_now then
+        error compiler
+          (sprintf  "Found statically that the packet size is inferior \
+                     to the maximal buffer access: %s < %d"
+             (Stiel_to_str.int_expression size) maximal_constant_access);
+      let statements =
+        if (maximal_constant_access <> -1) && (not size_is_literal) then
+          [ Stiel.cmt "Checking maximal_constant_access against packet size.";
+            Stiel.conditional ~statement_then:(Stiel.block escape_block)
+              (Stiel.le size (Stiel.uint maximal_constant_access))]
+        else [] in
+      statements
+
+
+
+    let generate_size_check compiler entity size_expr_opt escape_block =
+      match size_expr_opt, entity.buffer_access with
+      | None, _  
+      | _ , (Stiel_types.Int_expr_literal _, _) -> []
+      | Some size_expr, (offset_expr, type_bits) ->
+        let size = Stiel.int_expr size_expr in
+        let bufacc_expr = 
+          Stiel.sum [offset_expr; Stiel.uint (type_bits / 8)] in
+        let statements = 
+          [Stiel.cmt (sprintf 
+                        "Checking buffer-access of field %s against packet size."
+                        entity.stage_1_expression.Stage_1.s1_field);
+           Stiel.conditional (Stiel.le size bufacc_expr)
+             ~statement_then:(Stiel.block escape_block); ] in
+        statements
+        
+
+    let get_variables_and_size_checks
+        compiler entities size_expression_option escape_block  = 
+      let statements = ref [] in
+      Ls.iter (fun c ->
+        let check_stms = 
+          generate_size_check compiler c size_expression_option escape_block in
+        statements := !statements @ check_stms;
+        let add = function 
+          | Stiel_variable (v, e) -> 
+            statements := !statements @ [Stiel.declare v ; Stiel.assign v e];
+          | _ -> ()
+        in
+        add c.value;
+        add c.offset;
+        add c.pointer;
+        add c.size;
+      ) entities;
+      !statements
+
+    (* 'Exported' function: *)
+
+    let informed_block ~stage_1
+        ?(create_variables:variable_creation_preference=`as_needed)
+        ~(packet:Stiel_types.typed_expression)
+        ?(packet_size:Stiel_types.typed_expression option)
+        ?(size_error_block=[Stiel.cmt "Default size_error_block."])
+        ~(make_user_block: Stiel_types.typed_expression list -> 
+          Stiel_types.statement list) () =
+
+      let compiler = 
+        {stage_1 = stage_1; variable_creation_preference = create_variables;
+         compiled_entities = Ht.create 42; location = None} in
+     
+      let ordered_entities =
+        Ls.map compiler.stage_1.Stage_1.compiled_expressions 
+          ~f:(compile_expression compiler (Stiel.buffer_expr packet)) in
+
+      compiler.location <- 
+        Some "{Generating constant size/buffer-access checks}";
+      let constant_size_checks =
+        match packet_size with
+        | None -> []
+        | Some var ->
+          generate_constant_size_checks
+            compiler ordered_entities var size_error_block in
+
+      compiler.location <- Some "{Generating declarations, assignments, and \
+                                  size/buffer-access checks}";
+      let declarations_assignments_size_checks = 
+        get_variables_and_size_checks compiler ordered_entities 
+          packet_size size_error_block in
+      
+      compiler.location <- Some "{Generating user_expressions}";
+      let user_expressions =
+        Ls.map compiler.stage_1.Stage_1.request_list
+          ~f:(function
+            | `value f   -> get_stiel_dependency compiler `value f
+            | `offset f  -> get_stiel_dependency compiler `offset f
+            | `pointer f -> get_stiel_dependency compiler `pointer f
+            | `size f    -> get_stiel_dependency compiler `size f) in
+      let user_statements = make_user_block user_expressions in
+      (constant_size_checks 
+       @ declarations_assignments_size_checks
+       @ user_statements)
+  end
+
+
+
   module Stage_2_C = struct
     
     module Platform = Promiwag_platform

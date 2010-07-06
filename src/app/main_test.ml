@@ -216,7 +216,43 @@ let test_packet_parsing () =
   let stage_1 =
     Stage_one.compile_with_dependencies ~max_depth:10 ~packet_format request in
 
-  printf "STAGE 1:\n%s\n" (Stage_one.dump stage_1);
+  printf "STAGE 1: done\n"; (* (Stage_one.dump stage_1); *)
+
+  let module To_stiel = Promiwag.Meta_packet.Parser_generator.Stage_2_stiel in
+  let module Stiel = Promiwag.Stiel.Construct in
+  let module Stiel_to_str = Promiwag.Stiel.To_string in
+  let module Stiel_to_C = Promiwag.Stiel.To_C in
+  let packet_var = Stiel.var_sized_buffer ~unique:false 1000 "user_packet" in
+  let packet =  Stiel.expr_var packet_var in
+  let packet_size_var = Stiel.var_unat ~unique:false "user_packet_size" in
+  let packet_size = Stiel.expr_var packet_size_var in
+  let make_user_block l =
+    (Stiel.cmt "User Block")
+    :: (Ls.map l ~f:(fun te ->
+      Stiel.log "@expr is (@int, @hex)\n" [te; te; te;])) 
+  in
+
+  let the_whole_stiel = 
+    (Stiel.declare packet_var)
+    :: (Stiel.declare packet_size_var)
+    :: (Stiel.cmt "Informed block:")
+    :: (To_stiel.informed_block
+          ~stage_1 ~packet ~packet_size ~make_user_block ()) in
+
+  let c_from_stiel = 
+    let compiler = Stiel_to_C.compiler ~platform:Promiwag.Platform.default in
+    (Stiel_to_C.block compiler (Stiel.block the_whole_stiel)) in
+
+  let main, _, _ = 
+    C.Construct.standard_main c_from_stiel in
+    (*ring_tree.print (C2StrTree.file  [C.Function.definition main]);*)
+  
+  let out = open_out "/tmp/parsing_stiel_test.c" in
+  String_tree.print ~out (C2StrTree.file [C.Function.definition main]);
+  close_out out;
+ 
+  printf "STAGE 2 (with STIEL) done: /tmp/parsing_stiel_test.c\n";
+
 
   let module Stage_two = Promiwag.Meta_packet.Parser_generator.Stage_2_C in
   let packet_var =
@@ -253,7 +289,8 @@ let test_packet_parsing () =
   String_tree.print ~out (C2StrTree.file [C.Function.definition main]);
   close_out out;
 
-  printf "gcc /tmp/parsingtest.c -o /tmp/parsingtest && /tmp/parsingtest";
+  printf "STAGE 2 (Direct to C): done:\n\
+         gcc /tmp/parsingtest.c -o /tmp/parsingtest && /tmp/parsingtest";
   printf "\n";
   ()
 
