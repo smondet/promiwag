@@ -618,17 +618,25 @@ module To_C = struct
           | "@hex" -> snd ux 
           | "@expr" -> "%s"
           | _ -> fail compiler "Do_log: should not be here (type_fmt)" in
-        let result = 
-          Ls.find_opt ["@int"; "@hex"; "@expr" ] ~f:(fun sub ->
-            let by = type_fmt sub in
-            let found, new_str = Str.replace ~str:!fmt ~sub ~by in
-            if found then (fmt := new_str; true)
-            else false) in
-        match result with
-        | None -> fail compiler "Do_log: format does not match arg list"
-        | Some "@int" | Some "@hex" -> typed_expression compiler te
-        | Some "@expr" -> `literal_string (To_string.typed_expression te)
-        | Some s -> 
+        let try_the_patterns =
+          Ls.map  ["@int"; "@hex"; "@expr" ]  ~f:(fun pat ->
+            let index = try Str.find !fmt pat with e -> max_int in
+            (index, pat)) in
+        let _, the_first =
+          Ls.fold_left ~f:(fun (cur_index, cur_pat) (index, pat) ->
+            if cur_index > index then (index, pat)
+            else (cur_index, cur_pat))
+            ~init:(max_int, "none") try_the_patterns in
+        let sub, by = the_first, (type_fmt the_first) in
+        match the_first with
+        | "none" -> fail compiler "Do_log: format does not match arg list"
+        | "@int" | "@hex" -> 
+          fmt := snd (Str.replace ~str:!fmt ~sub ~by);
+          typed_expression compiler te
+        | "@expr" ->
+          fmt := snd (Str.replace ~str:!fmt ~sub ~by);
+          `literal_string (To_string.typed_expression te)
+        |  s -> 
           fail compiler (sprintf "Do_log: should not be here (arg_list): %s" s)
       ) in
     fmt := (Str.multi_replace ~str:!fmt ~sub:escape ~by:"@");

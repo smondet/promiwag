@@ -229,7 +229,7 @@ let test_packet_parsing () =
   let make_user_block l =
     (Stiel.cmt "User Block")
     :: (Ls.map l ~f:(fun te ->
-      Stiel.log "@expr is (@int, @hex)\n" [te; te; te;])) 
+      Stiel.log "Expr \"@expr\" is (@int, @hex)\n" [te; te; te;])) 
   in
 
   let the_whole_stiel = 
