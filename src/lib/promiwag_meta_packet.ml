@@ -445,12 +445,14 @@ module Parser_generator = struct
     type variable_creation_preference =
       [`minimalistically (** Only when absolutely needed, this may mean 
                              duplication of computations. *)
-      | `as_needed (** Normal behaviour: create variables when absolutely
-                       needed, and to save intermediary results, and avoid
-                       duplication of computations. *)
-      | `for_all (** Create variables for everything that has to be compiled,
-                     in particular, all the typed expressions passed to
-                     [make_user_block] will be [`variables name]. *)
+      | `as_needed (** Normal behaviour: create variables when
+                       absolutely needed, to save intermediary
+                       results, and avoid duplication of
+                       computations. *)
+      | `for_all (** Create variables for everything that has to be
+                     compiled, in particular, all the typed
+                     expressions passed to [make_user_block] will be
+                     of the kind [`variable "name"]. *)
       ]
 
 

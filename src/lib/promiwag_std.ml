@@ -1,6 +1,7 @@
 
 include Printf
-(* include Promiwag_Yaboon_PolyComp.CompAndOveridePoly *)
+
+include Promiwag_Yaboon_PolyComp.CompAndNoPolyPhy
 
 
 

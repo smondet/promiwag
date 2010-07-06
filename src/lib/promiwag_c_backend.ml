@@ -393,16 +393,7 @@ module To_big_string(Big_string: BIG_STRING) = struct
     
 end
 
-module Unique = struct
 
-  let var_count = ref 0
-
-  let name n = 
-    incr var_count;
-    Printf.sprintf "%s_%d" n !var_count
-
-end
-  
 module Typed_expression = struct
 
   type t = {

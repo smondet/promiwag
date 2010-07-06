@@ -2,41 +2,35 @@
 To do:
 
 
-* start using PolyComp
-* Promiwag_meta_packet: heavy testing (TCP and UDP packets)
-? Promiwag_stiel: use Genlex for expressions
-* Promiwag_stiel: interpret
-* Promiwag_stiel: Write_{int,...}_to_buffer i.e. a controled/typed
-  asignement of *buffer.
+* Promiwag_meta_packet: 
+  - TCP packets
+  - Stage_2_stiel -> Stage_3_C
 
 * Promiwag_stiel.Verify:
   - recursivity for variables
   - variables defined twice
-  - retrive checks to do on buffer accesses
+  - retrive checks to do on buffer accesses, and divisions by zero
 
 * Promiwag_stiel: Integer management
   - module SafeInt64, with all bounds checkings
   - check that ints are positive
 
-* Promiwag_stiel:
+* Promiwag_stiel: Language
   - add the "Exception" int,bool expressions (?)
-  AND/OR
-  - look_for_divisions which retrieves all denominators
-  and generates checks
+  - pure functions and call in expressions
+  - procedures  and call statement
+  - external procedures, defined with functions to transform parameters
+  - Write_{int,...}_to_buffer i.e. a controled/typed asignement of *buffer.
+
+* Promiwag_stiel: Future
+  - full interpreter
+  - export to Coq or ?
+  - float expressions
 
 * use Format, or EasyFormat for printing C and Stiel
 
-
-
 + a while+switch manager for parsing encapsulations of packets
-
 
 ? Promiwag_platform: Generate an "inspector.c" piece of code which
   retrives endianism, sizeof's, etc ... as OCaml code ...
 
-? A module _intermediate_language => Promiwag_stiel
-  - C-like semantics but much simpler
-  - without need to declare variables at the beginning
-  - interpretable/optimisable (=> formally verifiable?)
-  - types: int8, int16, int32, int64, float (= double),
-           buffer (pointer + size)
