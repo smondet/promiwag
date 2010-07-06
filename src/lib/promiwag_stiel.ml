@@ -60,8 +60,8 @@ and int_expression =
   | Int_expr_literal of int64
 
 and buffer_expression =
-  | Buf_expr_variable of buffer_variable
-  | Buf_expr_offset of buffer_expression * int_expression
+  | Buffer_expr_variable of buffer_variable
+  | Buffer_expr_offset of buffer_expression * int_expression
 
 and bool_expression =
   | Bool_expr_true        
@@ -86,6 +86,103 @@ type statement =
   | Do_declare_var_int     of integer_type *    int_variable
   | Do_declare_var_bool    of                  bool_variable
   | Do_declare_var_buffer  of  buffer_type * buffer_variable
+
+module Int_expression = struct
+
+  type t = {
+    expression: int_expression;
+    int_type: integer_type;
+  }
+  let create int_type expression =
+    {int_type = int_type; expression = expression}
+  let expression t = t.expression
+  let int_type t = t.int_type
+
+end
+
+module Bool_expression = struct
+
+  type t = bool_expression
+  let create t = t
+  let expression t = t
+
+end
+
+module Buffer_expression = struct
+
+  type t = {
+    expression: buffer_expression;
+    buffer_type: buffer_type;
+  }
+  let create buffer_type expression =
+    {buffer_type = buffer_type; expression = expression}
+  let expression t = t.expression
+  let buffer_type t = t.buffer_type
+
+end
+
+module Int_variable = struct
+
+  type t = {
+    name: string;
+    int_type: integer_type;
+  }
+  let create      ?(unique=true) name itype =
+    { name = if unique then Unique.name name else name; int_type = itype }
+  let uint8       ?(unique=true) name  = create ~unique name  Type_uint8      
+  let uint16      ?(unique=true) name  = create ~unique name  Type_uint16     
+  let uint32      ?(unique=true) name  = create ~unique name  Type_uint32     
+  let uint64      ?(unique=true) name  = create ~unique name  Type_uint64     
+  let uint_native ?(unique=true) name  = create ~unique name  Type_uint_native
+
+  let declaration t =  Do_declare_var_int    (t.int_type, t.name)
+  let name t = t.name
+
+  let assignment t e = Do_assign_int (t.name, e)
+
+  let int_expression t = 
+    Int_expression.create t.int_type (Int_expr_variable t.name)
+
+end
+
+module Bool_variable = struct
+
+  type t = {
+    name: string;
+  }
+  let create ?(unique=true) name =
+    { name = if unique then Unique.name name else name }
+  let declaration t =  Do_declare_var_bool t.name
+  let name t = t.name
+  let assignment t e = Do_assign_bool (t.name, e)
+  let bool_expression t = 
+    Bool_expression.create (Bool_expr_variable t.name)
+
+end
+
+module Buffer_variable = struct
+
+  type t = {
+    name: string;
+    buffer_type: buffer_type;
+  }
+  let create ?(unique=true) name btype =
+    { name = if unique then Unique.name name else name;
+      buffer_type = btype }
+  let buffer ?size ?(unique=true) name =
+    let btype =
+      match size with None -> Type_pointer | Some s -> Type_sized_buffer s in
+    create ~unique name btype
+
+
+  let declaration t =  Do_declare_var_buffer (t.buffer_type, t.name)
+  let name t = t.name
+  let assignment t e = Do_assign_buffer (t.name, e)
+
+  let buffer_expression t = 
+    Buffer_expression.create t.buffer_type (Buffer_expr_variable t.name)
+
+end
 
 
 module Construct = struct
@@ -154,8 +251,8 @@ module Construct = struct
 
 
  let rec buffer = function
-   | `Var v -> Buf_expr_variable v
-   | `Offset (b, i) -> Buf_expr_offset (buffer b, int i)
+   | `Var v -> Buffer_expr_variable v
+   | `Offset (b, i) -> Buffer_expr_offset (buffer b, int i)
 
   let rec bool = function
     | `T | `True  -> Bool_expr_true
@@ -252,8 +349,8 @@ module To_string = struct
     | Int_expr_literal        i64     -> spr "%s" (Int64.to_string i64)
 
   and buffer_expression = function
-    | Buf_expr_variable v         -> spr "%s" (buffer_variable v)
-    | Buf_expr_offset (bex, iex)  -> 
+    | Buffer_expr_variable v         -> spr "%s" (buffer_variable v)
+    | Buffer_expr_offset (bex, iex)  -> 
       spr "(%s +> %s)" (buffer_expression bex) (int_expression iex)
 
   and bool_expression = function
@@ -401,8 +498,8 @@ module To_C = struct
     | Int_expr_literal        i64     -> `literal_int64 i64
 
   and buffer_expression compiler = function
-    | Buf_expr_variable v         -> `variable (buffer_variable v)
-    | Buf_expr_offset (bex, iex)  -> 
+    | Buffer_expr_variable v         -> `variable (buffer_variable v)
+    | Buffer_expr_offset (bex, iex)  -> 
       `binary (`bin_add, buffer_expression compiler bex,
                int_expression compiler iex)
 
@@ -630,8 +727,8 @@ module Transform = struct
       | (Int_expr_literal _) as original -> original
 
     and buffer_expression environment = function
-      | Buf_expr_variable _ as original -> original
-      | Buf_expr_offset (_, _) as original -> original
+      | Buffer_expr_variable _ as original -> original
+      | Buffer_expr_offset (_, _) as original -> original
         
     and bool_expression environment expr =
       let allowed e =
