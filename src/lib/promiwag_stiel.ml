@@ -35,12 +35,7 @@ type bool_binary_operator =
   | Bool_binop_equal_or_greater
   | Bool_binop_equal_or_lower
 
-
-type int_variable = string
-
-type bool_variable = string
-
-type buffer_variable = string
+type variable_name = string
 
 type get_int_at_buffer =
   | Get_native of integer_type
@@ -55,22 +50,37 @@ type buffer_type =
 and int_expression =
   | Int_expr_unary of int_unary_operator * int_expression
   | Int_expr_binary of int_binary_operator * int_expression * int_expression
-  | Int_expr_variable of int_variable
+  | Int_expr_variable of variable_name
   | Int_expr_buffer_content of get_int_at_buffer * buffer_expression
   | Int_expr_literal of int64
 
 and buffer_expression =
-  | Buffer_expr_variable of buffer_variable
+  | Buffer_expr_variable of variable_name
   | Buffer_expr_offset of buffer_expression * int_expression
 
 and bool_expression =
   | Bool_expr_true        
   | Bool_expr_false       
-  | Bool_expr_variable of bool_variable
+  | Bool_expr_variable of variable_name
   | Bool_expr_and of bool_expression * bool_expression
   | Bool_expr_or of bool_expression * bool_expression
   | Bool_expr_not of bool_expression
   | Bool_expr_binary_int of bool_binary_operator * int_expression * int_expression
+
+type typed_expression =
+  | Typed_int of integer_type * int_expression
+  | Typed_bool of bool_expression
+  | Typed_buffer of buffer_type * buffer_expression
+
+type typed_variable_kind =
+  | Kind_int of integer_type
+  | Kind_bool
+  | Kind_buffer of buffer_type
+
+type typed_variable = {
+  name: variable_name;
+  kind: typed_variable_kind;
+}  
 
 type statement =
   | Do_nothing
@@ -80,13 +90,10 @@ type statement =
   | Do_block of statement list
   | Do_if of bool_expression * statement * statement
   | Do_while_loop of bool_expression * statement
-  | Do_assign_int of int_variable * int_expression
-  | Do_assign_buffer of buffer_variable * buffer_expression
-  | Do_assign_bool of bool_variable * bool_expression
-  | Do_declare_var_int     of integer_type *    int_variable
-  | Do_declare_var_bool    of                  bool_variable
-  | Do_declare_var_buffer  of  buffer_type * buffer_variable
-
+  | Do_assignment  of variable_name * typed_expression
+  | Do_declaration of typed_variable
+  | Do_log of string * typed_expression list
+(*
 module Int_expression = struct
 
   type t = {
@@ -183,7 +190,7 @@ module Buffer_variable = struct
     Buffer_expression.create t.buffer_type (Buffer_expr_variable t.name)
 
 end
-
+*)
 
 module Construct = struct
 
@@ -200,9 +207,7 @@ module Construct = struct
 
   let while_loop c s = Do_while_loop (c, s)
 
-  let assign_int    a b  = Do_assign_int    (a, b)
-  let assign_buffer a b  = Do_assign_buffer (a, b)
-  let assign_bool   a b  = Do_assign_bool   (a, b)
+  let assignment a b  = Do_assignment (a, b)
 
   let cmt s = Do_comment s
 
@@ -272,7 +277,7 @@ module Construct = struct
     | `Ge (a, b) -> Bool_expr_binary_int (Bool_binop_equal_or_greater , int a, int b)
     | `Le (a, b) -> Bool_expr_binary_int (Bool_binop_equal_or_lower   , int a, int b)
 
-  let declare = function
+(*  let declare = function
     | `Sized_buffer (v, i) -> Do_declare_var_buffer (Type_sized_buffer   i, v)
     | `Pointer v           -> Do_declare_var_buffer (Type_pointer         , v)
     (* | `Sizable s -> Type_sizable_buffer s *)
@@ -283,6 +288,7 @@ module Construct = struct
     | `Unat v -> Do_declare_var_int (Type_uint_native , v)
     | `Bool v -> Do_declare_var_bool v
 
+*)
 
 end
 
@@ -327,10 +333,7 @@ module To_string = struct
     | Get_big_endian     it -> spr "get-bigend-%s" (integer_type it)
     | Get_little_endian  it -> spr "get-ltlend-%s" (integer_type it)
 
-
-  let int_variable    s = s
-  let bool_variable   s = s
-  let buffer_variable s = s
+  let variable_name s = spr "var:%s" s
 
   let rec buffer_type = function
     | Type_sized_buffer   i -> spr "buffer-of-size-[%d]" i
@@ -343,20 +346,20 @@ module To_string = struct
     | Int_expr_binary (op, ea, eb)    -> 
       spr "(%s %s %s)" (int_expression ea)
         (int_binary_operator op) (int_expression eb)
-    | Int_expr_variable  v            -> spr "%s" (int_variable v)
+    | Int_expr_variable  v            -> spr "%s" (variable_name v)
     | Int_expr_buffer_content (t, ex) ->
       spr "(%s @ %s)" (get_int_at_buffer t) (buffer_expression ex)
     | Int_expr_literal        i64     -> spr "%s" (Int64.to_string i64)
 
   and buffer_expression = function
-    | Buffer_expr_variable v         -> spr "%s" (buffer_variable v)
+    | Buffer_expr_variable v         -> spr "%s" (variable_name v)
     | Buffer_expr_offset (bex, iex)  -> 
       spr "(%s +> %s)" (buffer_expression bex) (int_expression iex)
 
   and bool_expression = function
     | Bool_expr_true   -> "True"     
     | Bool_expr_false  -> "False"     
-    | Bool_expr_variable v -> spr "%s" (bool_variable v)
+    | Bool_expr_variable v -> spr "%s" (variable_name v)
     | Bool_expr_and        (a, b)     ->
       spr "(%s And %s)" (bool_expression a) (bool_expression b)
     | Bool_expr_or         (a, b)     ->
@@ -365,6 +368,16 @@ module To_string = struct
     | Bool_expr_binary_int (op, a, b) ->
       spr "(%s %s %s)" (int_expression a) 
         (bool_binary_operator op) (int_expression b)
+
+  let typed_expression = function
+    | Typed_int    (t, e) -> spr "%s  :%s" (integer_type t) (int_expression e)
+    | Typed_bool       e  -> spr "%s  :bool" (bool_expression e)
+    | Typed_buffer (t, e) -> spr "%s  :%s" (buffer_type t) (buffer_expression e)
+
+  let typed_variable_kind = function
+    | Kind_int     t -> spr "%s" (integer_type t)
+    | Kind_bool      ->     "bool"
+    | Kind_buffer  t -> spr "%s" (buffer_type t)
 
   let rec statement ?(indent=0) =
     let cur_indent = String.make indent ' ' in
@@ -384,15 +397,13 @@ module To_string = struct
     | Do_while_loop    (e, a)    -> 
       spr "%sWhile [%s] Do\n%s\n" 
         cur_indent (bool_expression e) (statement ~indent a)
-    | Do_assign_int    (a, b) -> assign (int_variable    a) (int_expression    b)
-    | Do_assign_buffer (a, b) -> assign (buffer_variable a) (buffer_expression b)
-    | Do_assign_bool   (a, b) -> assign (bool_variable   a) (bool_expression   b)
-    | Do_declare_var_int    (t, v) -> 
-      spr "%sDeclare %s as a %s;\n" cur_indent (int_variable v) (integer_type t)
-    | Do_declare_var_bool       v  -> 
-      spr "%sDeclare %s as a bool;\n" cur_indent (bool_variable v)
-    | Do_declare_var_buffer (t, v) ->
-      spr "%sDeclare %s as a %s;\n" cur_indent (buffer_variable v) (buffer_type t)
+    | Do_assignment  (a, b) -> assign (variable_name    a) (typed_expression b)
+    | Do_declaration t -> 
+      spr "%sDeclare %s of type: %s;\n" cur_indent
+        (variable_name t.name) (typed_variable_kind t.kind)
+    | Do_log (f, l) ->
+      spr "%sLog (format: %s) [%s];\n" cur_indent f 
+        (Str.concat "; " (Ls.map typed_expression l))
 
 
 end
@@ -477,9 +488,7 @@ module To_C = struct
       | Get_big_endian     it -> get_int big_endianise it
       | Get_little_endian  it -> todo "Get_little_endian"
 
-  let int_variable    s = s
-  let bool_variable   s = s
-  let buffer_variable s = s
+  let variable_name s = s
 
   let rec buffer_type compiler = function
     | Type_sized_buffer   i -> `array ([`literal_int i], `unsigned_char)
@@ -492,13 +501,13 @@ module To_C = struct
     | Int_expr_binary (op, ea, eb)    -> 
       `binary (int_binary_operator compiler op,
                int_expression compiler ea, int_expression compiler eb)
-    | Int_expr_variable  v            -> `variable (int_variable v)
+    | Int_expr_variable  v            -> `variable (variable_name v)
     | Int_expr_buffer_content (t, ex) ->
       get_int_at_buffer compiler t (buffer_expression compiler ex)
     | Int_expr_literal        i64     -> `literal_int64 i64
 
   and buffer_expression compiler = function
-    | Buffer_expr_variable v         -> `variable (buffer_variable v)
+    | Buffer_expr_variable v         -> `variable (variable_name v)
     | Buffer_expr_offset (bex, iex)  -> 
       `binary (`bin_add, buffer_expression compiler bex,
                int_expression compiler iex)
@@ -506,7 +515,7 @@ module To_C = struct
   and bool_expression compiler = function
     | Bool_expr_true   -> `literal_int 1
     | Bool_expr_false  -> `literal_int 0
-    | Bool_expr_variable v -> `variable (bool_variable v)
+    | Bool_expr_variable v -> `variable (variable_name v)
     | Bool_expr_and        (a, b)     ->
       `binary (`bin_and, bool_expression compiler a,
                bool_expression compiler b)
@@ -526,9 +535,7 @@ module To_C = struct
     let add d v = decls := d :: !decls; vars := v :: !vars; false in
     let non_decls =
       Ls.filter stlist ~f:(function
-        | Do_declare_var_int    (t, v) as d -> add d v
-        | Do_declare_var_bool       v  as d -> add d v
-        | Do_declare_var_buffer (t, v) as d -> add d v
+        | Do_declaration typed_var as d -> add d typed_var.name
         | _ -> true) in
     let nb_vars = Ls.length !vars in
     let nb_unique_vars = Ls.length (Ls.unique !vars) in
@@ -537,6 +544,19 @@ module To_C = struct
     else
       fail compiler "There are two variables with the same name \
                      in this block."
+
+  let typed_expression compiler = function 
+    | Typed_int    (t, e) -> `cast (integer_type compiler t,
+                                    int_expression compiler e)
+    | Typed_bool       e  -> `cast (`signed_int, bool_expression compiler e)
+    | Typed_buffer (t, e) -> `cast (buffer_type compiler Type_pointer, 
+                                    buffer_expression compiler e)
+      
+  let typed_variable_kind compiler = function
+    | Kind_int    t -> integer_type compiler t
+    | Kind_bool     -> `signed_int
+    | Kind_buffer t -> buffer_type compiler t
+
 
   let rec block compiler = function
     | Do_block          e        ->
@@ -557,22 +577,15 @@ module To_C = struct
                     statement compiler b)
     | Do_while_loop    (e, a)    -> 
       `while_loop (bool_expression compiler e, statement compiler a)
-    | Do_assign_int    (a, b) ->
-      assign (int_variable    a) (int_expression compiler    b)
-    | Do_assign_buffer (a, b) ->
-      assign (buffer_variable a) (buffer_expression compiler b)
-    | Do_assign_bool   (a, b) -> 
-      assign (bool_variable   a) (bool_expression compiler   b)
-    | Do_declare_var_int    _
-    | Do_declare_var_bool   _
-    | Do_declare_var_buffer _ -> 
+    | Do_assignment (a, b) ->
+      assign (variable_name a) (typed_expression compiler b)
+    | Do_declaration _ -> 
       fail compiler "Calling 'statement' on a declaration"
+    | Do_log (_, _) -> todo "Do_log"
   and declaration compiler = function
-    | Do_declare_var_int    (t, v) ->
-      `uninitialized (v, integer_type compiler t)
-    | Do_declare_var_bool       v  -> `uninitialized (v, `signed_int)
-    | Do_declare_var_buffer (t, v) -> 
-      `uninitialized (v, buffer_type compiler t)
+    | Do_declaration typed_var ->
+      `uninitialized (typed_var.name,
+                      typed_variable_kind compiler typed_var.kind)
     | _ -> fail compiler "Calling 'declaration' on a non-declaration"
 
 end
@@ -582,8 +595,8 @@ module Transform = struct
 
   module Partial_evaluation = struct
     type environment = {
-      int_variables: (int_variable, int_expression) Environment.t;
-      bool_variables: (bool_variable, bool_expression) Environment.t;
+      int_variables:  (variable_name, int_expression) Environment.t;
+      bool_variables: (variable_name, bool_expression) Environment.t;
       use_purity: bool;
       do_symbolic_equality: bool;
     }
@@ -812,9 +825,7 @@ module Verify = struct
   let check_block_for_double_vriables compiler stlist =
     let vars = ref [] in
     Ls.iter stlist ~f:(function
-      | Do_declare_var_int    (t, v)  -> vars := v :: !vars;
-      | Do_declare_var_bool       v   -> vars := v :: !vars;
-      | Do_declare_var_buffer (t, v)  -> vars := v :: !vars;
+      | Do_declaration t -> vars := t.name :: !vars;
       | _ -> ());
     let nb_vars = Ls.length !vars in
     let nb_unique_vars = Ls.length (Ls.unique !vars) in

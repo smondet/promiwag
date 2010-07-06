@@ -21,6 +21,8 @@ To do:
   - procedures  and call statement
   - external procedures, defined with functions to transform parameters
   - Write_{int,...}_to_buffer i.e. a controled/typed asignement of *buffer.
+  - put types in epxressions?
+  - add log_printf statement
 
 * Promiwag_stiel: Future
   - full interpreter
