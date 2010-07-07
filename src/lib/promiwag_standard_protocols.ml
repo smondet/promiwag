@@ -23,7 +23,7 @@ let ethernet_format =
     MPS.field "crc32" (MPS.fixed_int 32);
   ]
 let ethernet_transitions =
-  PS.switch ethernet_name "ethertype_length" [
+  PS.transitions_switch ethernet_name "ethertype_length" [
     PS.case_int_value 0x800 ipv4_name;
     PS.case_int_value 0x806 arp_name;
     PS.case_int_value 0x86dd ipv6_name;
@@ -93,7 +93,7 @@ let ipv4_format =
     (* byte[length-(ihl*4)]; *)
   ]
 let ipv4_transitions =
-  PS.switch ipv4_name "protocol" [
+  PS.transitions_switch ipv4_name "protocol" [
     PS.case_int_value  1 icmp_name;
     PS.case_int_value  2 igmp_name;
     PS.case_int_value  6 tcp_name;
