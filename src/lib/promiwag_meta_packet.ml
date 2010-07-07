@@ -99,6 +99,8 @@ module Packet_database = struct
 
   type t = (string, Packet_structure.packet) Ht.t
 
+  let empty () = Ht.create 42
+
   let add t (name, packet) = Ht.add t name (name, packet)
 
   let of_list l = 
