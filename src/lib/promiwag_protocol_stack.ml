@@ -34,7 +34,7 @@ type case =
 type transitions =
   | Switch of Stiel_types.int_expression * case list
   | Atomic_list of atomic_transition list
-
+  | No_transition
   
 type protocol_transitions = {
   packet_format: string;
@@ -77,8 +77,11 @@ let case_int_value int_value next_format =
 let case_int_range bottom top next_format =
   Case_int_range (Stiel.uint bottom, Stiel.uint top, next_format)
 
-let switch format_name int_expression cases =
+let switch format_name field cases =
   { packet_format = format_name;
-    transitions = Switch (int_expression, cases); }
+    transitions = Switch (Stiel.int_var field, cases); }
 
+let empty_transitions format_name = 
+  { packet_format = format_name;
+    transitions = No_transition; }
 

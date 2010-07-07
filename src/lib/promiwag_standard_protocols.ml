@@ -1,22 +1,36 @@
 module MPS = Promiwag_meta_packet.Packet_structure
+module Protocol_stack = Promiwag_protocol_stack
+module PS = Promiwag_protocol_stack
 
-let ethernet =
+
+let ethernet_name = "Ethernet"
+let ipv4_name = "IPv4"
+let arp_name = "ARP"
+let ipv6_name = "IPv6"
+let tcp_name = "TCP"
+let udp_name = "UDP"
+let dccp_name = "DCCP" 
+let icmp_name = "ICMP"
+let igmp_name = "IGMP"
+
+let ethernet_format =
   let mac_addr_type = MPS.fixed_string 6 in
-  MPS.packet_format "Ethernet" [
+  MPS.packet_format ethernet_name [
     MPS.field "dest_addr" mac_addr_type;
     MPS.field "src_addr" mac_addr_type;
     MPS.field "ethertype_length" (MPS.fixed_int 16);
-      (* value(offset(end_of_packet)-offset(length)); *)
-      (*      MPS.switch "ethertype_length" [
-              MPS.case_uint 0x800 [ MPS.payload ~packet_type:"IPv4" () ];
-              MPS.case_uint 0x806 [ MPS.payload ~packet_type:"Arp" () ];
-              MPS.case_uint 0x86dd [ MPS.payload ~packet_type:"IPv6" ()];
-              MPS.case_range 46 1500 [
-              MPS.payload ~size_variable:"ethertype_length" ()];
-              ]; *)
     MPS.payload ~name:"eth_payload" ();
     MPS.field "crc32" (MPS.fixed_int 32);
   ]
+let ethernet_transitions =
+  PS.switch ethernet_name "ethertype_length" [
+    PS.case_int_value 0x800 ipv4_name;
+    PS.case_int_value 0x806 arp_name;
+    PS.case_int_value 0x86dd ipv6_name;
+    PS.case_int_range 46 1500 "EthernetUnknownPayload_46-1500";
+  ]
+    
+
 (*
     version: bit[4] const(4);
     ihl: bit[4] min(5) value(offset(options) / 4);
@@ -45,8 +59,8 @@ let ethernet =
     header_end: label;
     data: byte[length-(ihl*4)];
 *)
-let ipv4 =
-  MPS.packet_format "IPv4" [
+let ipv4_format =
+  MPS.packet_format ipv4_name [
     MPS.fixed_int_field "version" 4;
     MPS.fixed_int_field "ihl" 4;
     MPS.fixed_int_field "tos_precedence" 3;
@@ -78,20 +92,17 @@ let ipv4 =
       ();
     (* byte[length-(ihl*4)]; *)
   ]
+let ipv4_transitions =
+  PS.switch ipv4_name "protocol" [
+    PS.case_int_value  1 icmp_name;
+    PS.case_int_value  2 igmp_name;
+    PS.case_int_value  6 tcp_name;
+    PS.case_int_value 17 udp_name;
+    PS.case_int_value 33 dccp_name;
+  ]
 
-(*
-ipv4.protocol: 17
-packet udp {
-    source_port: uint16;
-    dest_port: uint16;
-    length: uint16 min(8) value(offset(total_length));
-    checksum: uint16 default(0);
-    data: byte[length - offset(checksum)];
-    total_length: label;
-}
-*)
-let udp = 
-  MPS.packet_format "UDP" [
+let udp_format = 
+  MPS.packet_format udp_name [
     MPS.fixed_int_field "src_port" 16;
     MPS.fixed_int_field "dst_port" 16;
     MPS.fixed_int_field "length" 16;
@@ -101,7 +112,7 @@ let udp =
       ~name:"udp_payload"
       ();
   ]
-
+let udp_transitions = PS.empty_transitions udp_name
 
 let test =
   MPS.packet_format "Test" [
@@ -127,5 +138,13 @@ let test =
 
   ]
 
-let whole_database =
-  Promiwag_meta_packet.Packet_database.of_list [ test; ethernet; ipv4 ]
+let format_database =
+  Promiwag_meta_packet.Packet_database.of_list 
+    [ ethernet_format; ipv4_format; udp_format ]
+
+let internet_stack_from_ethernet () =
+  let s = Protocol_stack.empty_protcol_stack () in
+  Protocol_stack.add_protocol s ethernet_format ethernet_transitions;
+  Protocol_stack.add_protocol s ipv4_format ipv4_transitions;
+  Protocol_stack.add_protocol s udp_format udp_transitions;
+  s
