@@ -318,7 +318,10 @@ module Construct = struct
   let declare v = Do_declaration v
   let declaration n t = Do_declaration (tv ~unique:false n t)
 
-  let nop () = Do_nothing
+  let declare_and_assign v te = 
+    [declare v; assign v te]
+
+  let nop = Do_nothing
 
   let block l = Do_block l
 

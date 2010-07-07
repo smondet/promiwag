@@ -147,3 +147,151 @@ module To_string = struct
     sprintf "Protocol Stack: {\n%s\n}" (Str.concat "\n" (Ls.rev !r))
 
 end
+
+
+module Automata_generator = struct
+
+  module Packet_parsing = Promiwag_meta_packet.Parser_generator
+
+  type passed_expressions = Stiel_types.typed_expression list
+
+  type protocol_handler = {
+    handled_format: string;
+    user_request: Packet_parsing.request list;
+    make_handler: 
+      passed_expressions * passed_expressions * passed_expressions ->
+      Stiel_types.statement * passed_expressions;
+  }
+
+  type error =
+    [ `buffer_over_flow of string 
+    | `unknown of string ]
+
+  type error_handler = error -> Stiel_types.statement
+
+  let default_error_handler = function
+    | `buffer_over_flow s -> Stiel.log (sprintf "Error BOF: %s" s) []
+    | `unknown s -> Stiel.log (sprintf "Error unknown: %s" s) []
+
+  type protocol_stack_handler = {
+    protocol_handlers: protocol_handler list;
+    error_handler: error -> Stiel_types.statement;
+    continue_expression: Stiel_types.bool_expression;
+    initial_protocol: string;
+  }
+
+  let handler 
+      ?(error_handler=default_error_handler)
+      ?(continue_expression=Stiel.t)
+      ~initial_protocol handler_list =
+    {error_handler          = error_handler;
+     continue_expression = continue_expression;
+     initial_protocol       = initial_protocol;   
+     protocol_handlers      = 
+        Ls.map handler_list ~f:(fun (a, b, c) ->
+          {handled_format = a; user_request = b; make_handler = c;}
+        );}
+
+  type packet_expression = {
+    stiel_pointer: Stiel_types.buffer_expression;
+    stiel_size: Stiel_types.int_expression option;
+  }
+
+  let packet ?size expr = 
+    {stiel_pointer = expr; stiel_size = size}
+
+  let typed_pointer p = Stiel.expr_pointer p.stiel_pointer
+  let typed_size p = Opt.map Stiel.expr_unat p.stiel_size
+
+(*
+
+
+generate (just for handlers and their dependencies):
+
+  while (current_format != NONE && <continue_expression>) {
+    current_format = next_format;
+    current_payload = offsetize(previous_payload);
+    current_packet_size = previous - offset;
+    if (current_format == FORMAT_INT) {
+
+       informed_block (payload rightly offseted)
+       next_format = COMPUTED
+    }
+
+    if (current_format ...) {
+
+    }  
+
+  }
+
+*)
+
+  type compiler = {
+    protocol_stack: protocol_stack;
+    handler: protocol_stack_handler;
+    todo_queue: protocol_handler FIFO.t;
+    current_packet     : Stiel_types.typed_variable;
+    current_packet_size: Stiel_types.typed_variable;
+    current_format     : Stiel_types.typed_variable;
+    next_format        : Stiel_types.typed_variable;
+    format_values_ht: (string, Stiel_types.int_expression) Ht.t;
+    compiled_handlers: (string, Stiel_types.statement) Ht.t;
+  }
+
+  let int_expression_for_format compiler format =
+    match Ht.find_opt compiler.format_values_ht format with
+    | Some ie -> ie
+    | None ->
+      let ie = Stiel.uint (Unique.int ()) in
+      Ht.add  compiler.format_values_ht format ie;
+      ie
+
+  let compile_protocol_handler compiler protocol_handler =
+    ()
+
+
+  let automata_block protocol_stack handler packet_expression =
+
+    let compiler = 
+      {todo_queue = FIFO.of_list handler.protocol_handlers;
+       protocol_stack = protocol_stack;
+       handler = handler;
+       current_packet = Stiel.var_pointer "current_packet_pointer";
+       current_packet_size = Stiel.var_unat "current_packet_size";
+       current_format = Stiel.var_unat "current_packet_format";
+       next_format =    Stiel.var_unat "next_packet_format";
+       format_values_ht = Ht.create 42;
+       compiled_handlers = Ht.create 42;
+      } in
+
+    FIFO.consume compiler.todo_queue ~f:(compile_protocol_handler compiler);
+
+    let get_out_value = int_expression_for_format compiler "" in
+
+    let before_the_while =
+      (Stiel.declare_and_assign compiler.current_packet
+         (typed_pointer packet_expression))
+      @ (Opt.map_default
+           (Stiel.declare_and_assign compiler.current_packet_size)
+           [] (typed_size packet_expression))
+      @ [ Stiel.declare compiler.current_format;
+          Stiel.assign compiler.current_format 
+            (Stiel.expr_unat (Stiel.uint (Unique.int ())));
+          Stiel.declare compiler.next_format;
+          Stiel.assign compiler.next_format
+            (Stiel.expr_unat
+               (int_expression_for_format compiler handler.initial_protocol));]
+    in
+    let while_condition =
+      Stiel.bool (`And (`Neq (`E (Stiel.int_expr
+                                    (Stiel.expr_var compiler.current_format)),
+                              `E get_out_value),
+                        `E handler.continue_expression)) in
+    before_the_while
+    @ [Stiel.while_loop while_condition 
+          (Stiel.block (Ht.value_list compiler.compiled_handlers))]
+      
+
+end
+
+

@@ -9,6 +9,8 @@ To do:
   - recursivity for variables
   - variables defined twice
   - retrive checks to do on buffer accesses, and divisions by zero
+  - typing of variable assignments (follow types of declared
+    variables, and check assignments)
 
 * Promiwag_stiel: Integer management
   - module SafeInt64, with all bounds checkings

@@ -427,7 +427,7 @@ let test_stiel ?(out=`term) () =
   pr$ `b   (Cons.bool (`LsOr [`T; `T; `Var "the_truth"]));
 
   let b = 
-    let nop = Cons.nop () in
+    let nop = Cons.nop in
     let a, b, c =
       Cons.expr_unat    (Cons.int (`U 42)),
       Cons.expr_pointer (Cons.buffer (`Var "buf")),
@@ -788,12 +788,35 @@ let test_pcap_parsing dev () =
   ()
 
 let test_protocol_stack () =
+  let module Stiel = Promiwag.Stiel.Construct in
+  let module Stiel2S = Promiwag.Stiel.To_string in
   let module PS = Promiwag.Protocol_stack in
   let module PS2S = PS.To_string in
+  let module GenStiel =  PS.Automata_generator in
   let the_internet =
     Promiwag_standard_protocols.internet_stack_from_ethernet () in
 
-  printf "The Internet's %s" (PS2S.protocol_stack the_internet);
+  printf "The Internet's %s\n" (PS2S.protocol_stack the_internet);
+
+  let stack_handler =
+    GenStiel.handler
+      ~initial_protocol:Promiwag_standard_protocols.ethernet_name [
+        (Promiwag_standard_protocols.ethernet_name,
+         [ `pointer "dest_addr"; `pointer "src_addr"; ],
+         (fun (user, request, passed) ->
+           (Stiel.nop, passed)))
+
+      ] in
+
+  let packet =
+    GenStiel.packet (Stiel.buffer_var "initial_packet_pointer") in
+
+  let automata_block =
+    GenStiel.automata_block the_internet stack_handler packet in
+
+  printf "Automata Block:\n%s\n"
+    (Stiel2S.statement (Stiel.block automata_block));
+
 
   ()
 
