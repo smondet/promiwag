@@ -94,6 +94,32 @@ module Packet_structure = struct
 
 end
 
+module To_string = struct
+
+  open Packet_structure
+
+  let size = string_of_size 
+
+  let rec content_type =
+    let plural = function Size_fixed 1 -> "" | _ -> "s" in
+    function
+    | Type_unsigned_integer s -> sprintf "unsigned int of %s bit%s" (size s) (plural s)
+    | Type_signed_integer   s -> sprintf "signed int of %s bit%s" (size s) (plural s)
+    | Type_little_endian    t -> sprintf "%s (little-endian)" (content_type t)
+    | Type_string           s -> sprintf "string of %s byte%s" (size s) (plural s)
+
+  let content_item ?(suffix="") = function
+    | Item_field (s, t) ->
+      sprintf "%s: %s%s" s (content_type t) suffix
+
+  let format ?(sep="\n") ?(suffix=";") fmt =
+    Str.concat sep (Ls.map fmt ~f:(content_item ~suffix))
+
+
+end
+
+
+
 
 module C_packet = struct
 

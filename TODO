@@ -28,7 +28,6 @@ To do:
 
 * use Format, or EasyFormat for printing C and Stiel
 
-+ a while+switch manager for parsing encapsulations of packets
 
 ? Promiwag_platform: Generate an "inspector.c" piece of code which
   retrives endianism, sizeof's, etc ... as OCaml code ...

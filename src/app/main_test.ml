@@ -787,6 +787,15 @@ let test_pcap_parsing dev () =
           \  /tmp/pcaptest\n";
   ()
 
+let test_protocol_stack () =
+  let module PS = Promiwag.Protocol_stack in
+  let module PS2S = PS.To_string in
+  let the_internet =
+    Promiwag_standard_protocols.internet_stack_from_ethernet () in
+
+  printf "The Internet's %s" (PS2S.protocol_stack the_internet);
+
+  ()
 
 
 
@@ -805,6 +814,7 @@ let () =
       | "il" -> test_stiel ~out:`term
       | "ilbrtx" -> test_stiel ~out:`brtx
       | "mpp" -> test_pcap_parsing Sys.argv.(2)
+      | "ps" -> test_protocol_stack
       | s -> failwith (sprintf "Unknown test: %s\n" s)
     in
     Printexc.print test (); (* with
