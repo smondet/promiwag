@@ -657,7 +657,7 @@ module To_C = struct
     let assign a b = `assignment (`variable a, b) in
     match s with
     | Do_nothing                 -> `empty
-    | Do_comment               s -> `comment s
+    | Do_comment               s -> `block ([], [`comment s])
     | Do_block  e as b -> `block (block compiler b)
     | Do_if            (e, a, b) ->
       `conditional (bool_expression compiler e,
