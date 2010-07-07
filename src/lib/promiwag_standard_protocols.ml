@@ -15,7 +15,7 @@ let igmp_name = "IGMP"
 
 let ethernet_format =
   let mac_addr_type = MPS.fixed_string 6 in
-  MPS.packet_format ethernet_name [
+  MPS.packet_format [
     MPS.field "dest_addr" mac_addr_type;
     MPS.field "src_addr" mac_addr_type;
     MPS.field "ethertype_length" (MPS.fixed_int 16);
@@ -23,7 +23,7 @@ let ethernet_format =
     MPS.field "crc32" (MPS.fixed_int 32);
   ]
 let ethernet_transitions =
-  PS.transitions_switch ethernet_name "ethertype_length" [
+  PS.switch "ethertype_length" [
     PS.case_int_value 0x800 ipv4_name;
     PS.case_int_value 0x806 arp_name;
     PS.case_int_value 0x86dd ipv6_name;
@@ -60,7 +60,7 @@ let ethernet_transitions =
     data: byte[length-(ihl*4)];
 *)
 let ipv4_format =
-  MPS.packet_format ipv4_name [
+  MPS.packet_format [
     MPS.fixed_int_field "version" 4;
     MPS.fixed_int_field "ihl" 4;
     MPS.fixed_int_field "tos_precedence" 3;
@@ -93,7 +93,7 @@ let ipv4_format =
     (* byte[length-(ihl*4)]; *)
   ]
 let ipv4_transitions =
-  PS.transitions_switch ipv4_name "protocol" [
+  PS.switch "protocol" [
     PS.case_int_value  1 icmp_name;
     PS.case_int_value  2 igmp_name;
     PS.case_int_value  6 tcp_name;
@@ -102,7 +102,7 @@ let ipv4_transitions =
   ]
 
 let udp_format = 
-  MPS.packet_format udp_name [
+  MPS.packet_format [
     MPS.fixed_int_field "src_port" 16;
     MPS.fixed_int_field "dst_port" 16;
     MPS.fixed_int_field "length" 16;
@@ -112,10 +112,10 @@ let udp_format =
       ~name:"udp_payload"
       ();
   ]
-let udp_transitions = PS.empty_transitions udp_name
+let udp_transitions = PS.empty_transition
 
 let test =
-  MPS.packet_format "Test" [
+  MPS.packet_format [
     MPS.field "field_00" (MPS.fixed_string 8);
     MPS.field "field_01" (MPS.fixed_string 6);
     MPS.field "field_02" (MPS.fixed_string 6); (* 20 bytes *)
@@ -138,13 +138,10 @@ let test =
 
   ]
 
-let format_database =
-  Promiwag_meta_packet.Packet_database.of_list 
-    [ ethernet_format; ipv4_format; udp_format ]
 
 let internet_stack_from_ethernet () =
   let s = Protocol_stack.empty_protcol_stack () in
-  Protocol_stack.add_protocol s ethernet_format ethernet_transitions;
-  Protocol_stack.add_protocol s ipv4_format ipv4_transitions;
-  Protocol_stack.add_protocol s udp_format udp_transitions;
+  Protocol_stack.add_protocol s ethernet_name ethernet_format ethernet_transitions;
+  Protocol_stack.add_protocol s ipv4_name ipv4_format ipv4_transitions;
+  Protocol_stack.add_protocol s udp_name udp_format udp_transitions;
   s

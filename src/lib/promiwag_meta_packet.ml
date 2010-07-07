@@ -89,32 +89,11 @@ module Packet_structure = struct
     Item_field (name, Type_string actual_size)
 
   type format = content_item list
-  type packet = string * format
 
-  let packet_format name format = ((name, format): packet)
-
-end
-
-module Packet_database = struct
-
-  type t = (string, Packet_structure.packet) Ht.t
-
-  let empty () = Ht.create 42
-
-  let add t (name, packet) = Ht.add t name (name, packet)
-
-  let of_list l = 
-    let t = Ht.create 42 in
-    Ls.iter (fun p -> add t p) l;
-    t
-
-  let get_format (t:t) name =
-    try let _, fmt = Ht.find t name in fmt with
-    | Not_found ->
-      failwith (sprintf "ERROR: Meta_packet.Packet_database.find \
-                   packet format \"%s\" not found" name)
+  let packet_format format = (format: format)
 
 end
+
 
 module C_packet = struct
 
@@ -335,7 +314,7 @@ module Parser_generator = struct
         | `size f -> Depend_on_size_of f)
 
     type result = {
-      packet_format: packet;
+      packet_format: format;
       request_list: request list;
       compiled_expressions: stage_1_compiled_expression list;
     }
@@ -361,7 +340,7 @@ module Parser_generator = struct
           begin match Ls.find_all !stage_compiled_things ~f with
           | [] ->
             let compiled =
-              stage_1_compile_dependency (snd packet_format) depender d in
+              stage_1_compile_dependency packet_format depender d in
             go_deeper (depth + 1) (`other compiled) compiled.s1_dependencies;
             stage_compiled_things := compiled :: !stage_compiled_things;
           | one :: [] ->
@@ -424,13 +403,12 @@ module Parser_generator = struct
       Str.concat sep_items (Ls.rev !l)
 
     let dump s1 =
-      sprintf "{Stage 1 for [%s], on \"%s\" packets:\n%s\n}"
+      sprintf "{Stage 1 for [%s]:\n%s\n}"
         (Str.concat ", " (Ls.map (function
           | `value f -> sprintf "field %s" f
           | `pointer f -> sprintf "pointer  %s" f
           | `offset f -> sprintf "offset of %s" f
           | `size f -> sprintf "size of %s" f) s1.request_list))
-        (fst s1.packet_format)
         (string_of_stage_1_compilation_ht
            ~before:"  " ~sep_parens:"\n    " s1.compiled_expressions)
 

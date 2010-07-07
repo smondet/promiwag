@@ -191,7 +191,7 @@ let test_packet_parsing () =
 
   let request, packet_printf_list = 
     let module S = Promiwag.Meta_packet.Packet_structure in
-    let (n, fmt) = Promiwag.Standard_protocols.test in
+    let fmt = Promiwag.Standard_protocols.test in
     let req =
       Ls.flatten 
         (Ls.map fmt ~f:(function
