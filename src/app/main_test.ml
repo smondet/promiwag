@@ -191,7 +191,7 @@ let test_packet_parsing () =
 
   let request, packet_printf_list = 
     let module S = Promiwag.Meta_packet.Packet_structure in
-    let (n, fmt) = Promiwag.Standard_packets.test in
+    let (n, fmt) = Promiwag.Standard_protocols.test in
     let req =
       Ls.flatten 
         (Ls.map fmt ~f:(function
@@ -211,7 +211,7 @@ let test_packet_parsing () =
     in
     (req, prs)
   in
-  let packet_format = Promiwag.Standard_packets.test in
+  let packet_format = Promiwag.Standard_protocols.test in
   let module Stage_one = Promiwag.Meta_packet.Parser_generator.Stage_1 in
   let stage_1 =
     Stage_one.compile_with_dependencies ~max_depth:10 ~packet_format request in
@@ -555,7 +555,7 @@ let test_pcap_parsing dev () =
       `pointer "dest_addr"; `pointer "src_addr";
       `value "ethertype_length"; `offset "ethertype_length";
       `pointer "eth_payload" ] in
-    let packet_format = Promiwag.Standard_packets.ethernet in
+    let packet_format = Promiwag.Standard_protocols.ethernet in
     Stage_one.compile_with_dependencies
       ~max_depth:10 ~packet_format request_list in
 
@@ -578,7 +578,7 @@ let test_pcap_parsing dev () =
       `pointer "ip_payload";
       `size "ip_payload";
     ] in
-    let packet_format = Promiwag.Standard_packets.ipv4 in
+    let packet_format = Promiwag.Standard_protocols.ipv4 in
     Stage_one.compile_with_dependencies
       ~max_depth:10 ~packet_format request_list in
 
@@ -587,7 +587,7 @@ let test_pcap_parsing dev () =
       `value "src_port"; `value "dst_port";
       `value "length"; `value "checksum";
       `pointer "udp_payload"; `size "udp_payload" ] in
-    let packet_format = Promiwag.Standard_packets.udp in
+    let packet_format = Promiwag.Standard_protocols.udp in
     Stage_one.compile_with_dependencies
       ~max_depth:10 ~packet_format request_list in
 

@@ -7,7 +7,7 @@ LIB_MODULES[] =
     promiwag_stiel
     promiwag_meta_packet
     promiwag_protocol_stack
-    promiwag_standard_packets
+    promiwag_standard_protocols
     promiwag_pcap_boilerplate
     promiwag
 
