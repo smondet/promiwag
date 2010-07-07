@@ -24,10 +24,10 @@ let ethernet_format =
   ]
 let ethernet_transitions =
   PS.switch "ethertype_length" [
-    PS.case_int_value 0x800 ipv4_name;
-    PS.case_int_value 0x806 arp_name;
-    PS.case_int_value 0x86dd ipv6_name;
-    PS.case_int_range 46 1500 "EthernetUnknownPayload_46-1500";
+    PS.case_int_value 0x800 ipv4_name "eth_payload";
+    PS.case_int_value 0x806 arp_name "eth_payload";
+    PS.case_int_value 0x86dd ipv6_name "eth_payload";
+    PS.case_int_range 46 1500 "EthernetUnknownPayload_46-1500" "eth_payload";
   ]
     
 
@@ -94,11 +94,11 @@ let ipv4_format =
   ]
 let ipv4_transitions =
   PS.switch "protocol" [
-    PS.case_int_value  1 icmp_name;
-    PS.case_int_value  2 igmp_name;
-    PS.case_int_value  6 tcp_name;
-    PS.case_int_value 17 udp_name;
-    PS.case_int_value 33 dccp_name;
+    PS.case_int_value  1 icmp_name "ip_payload";
+    PS.case_int_value  2 igmp_name "ip_payload";
+    PS.case_int_value  6  tcp_name "ip_payload";
+    PS.case_int_value 17  udp_name "ip_payload";
+    PS.case_int_value 33 dccp_name "ip_payload";
   ]
 
 let udp_format = 

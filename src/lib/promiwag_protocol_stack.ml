@@ -3,27 +3,12 @@ open Promiwag_std
 module Stiel_types = Promiwag_stiel
 module Stiel = Promiwag_stiel.Construct
 module MP_format = Promiwag_meta_packet.Packet_structure
-(*
-protocol stack description:
-
-ethernet: 
-   (eq protocol "IP"), IPv4
-   boolean expression, packet_format name
-
-...
-
-
-stack handling request:
-
-ethernet, passed_exprs @ [ request ] -> block * passed_expressions
-
-*)
-
 
 type atomic_transition = {
   condition: Stiel_types.bool_expression;
   next_format: string;
   passed_expressions: Stiel_types.typed_expression list;
+  next_payload: string;
 }
   
 
@@ -39,8 +24,9 @@ type protocol_stack = {
 }
 
 type input_case =
-  | Case_int_value of Stiel_types.int_expression * string
-  | Case_int_range of Stiel_types.int_expression * Stiel_types.int_expression * string
+  | Case_int_value of Stiel_types.int_expression * string * string
+  | Case_int_range of
+      Stiel_types.int_expression * Stiel_types.int_expression * string * string
 
 type input_transition =
   | Switch of Stiel_types.int_expression * input_case list
@@ -54,38 +40,50 @@ let empty_protcol_stack () =
 let atomic_transition
     ?(condition=Stiel_types.Bool_expr_false)
     ?(passed_expressions=[])
-    next_format =
+    ~next_payload next_format =
   {condition = condition; next_format = next_format; 
-   passed_expressions = passed_expressions; }
+   passed_expressions = passed_expressions; 
+   next_payload = next_payload;}
+
+let transform_input_next (name, ofs) =
+  (name, fun e -> Stiel.offset e ofs)
 
 let transform_input_case int_expr = function
-  | Case_int_value (ie, next) -> 
+  | Case_int_value (ie, next_format, next_payload) -> 
     let condition = Stiel.eq int_expr ie in
-    atomic_transition ~condition next
-  | Case_int_range (iea, ieb, next) -> 
+    atomic_transition ~condition ~next_payload next_format
+  | Case_int_range (iea, ieb, next_format, next_payload) -> 
     let condition =
       Stiel.bool 
         (`And (`E (Stiel.le iea int_expr),
                `E (Stiel.le int_expr ieb))) in
-    atomic_transition ~condition
-      ~passed_expressions:[Stiel.expr_unat int_expr] next
+    atomic_transition ~condition 
+      ~passed_expressions:[Stiel.expr_unat int_expr] 
+      ~next_payload next_format
 
 let transform_input_transitions = function
   | No_transition -> []
   | Switch (iexpr, cases) -> Ls.map cases ~f:(transform_input_case iexpr)
   | Atomic a -> [a]
 
-let case_int_value int_value next_format =
-  Case_int_value (Stiel.uint int_value, next_format)
+let case_int_value int_value next_format next_payload =
+  Case_int_value (Stiel.uint int_value, next_format, next_payload)
 
-let case_int_range bottom top next_format =
-  Case_int_range (Stiel.uint bottom, Stiel.uint top, next_format)
+let case_int_range bottom top next_format next_payload =
+  Case_int_range (Stiel.uint bottom, Stiel.uint top, next_format, next_payload)
 
 let switch field cases =
   Switch (Stiel.int_var field, cases)
 
 let empty_transition =
   No_transition
+
+let atomic ?(condition=Stiel_types.Bool_expr_false)
+    ?(passed_expressions=[])
+    next_format next_payload =
+  Atomic (atomic_transition ~condition 
+            ~passed_expressions ~next_payload next_format)
+
 
 
 let add_protocol ps name format packet_transitions =
@@ -121,9 +119,9 @@ module To_string = struct
         (Str.concat sep (Ls.map Stiel2S.typed_expression at.passed_expressions))
         suf
     in 
-    sprintf "%sWhen [%s]\n%s-> Next Is \"%s\" with [%s]"
+    sprintf "%sWhen [%s]\n%s-> Next Is \"%s\" At Offset Of \"%s\" With [%s]"
       indent_str (Stiel2S.bool_expression at.condition) more_indent
-      at.next_format passed_expressions
+      at.next_format at.next_payload passed_expressions
   
       
   let protocol ?(indent=0) p =
