@@ -104,6 +104,26 @@ module Environment = struct
 
 end
 
+module FIFO = struct
+  type 'a t = 'a Queue.t
+
+  let of_list l =
+    let t = Queue.create () in
+    Ls.iter l ~f:(fun e ->
+      Queue.add e t;
+    );
+    t
+
+  let push t e = Queue.add e t
+  let pop t = try Some (Queue.take t) with Queue.Empty -> None
+
+  let rec consume ~f t =
+    match pop t with
+    | Some s -> f s ; consume ~f t
+    | None -> ()
+
+
+end
 
 
 
@@ -114,6 +134,11 @@ module Unique = struct
   let name n = 
     incr var_count;
     Printf.sprintf "%s_%d" n !var_count
+
+  let int_count = ref 0
+  let int () =
+    incr int_count;
+    !int_count
 
 end
   
