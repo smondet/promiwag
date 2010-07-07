@@ -804,7 +804,12 @@ let test_protocol_stack () =
         (Promiwag_standard_protocols.ethernet_name,
          [ `pointer "dest_addr"; `pointer "src_addr"; ],
          (fun (user, request, passed) ->
-           (Stiel.nop, passed)))
+           (Stiel.nop, passed)));
+        (Promiwag_standard_protocols.ipv4_name,
+         [ `value "src"; `value "dest"; ],
+         (fun (user, request, passed) ->
+           (Stiel.nop, passed)));
+
 
       ] in
 

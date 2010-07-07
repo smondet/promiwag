@@ -94,6 +94,8 @@ let add_protocol ps name format packet_transitions =
   };
   ()
     
+let get_protocol ps name =
+  Ht.find_opt ps.stack_description name
   
 module To_string = struct
 
@@ -231,7 +233,7 @@ generate (just for handlers and their dependencies):
     handler: protocol_stack_handler;
     todo_queue: protocol_handler FIFO.t;
     current_packet     : Stiel_types.typed_variable;
-    current_packet_size: Stiel_types.typed_variable;
+    current_packet_size: Stiel_types.typed_variable option;
     current_format     : Stiel_types.typed_variable;
     next_format        : Stiel_types.typed_variable;
     format_values_ht: (string, Stiel_types.int_expression) Ht.t;
@@ -247,6 +249,30 @@ generate (just for handlers and their dependencies):
       ie
 
   let compile_protocol_handler compiler protocol_handler =
+    let format = protocol_handler.handled_format in
+    let statements =
+      match get_protocol compiler.protocol_stack format with
+      | None -> [ Stiel.cmt (sprintf "Protocol %s not known" format) ]
+      | Some protocol -> 
+        let packet_format = protocol.format in
+        let request =
+          protocol_handler.user_request in
+        let stage_1 =
+          Packet_parsing.Stage_1.compile_with_dependencies
+            ~packet_format request in
+        let packet = Stiel.expr_var compiler.current_packet in
+        let packet_size = Opt.map Stiel.expr_var compiler.current_packet_size in
+        let make_user_block l =
+          (Stiel.cmt "Parsing User Block TODO")
+          :: (Ls.map l ~f:(fun te ->
+            Stiel.log "Receiving @hex\n" [te])) 
+        in
+        (Stiel.cmt "Informed block from packet parsing:")
+        :: (Packet_parsing.Stage_2_stiel.informed_block
+              ~stage_1 ~packet ?packet_size ~make_user_block ())
+        (* @ [ Stiel.cmt "Prepare the following... TODO" ] *)
+    in
+    Ht.add compiler.compiled_handlers format (Stiel.block statements);
     ()
 
 
@@ -257,7 +283,9 @@ generate (just for handlers and their dependencies):
        protocol_stack = protocol_stack;
        handler = handler;
        current_packet = Stiel.var_pointer "current_packet_pointer";
-       current_packet_size = Stiel.var_unat "current_packet_size";
+       current_packet_size =
+          Opt.map (fun _ -> Stiel.var_unat "current_packet_size")
+            (typed_size packet_expression);
        current_format = Stiel.var_unat "current_packet_format";
        next_format =    Stiel.var_unat "next_packet_format";
        format_values_ht = Ht.create 42;
@@ -272,7 +300,8 @@ generate (just for handlers and their dependencies):
       (Stiel.declare_and_assign compiler.current_packet
          (typed_pointer packet_expression))
       @ (Opt.map_default
-           (Stiel.declare_and_assign compiler.current_packet_size)
+           (fun v ->
+             Stiel.declare_and_assign (Opt.get compiler.current_packet_size) v)
            [] (typed_size packet_expression))
       @ [ Stiel.declare compiler.current_format;
           Stiel.assign compiler.current_format 
@@ -287,9 +316,23 @@ generate (just for handlers and their dependencies):
                                     (Stiel.expr_var compiler.current_format)),
                               `E get_out_value),
                         `E handler.continue_expression)) in
+    let while_block =
+      (* TODO one day: arrange them (optionaly) as a binary decision tree *)
+      let r = ref [] in
+      let cur_fmt_var_ie =
+        Stiel.int_expr (Stiel.expr_var compiler.current_format) in
+      Ht.iter (fun format statement_then ->
+        let format_ie = int_expression_for_format compiler format in
+        let st =
+          Stiel.conditional
+            (Stiel.bool (`Eq (`E cur_fmt_var_ie, `E format_ie)))
+            ~statement_then in
+        r := st :: !r;
+      ) compiler.compiled_handlers;
+      (Ls.rev !r)
+    in
     before_the_while
-    @ [Stiel.while_loop while_condition 
-          (Stiel.block (Ht.value_list compiler.compiled_handlers))]
+    @ [Stiel.while_loop while_condition (Stiel.block while_block)]
       
 
 end
