@@ -271,6 +271,10 @@ module Construct = struct
     | Typed_buffer (_, e) -> e
     | _ -> fail "This typed expression is not a buffer one"
 
+  let bool_expr = function
+    | Typed_bool e -> e
+    | _ -> fail "This typed expression is not an boolean one"
+
   let typed_variable ?(unique=true) name kind =
     { name = if unique then Unique.name name else name;
       kind = kind}
