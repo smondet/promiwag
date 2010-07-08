@@ -904,6 +904,124 @@ module Transform = struct
 
 end
 
+
+
+module Visit = struct
+
+  type compiler = {
+    on_variables: string -> unit;
+  }
+  let compiler ?(on_variables=fun _ -> ()) () =
+    { on_variables = on_variables }
+
+  let  integer_type compiler = function
+    | Type_uint8       -> ()
+    | Type_uint16      -> ()  
+    | Type_uint32      -> ()
+    | Type_uint64      -> ()
+    | Type_uint_native -> ()
+
+  let int_unary_operator compiler = function
+    | Int_unary_minus             -> ()
+    | Int_unary_plus              -> ()
+
+  let int_binary_operator compiler = function
+    | Int_binop_add     -> ()
+    | Int_binop_sub     -> ()
+    | Int_binop_mul     -> ()
+    | Int_binop_div     -> ()
+    | Int_binop_mod     -> ()
+    | Int_binop_bin_and -> ()
+    | Int_binop_bin_or  -> ()
+    | Int_binop_bin_xor -> ()
+    | Int_binop_bin_shl -> ()
+    | Int_binop_bin_shr -> ()
+      
+  let bool_binary_operator compiler = function
+    | Bool_binop_equals            -> ()
+    | Bool_binop_notequals         -> ()
+    | Bool_binop_strictly_greater  -> ()
+    | Bool_binop_strictly_lower    -> ()
+    | Bool_binop_equal_or_greater  -> ()
+    | Bool_binop_equal_or_lower    -> ()
+
+  let variable_name compiler s = compiler.on_variables s
+
+  let rec buffer_type compiler = function
+    | Type_sized_buffer   i -> ()
+    | Type_pointer          -> ()
+    | Type_sizable_buffer s -> ()
+
+  and int_expression compiler = function
+    | Int_expr_unary  (op, ex)        ->
+      ignore (int_unary_operator compiler op, int_expression compiler ex)
+    | Int_expr_binary (op, ea, eb)    -> 
+      ignore (int_binary_operator compiler op,
+              int_expression compiler ea, int_expression compiler eb)
+    | Int_expr_variable  v            -> (variable_name compiler v)
+    | Int_expr_buffer_content (t, ex) -> (buffer_expression compiler ex)
+    | Int_expr_literal        i64     -> ()
+
+  and buffer_expression compiler = function
+    | Buffer_expr_variable v         -> (variable_name compiler v)
+    | Buffer_expr_offset (bex, iex)  -> 
+      ignore (buffer_expression compiler bex, int_expression compiler iex)
+
+  and bool_expression compiler = function
+    | Bool_expr_true   -> ()
+    | Bool_expr_false  -> ()
+    | Bool_expr_variable v -> (variable_name compiler v)
+    | Bool_expr_and        (a, b)     ->
+      ignore (bool_expression compiler a, bool_expression compiler b)
+    | Bool_expr_or         (a, b)     ->
+      ignore (bool_expression compiler a, bool_expression compiler b)
+    | Bool_expr_not        ex         ->
+      ignore (bool_expression compiler ex)
+    | Bool_expr_binary_int (op, a, b) ->
+      ignore (bool_binary_operator compiler op,
+              int_expression compiler a, int_expression compiler b)
+
+  let typed_expression compiler = function 
+    | Typed_int    (t, e) -> 
+      ignore (integer_type compiler t, int_expression compiler e)
+    | Typed_bool       e  -> 
+      ignore (bool_expression compiler e)
+    | Typed_buffer (t, e) ->
+      ignore (buffer_type compiler Type_pointer, 
+              buffer_expression compiler e)
+      
+  let typed_variable_kind compiler = function
+    | Kind_int    t -> integer_type compiler t
+    | Kind_bool     -> ()
+    | Kind_buffer t -> buffer_type compiler t
+
+  let rec statement compiler =
+    function 
+    | Do_nothing                 -> ()
+    | Do_comment        s        -> ()
+    | Do_block          e        -> 
+      Ls.iter (statement compiler) e
+    | Do_if            (e, a, b) ->
+      ignore (bool_expression compiler e,
+              statement compiler a, statement compiler b)
+    | Do_while_loop    (e, a)    -> 
+      ignore (bool_expression compiler e, statement compiler a)
+    | Do_assignment  (a, b) -> 
+      ignore (variable_name compiler a, typed_expression compiler b)
+    | Do_declaration t -> 
+      ignore (variable_name compiler t.name,
+              typed_variable_kind compiler t.kind)
+    | Do_log (f, l) ->
+      ignore (Ls.map (typed_expression compiler) l)
+
+
+end
+
+
+
+
+
+
 module Verify = struct
 
   type problem =
