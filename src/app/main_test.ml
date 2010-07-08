@@ -314,33 +314,33 @@ let test_stiel ?(out=`term) () =
 
   let str_ie = out_tt *** IL.To_string.int_expression in
   let str_be = out_tt *** IL.To_string.bool_expression in
+  let str_te = out_tt *** IL.To_string.typed_expression in
 
   let compiler =    IL.To_C.compiler ~platform:Promiwag.Platform.default in
-  let int_variables = ref Env.empty in
+  let variables = ref Env.empty in
   let add_int_var v e =
-    int_variables := Env.add !int_variables v e;
-    printf "%s" (out_sec "Integer-environment");
+    variables := Env.add !variables v (Cons.expr_unat e);
+    printf "%s" (out_sec "Added Integer variable");
     let list_of_levels =
-      Env.metamap !int_variables
+      Env.metamap !variables
         ~map:(fun (v, e) ->
-          sprintf "('%s' is %s)" v (str_ie e))
+          sprintf "('%s' is %s)" v (str_te e))
         ~reduce:(fun strlist -> 
           sprintf "  [%s]" (Str.concat "; " strlist)) in
     printf "[\n%s\n]\n" (Str.concat "\n" list_of_levels);
   in
-  let bool_variables = ref Env.empty in
   let add_bool_var v e =
-    bool_variables := Env.add !bool_variables v e;
-    printf "%s [\n" (out_sec "Boolean-environment");
+    variables := Env.add !variables v (Cons.expr_bool e);
+    printf "%s [\n" (out_sec "Added Boolean variable");
     Env.iter ~f:(fun (v, e) ->
-      printf " (%s = %s) " v (str_be e);
-    ) !bool_variables;
+      printf " (%s = %s) " v (str_te e);
+    ) !variables;
     printf "]\n";
   in
   let pr t =
     let env =
       Partial.environment ~do_symbolic_equality:true ~use_purity:true
-        ~int_variables:!int_variables ~bool_variables:!bool_variables () in
+        ~variables:!variables () in
     let nope = "Not implemented or relevant" in
     let tryify s f e =
       try s (f e) with
@@ -799,18 +799,28 @@ let test_protocol_stack () =
   printf "The Internet's %s\n" (PS2S.protocol_stack the_internet);
 
   let stack_handler =
+
+    let make_make_block name =
+      fun (passed_by_protocol, request) ->
+        Stiel.block (
+          [ Stiel.cmt (sprintf "%s 'test' handler" name);] 
+          @ (Ls.map request
+               ~f:(fun te ->
+                 Stiel.log "Receiving @hex from my request" [te];))
+          @ (Ls.map passed_by_protocol
+               ~f:(fun te ->
+                    Stiel.log "Receiving @hex from passed expressions" [te];))
+        ) in
+
+
     GenStiel.handler
       ~initial_protocol:Promiwag_standard_protocols.ethernet_name [
         (Promiwag_standard_protocols.ethernet_name,
          [ `pointer "dest_addr"; `pointer "src_addr"; ],
-         (fun (user, request, passed) ->
-           (Stiel.nop, passed)));
+         make_make_block "Ethernet");
         (Promiwag_standard_protocols.ipv4_name,
          [ `value "src"; `value "dest"; ],
-         (fun (user, request, passed) ->
-           (Stiel.nop, passed)));
-
-
+         make_make_block "IPv4");
       ] in
 
   let packet =

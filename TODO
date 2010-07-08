@@ -2,6 +2,14 @@
 To do:
 
 
+* Automata_generator:
+  - passed_expressions
+  - 'lazy' binary tree of (condition, statement_then), with special
+    case for unknown protocols. Then balance the binary tree and
+    generate if-then-else's.
+  - "protocol_handler.make_handler (from_the_passed_expressions"
+    is wrong.
+
 * Promiwag_meta_packet: 
   - TCP packets
 
