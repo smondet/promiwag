@@ -683,6 +683,26 @@ module To_C = struct
                       typed_variable_kind compiler typed_var.kind)
     | _ -> fail compiler "Calling 'declaration' on a non-declaration"
 
+  let cabled_list_of_statements compiler var_expr_list statements =
+    let module CTE = Promiwag_c_backend.Typed_expression in
+    let declarations, assignments =
+      let decls = ref [] in
+      let assis = ref [] in
+      Ls.iter var_expr_list ~f:(fun (stiel_var, c_typed_expr) ->
+        decls := declaration compiler (Construct.declare stiel_var) :: !decls;
+        assis := (
+          let c_type = 
+            typed_variable_kind compiler (Construct.kind stiel_var) in
+          `assignment (`variable (Construct.name stiel_var),
+                       `cast (c_type, CTE.expression c_typed_expr)))
+        :: !assis;
+      );
+      (Ls.rev !decls, Ls.rev !assis) in
+    let decls, stats = _check_and_reorder_block compiler statements in
+    C_cons.block
+      ~declarations:(declarations @ (Ls.map decls ~f:(declaration compiler)))
+        ~statements:(assignments @ (Ls.map stats ~f:(statement compiler))) ()
+
 end
 
 module Transform = struct

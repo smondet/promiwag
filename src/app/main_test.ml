@@ -840,18 +840,12 @@ let test_protocol_stack dev () =
   let cable_automata_to_c packet_buffer_c_var =
     let module To_C = Promiwag.Stiel.To_C in
     let compiler = To_C.compiler ~platform:Promiwag.Platform.default in
-    let var_packet_pointer_c_declaration =
-      To_C.declaration compiler (Stiel.declare var_packet_pointer) in
-    let var_packet_pointer_c_assignment =
-      let c_type : C.C_LightAST.c_type = 
-        To_C.typed_variable_kind compiler (Stiel.kind var_packet_pointer) in
-      `assignment (`variable (Stiel.name var_packet_pointer),
-                   `cast (c_type, C.Variable.expression packet_buffer_c_var)) in
 
-    ([var_packet_pointer_c_declaration],
-     [ var_packet_pointer_c_assignment;
-       To_C.statement compiler (Stiel.block automata_block)]);
+    To_C.cabled_list_of_statements compiler 
+      [ (var_packet_pointer, C.Variable.typed_expression packet_buffer_c_var) ]
+      automata_block
   in
+
   (* PCAP part: *)
 
   let passed_structure =
