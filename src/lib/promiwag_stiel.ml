@@ -279,6 +279,9 @@ module Construct = struct
     { name = if unique then Unique.name name else name;
       kind = kind}
 
+  let name tv = tv.name
+  let kind tv = tv.kind
+
   let tv = typed_variable
 
   let var = 
@@ -647,7 +650,7 @@ module To_C = struct
           fail compiler (sprintf "Do_log: should not be here (arg_list): %s" s)
       ) in
     fmt := (Str.multi_replace ~str:!fmt ~sub:escape ~by:"@");
-    (`expression (`cast (`void, `call (`variable "eprintf", 
+    (`expression (`cast (`void, `call (`variable "printf", 
                                        (`literal_string !fmt) :: arg_list))))
 
   let rec block compiler = function

@@ -391,10 +391,10 @@ generate (just for handlers and their dependencies):
           Ls.split_nth (Ls.length transition_passed_request) the_rest in
         let from_the_transition_conditions, from_the_user_request =
           Ls.split_nth (Ls.length transition_conditions_request)  the_rest in
-        (Stiel.cmt "Parsing User Block TODO")
-        :: (Ls.map from_the_transition_conditions
-              ~f:(fun te ->
-                Stiel.log "Receiving @hex from transition conditions" [te];))
+        [ (Stiel.cmt "Parsing User Block TODO") ]
+        (* :: (Ls.map from_the_transition_conditions *)
+        (*       ~f:(fun te -> *)
+        (*         Stiel.log "Receiving @hex from transition conditions" [te];)) *)
         @ [ protocol_handler.make_handler ([] (* TODO ! *), 
                                            from_the_user_request)]
         @ [ Stiel.cmt "Default behaviour is to stop and get out of the While:";

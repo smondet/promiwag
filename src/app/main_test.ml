@@ -787,7 +787,7 @@ let test_pcap_parsing dev () =
           \  /tmp/pcaptest\n";
   ()
 
-let test_protocol_stack () =
+let test_protocol_stack dev () =
   let module Stiel = Promiwag.Stiel.Construct in
   let module Stiel2S = Promiwag.Stiel.To_string in
   let module PS = Promiwag.Protocol_stack in
@@ -803,13 +803,13 @@ let test_protocol_stack () =
     let make_make_block name =
       fun (passed_by_protocol, request) ->
         Stiel.block (
-          [ Stiel.cmt (sprintf "%s 'test' handler" name);] 
+          [ Stiel.log (sprintf "  %s 'test' handler\n" name) [];] 
           @ (Ls.map request
                ~f:(fun te ->
-                 Stiel.log "Receiving @hex from my request" [te];))
+                 Stiel.log "   @expr = @hex\n" [te; te];))
           @ (Ls.map passed_by_protocol
                ~f:(fun te ->
-                    Stiel.log "Receiving @hex from passed expressions" [te];))
+                    Stiel.log "   Receiving @hex from passed expressions\n" [te];))
         ) in
 
 
@@ -823,8 +823,11 @@ let test_protocol_stack () =
          make_make_block "IPv4");
       ] in
 
+  let var_packet_pointer =
+    Stiel.var_pointer "initial_packet_pointer" in
+
   let packet =
-    GenStiel.packet (Stiel.buffer_var "initial_packet_pointer") in
+    GenStiel.packet (Stiel.buffer_expr (Stiel.expr_var var_packet_pointer)) in
 
   let automata_block =
     GenStiel.automata_block the_internet stack_handler packet in
@@ -832,10 +835,73 @@ let test_protocol_stack () =
   printf "Automata Block:\n%s\n"
     (Stiel2S.statement (Stiel.block automata_block));
 
+  let module C = Promiwag.C_backend in
 
+  let cable_automata_to_c packet_buffer_c_var =
+    let module To_C = Promiwag.Stiel.To_C in
+    let compiler = To_C.compiler ~platform:Promiwag.Platform.default in
+    let var_packet_pointer_c_declaration =
+      To_C.declaration compiler (Stiel.declare var_packet_pointer) in
+    let var_packet_pointer_c_assignment =
+      let c_type : C.C_LightAST.c_type = 
+        To_C.typed_variable_kind compiler (Stiel.kind var_packet_pointer) in
+      `assignment (`variable (Stiel.name var_packet_pointer),
+                   `cast (c_type, C.Variable.expression packet_buffer_c_var)) in
+
+    ([var_packet_pointer_c_declaration],
+     [ var_packet_pointer_c_assignment;
+       To_C.statement compiler (Stiel.block automata_block)]);
+  in
+  (* PCAP part: *)
+
+  let passed_structure =
+    C.Variable.create ~name:"passed_structure"
+      ~c_type:(`unsigned_long) ~initialisation:(`literal_int 1) () in
+  let toplevels, (block_vars, block_sts) =
+    let passed_expression =
+      C.Variable.address_typed_expression passed_structure in
+    let device = `literal_string dev in
+    let on_error s e = 
+      `block (C.Construct.block () ~statements:[
+        call_printf "PCAP ERROR: %s: %s\n" [`literal_string s; e];
+        `return (`literal_int 2);
+      ]) in
+    let packet_treatment ~passed_argument ~packet_length ~packet_buffer =
+      let counter_mem_contents =
+        `unary (`unary_memof, C.Variable.expression passed_argument) in
+      C.Construct.block () ~statements:[
+        call_printf "=== Packet %d === (length: %d, address: %x)\n"
+          [counter_mem_contents;
+           C.Variable.expression packet_length;
+           C.Variable.expression packet_buffer;
+          ];
+        printf_packet ~prefix:"  Content" (C.Variable.expression packet_buffer) 20;
+        `assignment (counter_mem_contents,
+                     `binary (`bin_add, `literal_int 1, counter_mem_contents));
+
+        `block (cable_automata_to_c packet_buffer);
+      ]
+    in
+    Promiwag.Pcap_C.make_capture 
+      ~device ~on_error ~passed_expression ~packet_treatment in
+
+  (* Main: *)
+
+  let main_pcap, _, _ = 
+    C.Construct.standard_main 
+      ((C.Variable.declaration passed_structure) :: block_vars, 
+       block_sts @ [`return (`literal_int 0)]) in
+  let test_pcap = 
+    toplevels @ [ C.Function.definition main_pcap ] in
+  (* String_tree.print (C2StrTree.file test_pcap); *)
+
+  let out = open_out "/tmp/pcaptest.c" in
+  String_tree.print ~out (C2StrTree.file test_pcap);
+  close_out out;
+  printf "\  Now you can:\n\
+          \  gcc -lpcap /tmp/pcaptest.c -o /tmp/pcaptest \n\
+          \  /tmp/pcaptest\n";
   ()
-
-
 
 
 let () =
@@ -852,7 +918,7 @@ let () =
       | "il" -> test_stiel ~out:`term
       | "ilbrtx" -> test_stiel ~out:`brtx
       | "mpp" -> test_pcap_parsing Sys.argv.(2)
-      | "ps" -> test_protocol_stack
+      | "ps" -> test_protocol_stack Sys.argv.(2)
       | s -> failwith (sprintf "Unknown test: %s\n" s)
     in
     Printexc.print test (); (* with
