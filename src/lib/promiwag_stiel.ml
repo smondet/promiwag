@@ -687,8 +687,7 @@ module Transform = struct
 
   module Partial_evaluation = struct
     type environment = {
-      int_variables:  (variable_name, int_expression) Environment.t;
-      bool_variables: (variable_name, bool_expression) Environment.t;
+      variables:  (variable_name, typed_expression) Environment.t;
       use_purity: bool;
       do_symbolic_equality: bool;
     }
@@ -703,12 +702,8 @@ module Transform = struct
     module Env = Environment
 
     let environment
-        ?(do_symbolic_equality=false) ?(use_purity=false)
-        ?int_variables ?bool_variables () =
-      {int_variables = 
-          (match int_variables with | Some s -> s | None -> Env.empty);
-       bool_variables = 
-          (match bool_variables with | Some s -> s | None -> Env.empty);
+        ?(do_symbolic_equality=false) ?(use_purity=false) ?variables () =
+      {variables = (match variables with | Some s -> s | None -> Env.empty);
        use_purity = use_purity;
        do_symbolic_equality = do_symbolic_equality;}
 
@@ -808,7 +803,19 @@ module Transform = struct
       | Bool_binop_equal_or_greater  -> (>=)
       | Bool_binop_equal_or_lower    -> (<=)
 
-    let rec buffer_type environment = function
+    let rec int_variable environment v =
+      match Env.find_opt environment.variables v with
+      | None -> Int_expr_variable v
+      | Some e -> int_expression environment (Construct.int_expr e)
+    and bool_variable environment v =
+      match Env.find_opt environment.variables v with
+      | None -> Bool_expr_variable v
+      | Some e -> bool_expression environment (Construct.bool_expr e)
+    and buffer_variable environment v =
+      match Env.find_opt environment.variables v with
+      | None -> Buffer_expr_variable v
+      | Some e -> buffer_expression environment (Construct.buffer_expr e)
+    and buffer_type environment = function
       | Type_sized_buffer   i -> Type_sized_buffer   i
       | Type_pointer          -> Type_pointer         
       | Type_sizable_buffer s -> Type_sizable_buffer s
@@ -823,16 +830,12 @@ module Transform = struct
       | Int_expr_binary (op, ea, eb) -> 
         transform_int_binop environment op
           (int_expression environment ea) (int_expression environment eb)
-      | Int_expr_variable v as original ->
-        begin match Env.find_opt environment.int_variables v with
-        | None -> original
-        | Some e -> int_expression environment e
-        end
+      | Int_expr_variable v  -> int_variable environment v
       | Int_expr_buffer_content (_, _) as original -> original
       | (Int_expr_literal _) as original -> original
 
     and buffer_expression environment = function
-      | Buffer_expr_variable _ as original -> original
+      | Buffer_expr_variable v -> buffer_variable environment v
       | Buffer_expr_offset (_, _) as original -> original
         
     and bool_expression environment expr =
@@ -844,11 +847,7 @@ module Transform = struct
       match expr with
       | Bool_expr_true   -> Bool_expr_true 
       | Bool_expr_false  -> Bool_expr_false
-      | Bool_expr_variable v as original ->
-        begin match Env.find_opt environment.bool_variables v with
-        | None -> original
-        | Some e -> bool_expression environment e
-        end
+      | Bool_expr_variable v  -> bool_variable environment v
       | Bool_expr_and (a, b) ->
         let propa = bool_expression environment a in
         let propb = bool_expression environment b in
