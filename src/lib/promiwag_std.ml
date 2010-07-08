@@ -68,6 +68,8 @@ module Environment = struct
 
   let empty = Base []
 
+  let of_list l = Base l
+
   let push t =
     Pushed ([], t)
       
