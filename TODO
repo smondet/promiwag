@@ -3,18 +3,25 @@ To do:
 
 
 * Automata_generator:
-  - passed_expressions
-  - 'lazy' binary tree of (condition, statement_then), with special
+  ? 'more lazy' binary tree of (condition, statement_then), with special
     case for unknown protocols. Then balance the binary tree and
     generate if-then-else's.
-  - "protocol_handler.make_handler (from_the_passed_expressions"
-    is wrong.
+  - remove the idea of passed expressions (it is state-related)
+  - separate protocol description from compilation (e.g. atomic_transition)
+    => module Meta_protocol and Protocol_automaton_generator
+    or Meta_packet + Meta_protocol  Packet_parsing Protocol_automaton (?)
 
-* Promiwag_meta_packet: 
+* STIEL / C = comments are still not homogeneous
+
+* Pcap:
+  - version which takes STIEL as input (?)
+  - version with the main
+
+* Promiwag_standard_protocols: 
   - TCP packets
 
 * Promiwag_stiel.Verify:
-  - recursivity for variables
+  - recursivity for variables (that's an environment check)
   - variables defined twice
   - retrive checks to do on buffer accesses, and divisions by zero
   - typing of variable assignments (follow types of declared
@@ -25,11 +32,16 @@ To do:
   - check that ints are positive
 
 * Promiwag_stiel: Language
-  - add the "Exception" int,bool expressions (?)
+  ? add the "Exception" int,bool expressions (?)
   - pure functions and call in expressions
   - procedures  and call statement
   - external procedures, defined with functions to transform parameters
   - Write_{int,...}_to_buffer i.e. a controled/typed asignement of *buffer.
+  - big2little and little2big
+  - log: user-defined printers: 
+    e.g.: ("@ip_addr", "%d.%d.%d.%d", fun te -> [ te[0], ... ])
+    ? but format independent of 'C', like "@int.@int.@int.@int" ???
+    -> then need a @0int and a @0hex format ?
 
 * Promiwag_stiel: Future
   - full interpreter

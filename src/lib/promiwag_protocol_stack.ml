@@ -488,7 +488,7 @@ generate (just for handlers and their dependencies):
         Stiel.assign compiler.var_current_format
           (Stiel.expr_var compiler.var_next_format);
       ]
-in
+    in
     before_the_while
     @ [Stiel.while_loop while_condition (Stiel.block while_block)]
       
