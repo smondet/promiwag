@@ -189,7 +189,7 @@ module To_string = struct
     let indent = indent + 2 in
     function 
     | Do_nothing                 -> spr "%sNop;\n" cur_indent
-    | Do_comment        s        -> spr "%s(* %s *)\n" cur_indent s
+    | Do_comment        s        -> spr "%sComment: %s;\n" cur_indent s
     | Do_block          e        -> 
       spr "%s{\n%s%s}\n" cur_indent (catmap (statement ~indent) e) cur_indent
     | Do_if            (e, a, b) ->
@@ -643,18 +643,23 @@ module To_C = struct
         ~statements:(Ls.map stats ~f:(statement compiler)) ()
     | _ -> fail compiler "Called 'block' on a non-block statement"
       
-  and statement compiler s =
+  and statement ?(wrong_place_for_comment=false) compiler s =
     let assign a b = `assignment (`variable a, b) in
     match s with
     | Do_nothing                 -> `empty
-    | Do_comment               s -> `block ([], [`comment s])
+    | Do_comment               s ->
+      if wrong_place_for_comment then
+        `block ([], [`comment s])
+      else
+        `comment s
     | Do_block  e as b -> `block (block compiler b)
     | Do_if            (e, a, b) ->
       `conditional (bool_expression compiler e,
-                    statement compiler a,
-                    statement compiler b)
+                    statement ~wrong_place_for_comment:true compiler a,
+                    statement ~wrong_place_for_comment:true compiler b)
     | Do_while_loop    (e, a)    -> 
-      `while_loop (bool_expression compiler e, statement compiler a)
+      `while_loop (bool_expression compiler e, 
+                   statement ~wrong_place_for_comment:true compiler a)
     | Do_assignment (a, b) ->
       assign (variable_name a) (typed_expression compiler b)
     | Do_declaration _ -> 

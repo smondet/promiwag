@@ -10,8 +10,6 @@ To do:
     => module Meta_protocol and Protocol_automaton_generator
     or Meta_packet + Meta_protocol  Packet_parsing Protocol_automaton (?)
 
-* STIEL / C = comments are still not homogeneous
-
 * Pcap:
   - version which takes STIEL as input (?)
   - version with the main

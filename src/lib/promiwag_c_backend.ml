@@ -316,12 +316,14 @@ module To_big_string(Big_string: BIG_STRING) = struct
       | `identifier identifier -> case (BS.str identifier)
       | `default -> BS.str "default:"
 
-  let comment s =
+  let comment ?(at_dangerous_place=true) s =
     let sanitize_comment =
       (* nothing: for now escape-from-comment can be used for lowlevel
          dirty hacking. *)
       fun s -> s in
-    BS.cat [ BS.new_line (); BS.str "/* "; BS.str (sanitize_comment s);
+    let start =
+      if at_dangerous_place then ";/* " else "/* " in
+    BS.cat [ BS.new_line (); BS.str start ; BS.str (sanitize_comment s);
              BS.str " */"; BS.new_line () ]
 
 
@@ -330,7 +332,7 @@ module To_big_string(Big_string: BIG_STRING) = struct
       BS.cat [typed_var (name, typ); BS.str " = "; expression exp; BS.str ";"]
     | `uninitialized (name, typ) ->
       BS.cat [typed_var (name, typ); BS.str ";"]
-    | `comment s -> comment s
+    | `comment s -> comment ~at_dangerous_place:false s
 
   let and_newline printed = BS.cat [printed; BS.new_line ()]
 
@@ -369,7 +371,7 @@ module To_big_string(Big_string: BIG_STRING) = struct
         BS.str "}"; ]
     | `assignment (var, exp) -> 
       BS.cat [expression var; BS.str " = "; expression exp; BS.str ";"; ]
-    | `comment s -> comment s
+    | `comment s -> comment ~at_dangerous_place:true s
 
 
   let function_definition: C.function_definition -> BS.t = 
@@ -386,7 +388,7 @@ module To_big_string(Big_string: BIG_STRING) = struct
       BS.cat [function_declaration f; BS.new_line ();]
     | `function_definition f ->
       BS.cat [function_definition f; BS.new_line ();]
-    | `comment s -> comment s
+    | `comment s -> comment ~at_dangerous_place:false s
       
 
   let file: C.file -> BS.t = fun l -> BS.cat (Ls.map toplevel l)
