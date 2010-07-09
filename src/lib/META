@@ -1,0 +1,5 @@
+description = "Promiwag - Protection Middleware Generation"
+version="0"
+archive(byte)="promiwag.cma"
+archive(native)="promiwag.cmxa"
+requires = "extlib"
