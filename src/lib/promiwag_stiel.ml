@@ -423,8 +423,6 @@ end
 
 module Statement = struct
 
-  let log f l = Do_log (f, l)
-
   let declaration n t = Do_declaration (Variable.tv ~unique:false n t)
 
   let nop = Do_nothing
@@ -441,6 +439,64 @@ module Statement = struct
   let while_loop c s = Do_while_loop (Expression.bool c, s)
 
   let cmt s = Do_comment s
+
+
+  let meta_log user_printers format te_list =
+    let double_escape = "AROBASEESCAPE4732992387737238292933" in
+
+    let simple_escape =
+      sprintf "9sdfa9dsg3gfds8gfdsggfdsgfdsgfdsgfdsgfdsgfdsgfds33%s" in
+    let standard_printers = [
+      ("@hex", simple_escape "hex", fun te -> [te]);
+      ("@int", simple_escape "int", fun te -> [te]);
+      ("@expr",simple_escape "expr", fun te -> [te]); ] in
+    let all_printers =
+      standard_printers @ 
+        (Ls.map user_printers ~f:(fun (a,b,c) ->
+          let newb =
+            Str.multi_replace ~str:b ~sub:"@" ~by:(simple_escape "") in
+          (a, newb, c))) in
+    let unescape str =
+      let str =
+        (Str.multi_replace ~str ~sub:(simple_escape "") ~by:"@") in
+      Str.multi_replace ~str ~sub:double_escape ~by:"@@" in
+
+    let first_pattern fmt =
+      let try_the_patterns =
+        Ls.map all_printers ~f:(fun ((pat, replace, te_fun) as printer) ->
+          let index = try Str.find fmt pat with e -> max_int in
+          (index, printer)) in
+      let _, the_first =
+        Ls.fold_left ~f:(fun (cur_index, cur_prt) (index, prt) ->
+          if cur_index > index then (index, Some prt)
+          else (cur_index, cur_prt))
+          ~init:(max_int, None) try_the_patterns in
+      the_first
+    in
+    let rec parse_string te_list_list te_list str =
+      match first_pattern str, te_list with
+      | None, [] -> (str, Ls.flatten (Ls.rev te_list_list))
+      | Some (sub, by, te_fun), te :: next_tes ->
+        (parse_string ((te_fun te) :: te_list_list)
+           next_tes (snd (Str.replace ~str ~sub ~by)))
+      | None, l ->
+        failwith 
+          (sprintf "meta_log: too many arguments (%d) and no more patterns: %S"
+             (Ls.length l) (unescape str))
+      | Some (sub, by, _), [] ->
+        failwith
+          (sprintf "meta_log: not enough arguments for all the patterns: \
+                    '%s' in %S"
+             sub (unescape str))
+    in
+    let fmt = Str.multi_replace ~str:format ~sub:"@@" ~by:double_escape in
+    let new_format, new_args = parse_string [] te_list fmt in
+
+    let actually_the_format = unescape new_format in
+
+    Do_log (actually_the_format, new_args)
+
+  let log f l = meta_log [] f l
 
 end
 
@@ -1177,6 +1233,7 @@ module Construct_legacy = struct
   let rec buffer = function
     | `Var v -> Buffer_expr_variable v
     | `Offset (b, i) -> Buffer_expr_offset (buffer b, int i)
+    | `E e -> e
 
   let buffer_var v = Buffer_expr_variable v
   let offset b i =  Buffer_expr_offset (b, i)

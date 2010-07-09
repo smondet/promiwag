@@ -798,23 +798,39 @@ let test_protocol_stack dev () =
 
   printf "The Internet's %s\n" (PS2S.protocol_stack the_internet);
 
+  let my_log =
+    Promiwag.Stiel.Statement.meta_log [
+      ("@ethaddr", "@hex:@hex:@hex:@hex:@hex:@hex",
+       (fun buf ->
+         let be = Stiel.buffer_expr buf in
+         [ Stiel.expr $ `U8  (`U8_at be);
+           Stiel.expr $ `U8  (`U8_at (Stiel.buffer (`Offset (`E be, `U 1))));
+           Stiel.expr $ `U8  (`U8_at (Stiel.buffer (`Offset (`E be, `U 2))));
+           Stiel.expr $ `U8  (`U8_at (Stiel.buffer (`Offset (`E be, `U 3))));
+           Stiel.expr $ `U8  (`U8_at (Stiel.buffer (`Offset (`E be, `U 4))));
+           Stiel.expr $ `U8  (`U8_at (Stiel.buffer (`Offset (`E be, `U 5)))); ]))
+    ] in
+
   let automata_treatment packet_pointer =
     let stack_handler =
-      let make_make_block name request =
+      let make_make_block more name request =
         Stiel.block (
           [ Stiel.log (sprintf "  %s 'test' handler\n" name) [];] 
           @ (Ls.map request
                ~f:(fun te ->
                  Stiel.log "   @expr = @hex\n" [te; te];))
+          @ (Ls.map request ~f:more)
         ) in
       GenStiel.handler
         ~initial_protocol:Promiwag_standard_protocols.ethernet_name [
           (Promiwag_standard_protocols.ethernet_name,
            [ `pointer "dest_addr"; `pointer "src_addr"; ],
-           make_make_block "Ethernet");
+           make_make_block 
+             (fun te -> my_log "   addr @expr: @ethaddr" [te; te])
+             "Ethernet");
           (Promiwag_standard_protocols.ipv4_name,
            [ `value "src"; `value "dest"; ],
-           make_make_block "IPv4");
+           make_make_block (fun a -> Stiel.nop) "IPv4");
         ] in
 
     let packet =

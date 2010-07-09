@@ -31,10 +31,6 @@ To do:
   - external procedures, defined with functions to transform parameters
   - Write_{int,...}_to_buffer i.e. a controled/typed asignement of *buffer.
   - big2little and little2big
-  - log: user-defined printers: 
-    e.g.: ("@ip_addr", "%d.%d.%d.%d", fun te -> [ te[0], ... ])
-    ? but format independent of 'C', like "@int.@int.@int.@int" ???
-    -> then need a @0int and a @0hex format ?
 
 * Promiwag_stiel: Future
   - full interpreter
