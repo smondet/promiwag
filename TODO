@@ -10,6 +10,12 @@ To do:
     => module Meta_protocol and Protocol_automaton_generator
     or Meta_packet + Meta_protocol  Packet_parsing Protocol_automaton (?)
 
+* Promiwag_meta_packet, Promiwag_protocol_stack:
+  - like DHCP options (like a null-terminated list)
+  - like DNS arrays
+  - GRE's checksum sounds a bit hackish...
+
+
 * Promiwag_standard_protocols: 
   - TCP packets
 

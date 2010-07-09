@@ -3,15 +3,17 @@ module Protocol_stack = Promiwag_protocol_stack
 module PS = Promiwag_protocol_stack
 
 
-let ethernet_name = "Ethernet"
-let ipv4_name = "IPv4"
-let arp_name = "ARP"
-let ipv6_name = "IPv6"
-let tcp_name = "TCP"
-let udp_name = "UDP"
-let dccp_name = "DCCP" 
-let icmp_name = "ICMP"
-let igmp_name = "IGMP"
+let ethernet = "Ethernet"
+let ipv4 = "IPv4"
+let arp = "ARP"
+let ipv6 = "IPv6"
+let tcp = "TCP"
+let udp = "UDP"
+let dccp = "DCCP" 
+let icmp = "ICMP"
+let igmp = "IGMP"
+let gre = "GRE"
+let dhcp = "DHCP"
 
 let ethernet_format =
   let mac_addr_type = MPS.fixed_string 6 in
@@ -24,40 +26,203 @@ let ethernet_format =
   ]
 let ethernet_transitions =
   PS.switch "ethertype_length" [
-    PS.case_int_value 0x800 ipv4_name "eth_payload";
-    PS.case_int_value 0x806 arp_name "eth_payload";
-    PS.case_int_value 0x86dd ipv6_name "eth_payload";
+    PS.case_int_value 0x800 ipv4 "eth_payload";
+    PS.case_int_value 0x806 arp "eth_payload";
+    PS.case_int_value 0x86dd ipv6 "eth_payload";
     PS.case_int_range 46 1500 "EthernetUnknownPayload_46-1500" "eth_payload";
   ]
-    
+  
+(*
+From Ion's:
+/* http://www.iana.org/assignments/arp-parameters, 
+   don't ask me why ATM has three values, Internet is what
+   it is... */
+
+ptype: uint16 variant {|0x800->Ipv4 |0x806->Ipv6 };
+*)
+
+let arp_format =
+  MPS.packet_format [
+    MPS.fixed_int_field "htype" 16;
+    MPS.fixed_int_field "ptype" 16;
+    MPS.fixed_int_field "hlen"   8;
+    MPS.fixed_int_field "plen"   8;
+    MPS.fixed_int_field "op"    16;
+    MPS.string_field    "sha"   (MPS.size (`var "hlen"));
+    MPS.string_field    "spa"   (MPS.size (`var "plen"));
+    MPS.string_field    "tha"   (MPS.size (`var "hlen"));
+    MPS.string_field    "tpa"   (MPS.size (`var "plen"));
+  ]
+let arp_transitions = PS.empty_transition
+
+let string_arp_htype = [
+  (0, "Reserved");
+  (1, "Ethernet");
+  (2, "ExperimentalEthernet");
+  (3, "AmateurRadioAXDOT25");
+  (4, "ProteonProNETTokenRing");
+  (5, "Chaos");
+  (6, "IEEE802Networks");
+  (7, "ARCNET");
+  (8, "Hyperchannel");
+  (9, "Lanstar");
+  (10, "AutonetShortAddress");
+  (111, "LocalTalk");
+  (112, "LocalNet");
+  (131, "Ultralink");
+  (114, "SMDS");
+  (1115, "FrameRelay");
+  (116, "ATM");
+  (117, "HDLC");
+  (118, "FibreChannel");
+  (119, "ATM1");
+  (220, "SerialLine");
+  (221, "ATM3");
+  (222, "MILSTD188220");
+  (223, "Metricom");
+  (224, "IEEE1394DOT1995");
+  (225, "MAPOS");
+  (226, "Twinaxial");
+  (227, "EUI64");
+  (228, "HIPARP");
+  (229, "IPandARPoverISO78163");
+  (330, "ARPSec");
+  (331, "IPsectunnel");
+  (332, "InfiniBand");
+  (333, "TIA102Project25CAI");
+  (334, "WiegandInterface");
+  (335, "PureIP");
+  (336, "HW_EXP1" );
+]
+let string_of_arp_op = [
+  (0, "Reserved");
+  (13, "REQUEST");
+  (23, "REPLY");
+  (34, "RequestReverse");
+  (44, "ReplyReverse");
+  (54, "DRARPRequest");
+  (64, "DRARPReply");
+  (74, "DRARPError");
+  (84, "InARPRequest");
+  (94, "InARPReply");
+  (140, "ARPNAK");
+  (141, "MARSRequest");
+  (142, "MARSMulti");
+  (153, "MARSMServ");
+  (154, "MARSJoin");
+  (155, "MARSLeave");
+  (156, "MARSNAK");
+  (157, "MARSUnserv");
+  (158, "MARSSJoin");
+  (159, "MARSSLeave");
+  (250, "MARSGrouplistRequest");
+  (251, "MARSGrouplistReply");
+  (252, "MARSRedirectMap");
+  (263, "MAPOSUNARP");
+  (264, "OP_EXP1");
+  (265, "OP_EXP2");
+]
 
 (*
-    version: bit[4] const(4);
-    ihl: bit[4] min(5) value(offset(options) / 4);
-    tos_precedence: bit[3] variant {
-        |0 => Routine |1 -> Priority
-        |2 -> Immediate |3 -> Flash
-        |4 -> Flash_override |5 -> ECP
-        |6 -> Internetwork_control |7 -> Network_control
-    };
+packet dhcp {
+    op: byte variant {
+ |1 3-> BootRequest |2-> BootReply };
+    htype: byte variant { |1 -> Ethernet };
+    hlen: byte value(sizeof(chaddr));
+    hops: byte;
+    xid: uint32;
+    secs: uint16;
+	broadcast: bit[1];
+	reserved: bit[15] const(0);
+    ciaddr: uint32;
+    yiaddr: uint32;
+    siaddr: uint32;
+    giaddr: uint32;
+    chaddr: byte[16];
+    sname: byte[64];
+    file: byte[128];
+    options: byte[remaining()];
+}
+
+There is more (options) in the file
+*)
+
+let dhcp_format =
+  MPS.packet_format [
+    MPS.fixed_int_field "op"     8;
+    MPS.fixed_int_field "htype"  8;
+    MPS.fixed_int_field "hlen"   8;
+    MPS.fixed_int_field "hops"   8;
+    MPS.fixed_int_field "xid"   32;
+    MPS.fixed_int_field "secs"  16;
+    MPS.fixed_int_field "broadcast" 1;
+    MPS.fixed_int_field "reserved" 15;
+    MPS.fixed_int_field "ciaddr"   32;
+    MPS.fixed_int_field "yiaddr"   32;
+    MPS.fixed_int_field "siaddr"   32;
+    MPS.fixed_int_field "giaddr"   32;
+    MPS.string_field    "chaddr"  (MPS.size (`int  16));
+    MPS.string_field    "sname"   (MPS.size (`int  64));
+    MPS.string_field    "file"    (MPS.size (`int 128));
+(*    MPS.fixed_int_field "options_code" 8;
+    MPS.fixed_int_field "option_len"   8;
+    MPS.string_field    "option_content" (MPS.size (`var "option_len")); *)
+  ]
+let dhcp_transitions = PS.empty_transition
+
+
+
+let dns_format =
+  MPS.packet_format [
+    MPS.fixed_int_field "id" 16;
+    MPS.fixed_int_field "qr" 1;
+    MPS.fixed_int_field "opcode" 4;
+    MPS.fixed_int_field "authoritative" 1;
+    MPS.fixed_int_field "truncation" 1;
+    MPS.fixed_int_field "rd" 1;
+    MPS.fixed_int_field "ra" 1;
+    MPS.fixed_int_field "zv" 3;
+    MPS.fixed_int_field "rcode" 4;
+    MPS.fixed_int_field "qdcount" 16;
+    MPS.fixed_int_field "ancount" 16;
+    MPS.fixed_int_field "nscount" 16;
+    MPS.fixed_int_field "arcount" 16;
+    MPS.string_field "questions" (MPS.size (`mul (`int 4, `var "qdcount")));
+  (* TODO *)
+  ]
+let dns_transitions = PS.empty_transition
+
+
+let gre_format = 
+  MPS.packet_format [
+    MPS.fixed_int_field "checksum_present" 1;
+    MPS.fixed_int_field "reserved" 12;
+    MPS.fixed_int_field "version" 3;
+    MPS.fixed_int_field "protocol" 16; (* variant {|2048->IP |2054->ARP};*)
+    MPS.string_field "checksum"    (MPS.size (`mul (`var "checksum_present", `int 2)));
+    MPS.string_field "reserved_cs" (MPS.size (`mul (`var "checksum_present", `int 2)));
+    MPS.payload ~name:"gre_payload" ();
+  ]
+(*let gre_transitions = 
+  PS.switch "checksum_present" [
+    PS.case_int_value 0 gre_without_checksum "gre_payload";
+    PS.case_int_value 1 gre_with_checksum "gre_payload";
+  ]*)
+
+let gre_transitions =
+  PS.switch "protocol" [
+    PS.case_int_value 0x800  ipv4 "gre_payload";
+    PS.case_int_value 0x806  arp  "gre_payload";
+    PS.case_int_value 0x86dd ipv6 "gre_payload";
+    PS.case_int_range 46 1500 "GREUnknownPayload_46-1500" "gre_payload";
+  ]
+
+
+(*
     tos_delay: bit[1] variant {|0 => Normal |1 -> Low};
     tos_throughput: bit[1] variant {|0 => Normal |1 -> Low};
     tos_reliability: bit[1] variant {|0 => Normal |1 -> Low};
-    tos_reserved: bit[2] const(0);
-    length: uint16 value(offset(data));
-    id: uint16;
-    reserved: bit[1] const(0);
-    dont_fragment: bit[1] default(0);
-    can_fragment: bit[1] default(0);
-    frag_offset: bit[13] default(0);
-    ttl: byte;
     protocol: byte variant {|1->ICMP |2->IGMP |6->TCP |17->UDP};
-    checksum: uint16 default(0);
-    src: uint32;
-    dest: uint32;
-    options: byte[(ihl * 4) - offset(dest)] align(32);
-    header_end: label;
-    data: byte[length-(ihl*4)];
 *)
 let ipv4_format =
   MPS.packet_format [
@@ -94,12 +259,24 @@ let ipv4_format =
   ]
 let ipv4_transitions =
   PS.switch "protocol" [
-    PS.case_int_value  1 icmp_name "ip_payload";
-    PS.case_int_value  2 igmp_name "ip_payload";
-    PS.case_int_value  6  tcp_name "ip_payload";
-    PS.case_int_value 17  udp_name "ip_payload";
-    PS.case_int_value 33 dccp_name "ip_payload";
+    PS.case_int_value  1 icmp "ip_payload";
+    PS.case_int_value  2 igmp "ip_payload";
+    PS.case_int_value  6  tcp "ip_payload";
+    PS.case_int_value 17  udp "ip_payload";
+    PS.case_int_value 33 dccp "ip_payload";
+    PS.case_int_value 47 gre  "ip_payload";
   ]
+let ipv4_tos_precedence_string = [
+  (0, "Routine");
+  (1, "Priority");
+  (2, "Immediate");
+  (3, "Flash");
+  (4, "Flash_override");
+  (5, "ECP");
+  (6, "Internetwork_control");
+  (7, "Network_control");
+]
+
 
 let udp_format = 
   MPS.packet_format [
@@ -113,6 +290,41 @@ let udp_format =
       ();
   ]
 let udp_transitions = PS.empty_transition
+
+
+let tcp_format =
+  MPS.packet_format [
+    MPS.fixed_int_field "src_port" 16;
+    MPS.fixed_int_field "dst_port" 16;
+    MPS.fixed_int_field "seq_number" 32;
+    MPS.fixed_int_field "ack_number" 32;
+
+    MPS.fixed_int_field "data_offset" 4;
+    MPS.fixed_int_field "reserved"    4;
+    MPS.fixed_int_field  "cwr" 1;
+    MPS.fixed_int_field  "ece" 1;
+    MPS.fixed_int_field  "urg" 1;
+    MPS.fixed_int_field  "ack" 1;
+    MPS.fixed_int_field  "psh" 1;
+    MPS.fixed_int_field  "rst" 1;
+    MPS.fixed_int_field  "syn" 1;
+    MPS.fixed_int_field  "fin" 1;
+
+    MPS.fixed_int_field  "window" 16;
+    MPS.fixed_int_field  "checksum" 16;
+    MPS.fixed_int_field  "urg_pointer" 16;
+    MPS.string_field  "options" (MPS.size (`sub (`mul (`var "data_offset", `int 4),
+                                                 `offset "options")));
+    MPS.payload ~name:"tcp_payload" ();
+  ]
+let tcp_transitions = PS.empty_transition
+
+
+
+
+
+
+
 
 let test =
   MPS.packet_format [
@@ -141,7 +353,11 @@ let test =
 
 let internet_stack_from_ethernet () =
   let s = Protocol_stack.empty_protcol_stack () in
-  Protocol_stack.add_protocol s ethernet_name ethernet_format ethernet_transitions;
-  Protocol_stack.add_protocol s ipv4_name ipv4_format ipv4_transitions;
-  Protocol_stack.add_protocol s udp_name udp_format udp_transitions;
+  Protocol_stack.add_protocol s ethernet ethernet_format ethernet_transitions;
+  Protocol_stack.add_protocol s ipv4 ipv4_format ipv4_transitions;
+  Protocol_stack.add_protocol s udp udp_format udp_transitions;
+  Protocol_stack.add_protocol s tcp tcp_format tcp_transitions;
+  Protocol_stack.add_protocol s arp arp_format arp_transitions;
+  Protocol_stack.add_protocol s gre gre_format gre_transitions;
+  Protocol_stack.add_protocol s dhcp dhcp_format dhcp_transitions;
   s

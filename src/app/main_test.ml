@@ -822,13 +822,13 @@ let test_protocol_stack dev () =
           @ (Ls.map request ~f:more)
         ) in
       GenStiel.handler
-        ~initial_protocol:Promiwag_standard_protocols.ethernet_name [
-          (Promiwag_standard_protocols.ethernet_name,
+        ~initial_protocol:Promiwag_standard_protocols.ethernet [
+          (Promiwag_standard_protocols.ethernet,
            [ `pointer "dest_addr"; `pointer "src_addr"; ],
            make_make_block 
              (fun te -> my_log "   addr @expr: @ethaddr" [te; te])
              "Ethernet");
-          (Promiwag_standard_protocols.ipv4_name,
+          (Promiwag_standard_protocols.ipv4,
            [ `value "src"; `value "dest"; ],
            make_make_block (fun a -> Stiel.nop) "IPv4");
         ] in

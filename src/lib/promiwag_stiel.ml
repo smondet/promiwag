@@ -498,6 +498,10 @@ module Statement = struct
 
   let log f l = meta_log [] f l
 
+  let switch_int expr cases =
+    Ls.map cases ~f:(fun (i, statement_then) ->
+      conditional (Expression.eq expr (Expression.unat i)) ~statement_then)
+
 end
 
 
