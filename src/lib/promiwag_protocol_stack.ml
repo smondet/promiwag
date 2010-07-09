@@ -1,7 +1,7 @@
 open Promiwag_std
 
 module Stiel_types = Promiwag_stiel
-module Stiel = Promiwag_stiel.Construct
+module Stiel = Promiwag_stiel.Construct_legacy
 module MP_format = Promiwag_meta_packet.Packet_structure
 module Partial_eval = Promiwag_stiel.Transform.Partial_evaluation
 

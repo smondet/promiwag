@@ -219,7 +219,7 @@ let test_packet_parsing () =
   printf "STAGE 1: done\n"; (* (Stage_one.dump stage_1); *)
 
   let module To_stiel = Promiwag.Meta_packet.Parser_generator.Stage_2_stiel in
-  let module Stiel = Promiwag.Stiel.Construct in
+  let module Stiel = Promiwag.Stiel.Construct_legacy in
   let module Stiel_to_str = Promiwag.Stiel.To_string in
   let module Stiel_to_C = Promiwag.Stiel.To_C in
   let packet_var = Stiel.var_sized_buffer ~unique:false 1000 "user_packet" in
@@ -298,7 +298,7 @@ let test_stiel ?(out=`term) () =
 
 
   let module IL = Promiwag.Stiel in
-  let module Cons = IL.Construct in
+  let module Cons = IL.Construct_legacy in
   let module Transfo = IL.Transform in
   let module Partial = Transfo.Partial_evaluation in
   let module Env = Environment in
@@ -788,7 +788,7 @@ let test_pcap_parsing dev () =
   ()
 
 let test_protocol_stack dev () =
-  let module Stiel = Promiwag.Stiel.Construct in
+  let module Stiel = Promiwag.Stiel.Construct_legacy in
   let module Stiel2S = Promiwag.Stiel.To_string in
   let module PS = Promiwag.Protocol_stack in
   let module PS2S = PS.To_string in
