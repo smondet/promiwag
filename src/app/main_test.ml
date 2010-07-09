@@ -801,15 +801,12 @@ let test_protocol_stack dev () =
   let stack_handler =
 
     let make_make_block name =
-      fun (passed_by_protocol, request) ->
+      fun request ->
         Stiel.block (
           [ Stiel.log (sprintf "  %s 'test' handler\n" name) [];] 
           @ (Ls.map request
                ~f:(fun te ->
                  Stiel.log "   @expr = @hex\n" [te; te];))
-          @ (Ls.map passed_by_protocol
-               ~f:(fun te ->
-                    Stiel.log "   Receiving @hex from passed expressions\n" [te];))
         ) in
 
 

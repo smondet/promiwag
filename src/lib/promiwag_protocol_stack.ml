@@ -32,7 +32,6 @@ let packet_value_of_string s =
 type atomic_transition = {
   condition: Stiel_types.bool_expression;
   next_format: string;
-  passed_expressions: packet_value list;
   next_payload: string;
 }
   
@@ -55,7 +54,6 @@ type input_case =
 
 type input_transition =
   | Switch of string * input_case list
-  | Atomic of atomic_transition
   | No_transition
 
 let empty_protcol_stack () =
@@ -64,10 +62,8 @@ let empty_protcol_stack () =
 
 let atomic_transition
     ?(condition=Stiel_types.Bool_expr_false)
-    ?(passed_expressions=[])
     ~next_payload next_format =
   {condition = condition; next_format = next_format; 
-   passed_expressions = passed_expressions; 
    next_payload = next_payload;}
 
 let transform_input_next (name, ofs) =
@@ -84,15 +80,12 @@ let transform_input_case field =
       Stiel.bool 
         (`And (`E (Stiel.le iea (Stiel.int_var var_field)),
                `E (Stiel.le (Stiel.int_var var_field) ieb))) in
-    atomic_transition ~condition 
-      ~passed_expressions:[`value field] 
-      ~next_payload next_format
+    atomic_transition ~condition ~next_payload next_format
 
 let transform_input_transitions = function
   | No_transition -> []
   | Switch (field, cases) ->
     Ls.map cases ~f:(transform_input_case field)
-  | Atomic a -> [a]
 
 let case_int_value int_value next_format next_payload =
   Case_int_value (Stiel.uint int_value, next_format, next_payload)
@@ -105,12 +98,6 @@ let switch field cases =
 
 let empty_transition =
   No_transition
-
-let atomic ?(condition=Stiel_types.Bool_expr_false)
-    ?(passed_expressions=[])
-    next_format next_payload =
-  Atomic (atomic_transition ~condition 
-            ~passed_expressions ~next_payload next_format)
 
 
 
@@ -135,28 +122,9 @@ module To_string = struct
   let atomic_transition ?(indent=0) at = 
     let indent_str = make_indent indent in
     let more_indent = make_indent (indent + 1) in
-    let more_more_indent = make_indent (indent + 2) in
-    let passed_expressions =
-      let pref, sep, suf = 
-        if Ls.length at.passed_expressions > 0 then
-          (sprintf "\n%s"  more_more_indent, 
-           sprintf ";\n%s" more_more_indent,
-           sprintf "\n%s"  more_indent)
-        else 
-          ("", "", "")
-      in
-      sprintf "%s%s%s" pref
-        (Str.concat sep (Ls.map (function
-          | `value f -> sprintf "field %s" f
-          | `pointer f -> sprintf "pointer %s" f
-          | `offset f -> sprintf "offset of %s" f
-          | `size f -> sprintf "size of %s" f) at.passed_expressions))
-        suf
-    in 
-    sprintf "%sWhen [%s]\n%s-> Next Is \"%s\"\n%sAt Offset Of \"%s\"\n%sPassing: [%s]"
+    sprintf "%sWhen [%s]\n%s-> Next Is \"%s\"\n%sAt Offset Of \"%s\""
       indent_str (Stiel2S.bool_expression at.condition) more_indent
-      at.next_format more_indent 
-      at.next_payload more_indent passed_expressions
+      at.next_format more_indent at.next_payload
   
       
   let protocol ?(indent=0) p =
@@ -188,13 +156,10 @@ module Automata_generator = struct
 
   module Packet_parsing = Promiwag_meta_packet.Parser_generator
 
-  type passed_expressions = Stiel_types.typed_expression list
-
   type protocol_handler = {
     handled_format: string;
     user_request: Packet_parsing.request list;
-    make_handler: 
-      passed_expressions * passed_expressions -> Stiel_types.statement;
+    make_handler:  Stiel_types.typed_expression list -> Stiel_types.statement;
   }
 
   type error =
@@ -288,8 +253,7 @@ generate (just for handlers and their dependencies):
       (Stiel.expr_unat (get_out_value compiler))
 
 
-  let compile_transition compiler cond_req_exprs ofs_req_exprs
-      req_passed_exprs transition =
+  let compile_transition compiler cond_req_exprs ofs_req_exprs transition =
 
 (*
   condition: Stiel_types.bool_expression;
@@ -340,7 +304,7 @@ generate (just for handlers and their dependencies):
     let default_handler format =
       { handled_format = format;
         user_request = [];
-        make_handler= fun (_, _) ->
+        make_handler= fun _ ->
           let block = [
             Stiel.cmt (sprintf "Protocol %s is not handled by user" format);
           ] in
@@ -367,8 +331,6 @@ generate (just for handlers and their dependencies):
         Ls.iter transitions ~f:(fun t ->
           V.bool_expression get_variables_compiler t.condition);
         (Ls.unique !l) in
-      let transition_passed_request =
-        Ls.flatten (Ls.map transitions ~f:(fun t -> t.passed_expressions)) in
       let transition_offset_request =
         Ls.unique (Ls.map transitions ~f:(fun t -> `offset t.next_payload)) in
       Ls.iter transitions ~f:(fun t ->
@@ -376,7 +338,7 @@ generate (just for handlers and their dependencies):
           (find_handler compiler t.next_format));
 
       let request =
-        transition_offset_request @ transition_passed_request 
+        transition_offset_request
         @ transition_conditions_request @ protocol_handler.user_request in
       let stage_1 =
         Packet_parsing.Stage_1.compile_with_dependencies
@@ -387,25 +349,20 @@ generate (just for handlers and their dependencies):
       let make_user_block l =
         let from_next_offset, the_rest =
           Ls.split_nth (Ls.length transition_offset_request)  l in
-        let from_the_passed_expressions, the_rest =
-          Ls.split_nth (Ls.length transition_passed_request) the_rest in
         let from_the_transition_conditions, from_the_user_request =
           Ls.split_nth (Ls.length transition_conditions_request)  the_rest in
         [ (Stiel.cmt "Parsing User Block TODO") ]
         (* :: (Ls.map from_the_transition_conditions *)
         (*       ~f:(fun te -> *)
         (*         Stiel.log "Receiving @hex from transition conditions" [te];)) *)
-        @ [ protocol_handler.make_handler ([] (* TODO ! *), 
-                                           from_the_user_request)]
+        @ [ protocol_handler.make_handler from_the_user_request ]
         @ [ Stiel.cmt "Default behaviour is to stop and get out of the While:";
             get_out_statement compiler; ]
         @ (Ls.map transitions 
              ~f:(compile_transition compiler 
                    (Ls.combine transition_conditions_request
                       from_the_transition_conditions)
-                   (Ls.combine transition_offset_request from_next_offset)
-                   (Ls.combine transition_passed_request
-                      from_the_passed_expressions)))
+                   (Ls.combine transition_offset_request from_next_offset)))
       in
       (Stiel.cmt (sprintf "Protocol %s:" format))
       :: (Packet_parsing.Stage_2_stiel.informed_block

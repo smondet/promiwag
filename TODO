@@ -6,7 +6,6 @@ To do:
   ? 'more lazy' binary tree of (condition, statement_then), with special
     case for unknown protocols. Then balance the binary tree and
     generate if-then-else's.
-  - remove the idea of passed expressions (it is state-related)
   - separate protocol description from compilation (e.g. atomic_transition)
     => module Meta_protocol and Protocol_automaton_generator
     or Meta_packet + Meta_protocol  Packet_parsing Protocol_automaton (?)
