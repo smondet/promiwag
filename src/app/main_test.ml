@@ -867,6 +867,96 @@ let test_protocol_stack dev () =
   ()
 
 
+
+let test_clean_protocol_stack dev () =
+  let module Stiel = Promiwag.Stiel in
+  let module Expr = Stiel.Expression in
+  let module Var = Stiel.Variable in
+  let module Do = Stiel.Statement in
+  let module Stiel_to_s = Promiwag.Stiel.To_string in
+  let module Stiel_to_c = Promiwag.Stiel.To_C in
+  let module Meta_stack = Promiwag.Protocol_stack in
+  let module Standard_protocols = Promiwag.Standard_protocols in
+  let module Generator = Meta_stack.Automata_generator in
+  let the_internet =
+    Standard_protocols.internet_stack_from_ethernet () in
+
+  let my_log =
+    Do.meta_log [
+      ("@ethaddr", "@hex:@hex:@hex:@hex:@hex:@hex",
+       (fun be ->
+         [ Expr.u8_at (Expr.offset be (Expr.unat 0));
+           Expr.u8_at (Expr.offset be (Expr.unat 1));
+           Expr.u8_at (Expr.offset be (Expr.unat 2));
+           Expr.u8_at (Expr.offset be (Expr.unat 3));
+           Expr.u8_at (Expr.offset be (Expr.unat 4));
+           Expr.u8_at (Expr.offset be (Expr.unat 5));]));
+      ("@ipv4addr", "@int.@int.@int.@int",
+       (fun ie ->
+         let byte_ones = Expr.i64_to_u32 (Expr.ones 8) in
+         [ Expr.bin_and byte_ones $ Expr.bin_shr ie (Expr.u32 24);
+           Expr.bin_and byte_ones $ Expr.bin_shr ie (Expr.u32 16);
+           Expr.bin_and byte_ones $ Expr.bin_shr ie (Expr.u32  8);
+           Expr.bin_and byte_ones $ Expr.bin_shr ie (Expr.u32  0);]));
+    ] in
+
+  let automata_treatment packet_pointer =
+    let stack_handler =
+      let make_make_block more name request =
+        Do.block (
+          [ Do.log (sprintf "  %s 'test' handler\n" name) [];] 
+          @ (Ls.map request
+               ~f:(fun te -> Do.log "   @expr = @hex\n" [te; te];))
+          @ (Ls.map request ~f:more)
+        ) in
+      Generator.handler
+        ~initial_protocol:Standard_protocols.ethernet [
+          (Standard_protocols.ethernet,
+           [ `pointer "dest_addr"; `pointer "src_addr"; ],
+           make_make_block 
+             (fun te -> my_log "   addr @expr: @ethaddr\n" [te; te])
+             "Ethernet");
+          (Promiwag_standard_protocols.ipv4,
+           [ `value "src"; `value "dest"; ],
+           make_make_block 
+             (fun te -> my_log "   addr @expr: @ipv4addr\n" [te; te])
+             "IPv4");
+        ] in
+
+    let packet = Generator.packet (Expr.buffer packet_pointer) in
+    
+    let automata_block =
+      Do.block (Generator.automata_block the_internet stack_handler packet) in
+
+    (* printf "Automata Block:\n%s\n" (Stiel2S.statement automata_block); *)
+    
+    automata_block
+  in
+
+  let pcap_capture =
+    let c_compiler =
+      Promiwag.Stiel.To_C.compiler ~platform:Promiwag.Platform.default in
+    let device = `string dev in
+    let on_error a e = Do.log (sprintf "libPCAP ERROR: %s\n" a) [] in
+    let passed_pointer = Var.expression (Var.pointer ~unique:false "NULL") in
+    Promiwag.Pcap_C.make_capture_of_stiel
+      ~device ~on_error ~passed_pointer ~c_compiler
+      (fun ~passed_argument ~packet_length ~packet_buffer -> 
+        automata_treatment packet_buffer) in
+
+  let full_test_c_file = Promiwag.Pcap_C.to_full_file pcap_capture in
+
+  
+  let out = open_out "/tmp/pcaptest.c" in
+  String_tree.print ~out (C2StrTree.file full_test_c_file);
+  close_out out;
+  printf "\  Now you can:\n\
+          \  gcc -lpcap /tmp/pcaptest.c -o /tmp/pcaptest \n\
+          \  /tmp/pcaptest\n";
+  ()
+
+
+
 let () =
   printf "Promiwag's main test.\n";
   if Array.length Sys.argv <= 1 then
@@ -882,6 +972,7 @@ let () =
       | "ilbrtx" -> test_stiel ~out:`brtx
       | "mpp" -> test_pcap_parsing Sys.argv.(2)
       | "ps" -> test_protocol_stack Sys.argv.(2)
+      | "cps" -> test_clean_protocol_stack Sys.argv.(2)
       | s -> failwith (sprintf "Unknown test: %s\n" s)
     in
     Printexc.print test (); (* with
