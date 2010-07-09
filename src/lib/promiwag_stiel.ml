@@ -430,6 +430,9 @@ module Statement = struct
   let nop = Do_nothing
 
   let block l = Do_block l
+  let unblock = function
+    | Do_block l -> l
+    | s -> [s]
 
   let conditional ?(statement_then=Do_nothing) ?(statement_else=Do_nothing)
       condition =

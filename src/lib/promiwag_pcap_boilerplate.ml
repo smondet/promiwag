@@ -104,4 +104,72 @@ module C = struct
           [(`comment "Pcap's callback handler:"); Function.definition handler],
        (locals, statements))
 
+  
+  module Stiel = Promiwag_stiel
+  module Expr = Stiel.Expression
+  module Var = Stiel.Variable
+  module Do = Stiel.Statement
+  module Stiel_to_C = Stiel.To_C
+
+  type stiel_treatment =
+      passed_argument:Stiel.typed_expression ->
+      packet_length:Stiel.typed_expression -> 
+      packet_buffer:Stiel.typed_expression
+      -> Stiel.statement
+      
+  let make_capture_of_stiel
+      ~(c_compiler:Stiel.To_C.compiler)
+      ~(device:[`string of string | `C of C_LightAST.expression])
+      ~(on_error:(string -> Stiel.typed_expression (* pointer: error_buffer *) ->
+                  Stiel.statement))
+      ~(passed_pointer:Stiel.typed_expression)
+      stiel_treatment =
+    let var_name c =
+      match Variable.expression c with
+      | `variable v -> v
+      | other -> failwith "make_capture_of_stiel: stiel_var_of_c_var \
+                             does not receive a variable" in
+    let c_passed_expression = 
+      Stiel.To_C.typed_expression c_compiler passed_pointer in
+    let c_device =
+      match device with `string s -> `literal_string s | `C e -> e in
+    let c_on_error s e =
+      Stiel.To_C.statement c_compiler
+        (on_error s (Var.expression (Var.pointer ~unique:false (
+          match e with
+          | `variable v -> v
+          | other -> failwith "make_capture_of_stiel: stiel_var_of_c_var \
+                             does not receive a variable")))) in
+    let packet_treatment ~passed_argument ~packet_length ~packet_buffer =
+
+      let passed_argument = 
+        Var.expression (Var.pointer ~unique:false (var_name passed_argument)) in
+      let packet_length =
+        Var.expression (Var.unat    ~unique:false (var_name packet_length)) in 
+      let packet_buffer = 
+        Var.expression (Var.pointer ~unique:false (var_name packet_buffer)) in
+      let stiel_statement =
+        stiel_treatment  ~passed_argument ~packet_length ~packet_buffer in
+      match Stiel.To_C.statement c_compiler stiel_statement with
+      | `block b -> b
+      | other -> ([], [other])
+    in
+    let cte =
+      Typed_expression.create ~c_type:(`pointer `unsigned_char) in
+    make_capture 
+      ~device:c_device
+      ~on_error:c_on_error
+      ~passed_expression:(cte ~expression:c_passed_expression ())
+      ~packet_treatment
+
+
+  let to_full_file (toplevels, (block_vars, block_sts)) =
+    let main_pcap, _, _ = 
+      Construct.standard_main 
+        (block_vars, block_sts @ [`return (`literal_int 0)]) in
+    toplevels @ [ Function.definition main_pcap ]
+  
+    
+    
+
 end

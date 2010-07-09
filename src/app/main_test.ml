@@ -798,96 +798,52 @@ let test_protocol_stack dev () =
 
   printf "The Internet's %s\n" (PS2S.protocol_stack the_internet);
 
-  let stack_handler =
-
-    let make_make_block name =
-      fun request ->
+  let automata_treatment packet_pointer =
+    let stack_handler =
+      let make_make_block name request =
         Stiel.block (
           [ Stiel.log (sprintf "  %s 'test' handler\n" name) [];] 
           @ (Ls.map request
                ~f:(fun te ->
                  Stiel.log "   @expr = @hex\n" [te; te];))
         ) in
+      GenStiel.handler
+        ~initial_protocol:Promiwag_standard_protocols.ethernet_name [
+          (Promiwag_standard_protocols.ethernet_name,
+           [ `pointer "dest_addr"; `pointer "src_addr"; ],
+           make_make_block "Ethernet");
+          (Promiwag_standard_protocols.ipv4_name,
+           [ `value "src"; `value "dest"; ],
+           make_make_block "IPv4");
+        ] in
 
+    let packet =
+      GenStiel.packet (Stiel.buffer_expr packet_pointer) in
+    
+    let automata_block =
+      Stiel.block (GenStiel.automata_block the_internet stack_handler packet) in
 
-    GenStiel.handler
-      ~initial_protocol:Promiwag_standard_protocols.ethernet_name [
-        (Promiwag_standard_protocols.ethernet_name,
-         [ `pointer "dest_addr"; `pointer "src_addr"; ],
-         make_make_block "Ethernet");
-        (Promiwag_standard_protocols.ipv4_name,
-         [ `value "src"; `value "dest"; ],
-         make_make_block "IPv4");
-      ] in
+    printf "Automata Block:\n%s\n" (Stiel2S.statement automata_block);
 
-  let var_packet_pointer =
-    Stiel.var_pointer "initial_packet_pointer" in
-
-  let packet =
-    GenStiel.packet (Stiel.buffer_expr (Stiel.expr_var var_packet_pointer)) in
-
-  let automata_block =
-    GenStiel.automata_block the_internet stack_handler packet in
-
-  printf "Automata Block:\n%s\n"
-    (Stiel2S.statement (Stiel.block automata_block));
-
-  let module C = Promiwag.C_backend in
-
-  let cable_automata_to_c packet_buffer_c_var =
-    let module To_C = Promiwag.Stiel.To_C in
-    let compiler = To_C.compiler ~platform:Promiwag.Platform.default in
-
-    To_C.cabled_list_of_statements compiler 
-      [ (var_packet_pointer, C.Variable.typed_expression packet_buffer_c_var) ]
-      automata_block
+    automata_block
   in
 
-  (* PCAP part: *)
+  let pcap_capture =
+    let c_compiler =
+      Promiwag.Stiel.To_C.compiler ~platform:Promiwag.Platform.default in
+    let device = `string dev in
+    let on_error a e = Stiel.log (sprintf "libPCAP ERROR: %s\n" a) [] in
+    let passed_pointer = Stiel.expr (`Pointer (`Var "NULL")) in
+    Promiwag.Pcap_C.make_capture_of_stiel
+      ~device ~on_error ~passed_pointer ~c_compiler
+      (fun ~passed_argument ~packet_length ~packet_buffer -> 
+        automata_treatment packet_buffer) in
 
-  let passed_structure =
-    C.Variable.create ~name:"passed_structure"
-      ~c_type:(`unsigned_long) ~initialisation:(`literal_int 1) () in
-  let toplevels, (block_vars, block_sts) =
-    let passed_expression =
-      C.Variable.address_typed_expression passed_structure in
-    let device = `literal_string dev in
-    let on_error s e = 
-      `block (C.Construct.block () ~statements:[
-        call_printf "PCAP ERROR: %s: %s\n" [`literal_string s; e];
-        `return (`literal_int 2);
-      ]) in
-    let packet_treatment ~passed_argument ~packet_length ~packet_buffer =
-      let counter_mem_contents =
-        `unary (`unary_memof, C.Variable.expression passed_argument) in
-      C.Construct.block () ~statements:[
-        call_printf "=== Packet %d === (length: %d, address: %x)\n"
-          [counter_mem_contents;
-           C.Variable.expression packet_length;
-           C.Variable.expression packet_buffer;
-          ];
-        printf_packet ~prefix:"  Content" (C.Variable.expression packet_buffer) 20;
-        `assignment (counter_mem_contents,
-                     `binary (`bin_add, `literal_int 1, counter_mem_contents));
+  let full_test_c_file = Promiwag.Pcap_C.to_full_file pcap_capture in
 
-        `block (cable_automata_to_c packet_buffer);
-      ]
-    in
-    Promiwag.Pcap_C.make_capture 
-      ~device ~on_error ~passed_expression ~packet_treatment in
-
-  (* Main: *)
-
-  let main_pcap, _, _ = 
-    C.Construct.standard_main 
-      ((C.Variable.declaration passed_structure) :: block_vars, 
-       block_sts @ [`return (`literal_int 0)]) in
-  let test_pcap = 
-    toplevels @ [ C.Function.definition main_pcap ] in
-  (* String_tree.print (C2StrTree.file test_pcap); *)
-
+  
   let out = open_out "/tmp/pcaptest.c" in
-  String_tree.print ~out (C2StrTree.file test_pcap);
+  String_tree.print ~out (C2StrTree.file full_test_c_file);
   close_out out;
   printf "\  Now you can:\n\
           \  gcc -lpcap /tmp/pcaptest.c -o /tmp/pcaptest \n\

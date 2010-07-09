@@ -10,10 +10,6 @@ To do:
     => module Meta_protocol and Protocol_automaton_generator
     or Meta_packet + Meta_protocol  Packet_parsing Protocol_automaton (?)
 
-* Pcap:
-  - version which takes STIEL as input (?)
-  - version with the main
-
 * Promiwag_standard_protocols: 
   - TCP packets
 
