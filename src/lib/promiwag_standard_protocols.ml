@@ -94,7 +94,7 @@ let string_arp_htype = [
   (335, "PureIP");
   (336, "HW_EXP1" );
 ]
-let string_of_arp_op = [
+let string_arp_op = [
   (0, "Reserved");
   (13, "REQUEST");
   (23, "REPLY");

@@ -911,16 +911,40 @@ let test_clean_protocol_stack dev () =
         ) in
       Generator.handler
         ~initial_protocol:Standard_protocols.ethernet [
-          (Standard_protocols.ethernet,
-           [ `pointer "dest_addr"; `pointer "src_addr"; ],
-           make_make_block 
-             (fun te -> my_log "   addr @expr: @ethaddr\n" [te; te])
-             "Ethernet");
-          (Promiwag_standard_protocols.ipv4,
-           [ `value "src"; `value "dest"; ],
-           make_make_block 
-             (fun te -> my_log "   addr @expr: @ipv4addr\n" [te; te])
-             "IPv4");
+          ( Standard_protocols.ethernet,
+            [ `pointer "dest_addr"; `pointer "src_addr"; ],
+            function
+              | [ pointer_dest; pointer_src ] ->
+                Do.block [
+                  my_log "Ethernet: @ethaddr -> @ethaddr.\n" [pointer_src; pointer_dest;];
+                ]
+              | _ -> failwith "should have two typed expressions");
+          ( Standard_protocols.arp,
+            [ `value "htype"; `value "ptype"; `value "op"],
+            function
+              | [ htype; ptype; op ] ->
+                Do.block $ Ls.flatten [
+                  [my_log "  ARP: htype = " [] ];
+                  Do.switch_int htype 
+                    (Ls.map Standard_protocols.string_arp_htype
+                       ~f:(fun (i, s) -> (i, my_log s [])));
+                  [my_log ", ptype = @hex, op = " [ptype]]; 
+                  Do.switch_int htype 
+                    (Ls.map Standard_protocols.string_arp_op
+                       ~f:(fun (i, s) -> (i, my_log s [])));
+                  [my_log ".\n" []];
+                ]
+              | _ -> failwith "should have three typed expressions");
+          ( Standard_protocols.gre,
+            [ `value "checksum_present"; `value "version"; `value "protocol"; ],
+            fun te_list ->
+              my_log "    GRE: checksum_present: @int, \
+                          version: @int, protocol: @hex\n" te_list);
+          ( Promiwag_standard_protocols.ipv4,
+            [ `value "src"; `value "dest"; `value "protocol"; `size "options" ],
+            make_make_block             (* TODO *)
+              (fun te -> my_log "   addr @expr: @ipv4addr\n" [te; te])
+              "IPv4");
         ] in
 
     let packet = Generator.packet (Expr.buffer packet_pointer) in
