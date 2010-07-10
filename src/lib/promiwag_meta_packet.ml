@@ -528,9 +528,9 @@ module Parser_generator = struct
 
     let expr_op_of_size_op = function
       | Op_add -> Expr.add
-      | Op_sub -> Expr.add
-      | Op_mul -> Expr.add
-      | Op_div -> Expr.add
+      | Op_sub -> Expr.sub
+      | Op_mul -> Expr.mul
+      | Op_div -> Expr.div
 
     let rec compile_size compiler needed_as = function
       | Size_fixed s -> Expr.unat s
