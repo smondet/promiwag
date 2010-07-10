@@ -66,61 +66,61 @@ let string_arp_htype = [
   (7, "ARCNET");
   (8, "Hyperchannel");
   (9, "Lanstar");
-  (10, "AutonetShortAddress");
-  (111, "LocalTalk");
-  (112, "LocalNet");
-  (131, "Ultralink");
-  (114, "SMDS");
-  (1115, "FrameRelay");
-  (116, "ATM");
-  (117, "HDLC");
-  (118, "FibreChannel");
-  (119, "ATM1");
-  (220, "SerialLine");
-  (221, "ATM3");
-  (222, "MILSTD188220");
-  (223, "Metricom");
-  (224, "IEEE1394DOT1995");
-  (225, "MAPOS");
-  (226, "Twinaxial");
-  (227, "EUI64");
-  (228, "HIPARP");
-  (229, "IPandARPoverISO78163");
-  (330, "ARPSec");
-  (331, "IPsectunnel");
-  (332, "InfiniBand");
-  (333, "TIA102Project25CAI");
-  (334, "WiegandInterface");
-  (335, "PureIP");
-  (336, "HW_EXP1" );
+  (0, "AutonetShortAddress");
+  (11, "LocalTalk");
+  (12, "LocalNet");
+  (31, "Ultralink");
+  (14, "SMDS");
+  (15, "FrameRelay");
+  (16, "ATM");
+  (17, "HDLC");
+  (18, "FibreChannel");
+  (19, "ATM1");
+  (20, "SerialLine");
+  (21, "ATM3");
+  (22, "MILSTD188220");
+  (23, "Metricom");
+  (24, "IEEE1394DOT1995");
+  (25, "MAPOS");
+  (26, "Twinaxial");
+  (27, "EUI64");
+  (28, "HIPARP");
+  (29, "IPandARPoverISO78163");
+  (30, "ARPSec");
+  (31, "IPsectunnel");
+  (32, "InfiniBand");
+  (33, "TIA102Project25CAI");
+  (34, "WiegandInterface");
+  (35, "PureIP");
+  (36, "HW_EXP1" );
 ]
 let string_arp_op = [
   (0, "Reserved");
-  (13, "REQUEST");
-  (23, "REPLY");
-  (34, "RequestReverse");
-  (44, "ReplyReverse");
-  (54, "DRARPRequest");
-  (64, "DRARPReply");
-  (74, "DRARPError");
-  (84, "InARPRequest");
-  (94, "InARPReply");
-  (140, "ARPNAK");
-  (141, "MARSRequest");
-  (142, "MARSMulti");
-  (153, "MARSMServ");
-  (154, "MARSJoin");
-  (155, "MARSLeave");
-  (156, "MARSNAK");
-  (157, "MARSUnserv");
-  (158, "MARSSJoin");
-  (159, "MARSSLeave");
-  (250, "MARSGrouplistRequest");
-  (251, "MARSGrouplistReply");
-  (252, "MARSRedirectMap");
-  (263, "MAPOSUNARP");
-  (264, "OP_EXP1");
-  (265, "OP_EXP2");
+  (1, "REQUEST");
+  (2, "REPLY");
+  (3, "RequestReverse");
+  (4, "ReplyReverse");
+  (5, "DRARPRequest");
+  (6, "DRARPReply");
+  (7, "DRARPError");
+  (8, "InARPRequest");
+  (9, "InARPReply");
+  (10, "ARPNAK");
+  (11, "MARSRequest");
+  (12, "MARSMulti");
+  (13, "MARSMServ");
+  (14, "MARSJoin");
+  (15, "MARSLeave");
+  (16, "MARSNAK");
+  (17, "MARSUnserv");
+  (18, "MARSSJoin");
+  (19, "MARSSLeave");
+  (20, "MARSGrouplistRequest");
+  (21, "MARSGrouplistReply");
+  (22, "MARSRedirectMap");
+  (23, "MAPOSUNARP");
+  (24, "OP_EXP1");
+  (25, "OP_EXP2");
 ]
 
 (*
@@ -285,7 +285,7 @@ let udp_format =
     MPS.fixed_int_field "length" 16;
     MPS.fixed_int_field "checksum" 16;
     MPS.payload 
-      ~size:(MPS.size (`sub (`var "length", `add (`offset "checksum", `int 4))))
+      ~size:(MPS.size (`sub (`var "length", `add (`offset "checksum", `int 2))))
       ~name:"udp_payload"
       ();
   ]
