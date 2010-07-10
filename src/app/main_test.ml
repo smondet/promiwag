@@ -917,48 +917,52 @@ let test_clean_protocol_stack dev () =
             function
               | [ htype; ptype; op ] ->
                 Do.block $ Ls.flatten [
-                  [my_log "  ARP: htype = " [] ];
+                  [my_log "  ARP: htype = '" [] ];
                   Do.switch_int htype 
                     (Ls.map Standard_protocols.string_arp_htype
                        ~f:(fun (i, s) -> (i, my_log s [])));
-                  [my_log ", ptype = @hex, op = " [ptype]]; 
-                  Do.switch_int htype 
+                  [my_log "' (@int), ptype = @hex, op = '" [ptype; htype]]; 
+                  Do.switch_int op 
                     (Ls.map Standard_protocols.string_arp_op
                        ~f:(fun (i, s) -> (i, my_log s [])));
-                  [my_log ".\n" []];
+                  [my_log "' (@int).\n" [op]];
                 ]
               | _ -> failwith "should have three typed expressions");
           ( Standard_protocols.gre,
             [ `value "checksum_present"; `value "version"; `value "protocol"; ],
             fun te_list ->
               my_log "  GRE: checksum_present: @int, \
-                     \  version: @int, protocol: @hex\n" te_list);
+                     \  version: @int, protocol: @hex.\n" te_list);
           ( Promiwag_standard_protocols.ipv4,
             [ `value "src"; `value "dest"; `value "protocol";`value "ttl";
-              `size "options"; `value "can_fragment"; `value "frag_offset"; ],
+              `value "can_fragment"; `value "frag_offset"; 
+              `size "options"; `value "length";],
             fun te_list ->
               my_log "  IPv4: @ipv4addr -> @ipv4addr\n\
-                     \  protocol: @hex, size of options: @int, TTL: @int,\n\
-                     \  fragment: (can: @int, offset: @int)\n" te_list);
+                     \  protocol: @hex, TTL: @int, fragment: (can: @int, offset: @int)\n\
+                     \  size of options: @int, length: @int.\n"
+                te_list);
           ( Promiwag_standard_protocols.udp,
             [ `value "src_port"; `value "dst_port"; `size "udp_payload"; ],
             fun te_list ->
               my_log "    UDP: @int -> @int\n\
-                     \    payload siwe: @int\n" te_list);
+                     \    payload size: @int.\n" te_list);
           ( Promiwag_standard_protocols.tcp,
             [ `value "src_port"; `value "dst_port"; 
               `value "seq_number"; `value "ack_number";
               `value "window"; `size "options"; ],
             fun te_list ->
               my_log "    TCP: @int -> @int\n\
-                     \    seq: @int, ack: @int, window: @int,\
-                     size of options: @int\n" te_list);
+                     \    seq: @int, ack: @int, window: @int, \
+                     size of options: @int.\n" te_list);
         ] in
 
     let packet = Generator.packet (Expr.buffer packet_pointer) in
     
     let automata_block =
-      Do.block (Generator.automata_block the_internet stack_handler packet) in
+      Do.block 
+        ( (Do.log "===== New Packet =====\n" [])
+          :: (Generator.automata_block the_internet stack_handler packet)) in
 
     printf "Automata Block:\n%s\n" (Stiel_to_str.statement automata_block);
     
