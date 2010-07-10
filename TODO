@@ -14,10 +14,10 @@ To do:
   - like DHCP options (like a null-terminated list)
   - like DNS arrays
   - GRE's checksum sounds a bit hackish...
-
+  - transition from UDP/TCP needs two swtiches, or a "OR"
 
 * Promiwag_standard_protocols: 
-  - TCP packets
+  - DHCP/DNS transitions from UDP
 
 * Promiwag_stiel.Verify:
   - recursivity for variables (that's an environment check)

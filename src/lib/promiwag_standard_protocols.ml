@@ -14,6 +14,7 @@ let icmp = "ICMP"
 let igmp = "IGMP"
 let gre = "GRE"
 let dhcp = "DHCP"
+let dns = "DNS"
 
 let ethernet_format =
   let mac_addr_type = MPS.fixed_string 6 in
@@ -123,76 +124,6 @@ let string_arp_op = [
   (25, "OP_EXP2");
 ]
 
-(*
-packet dhcp {
-    op: byte variant {
- |1 3-> BootRequest |2-> BootReply };
-    htype: byte variant { |1 -> Ethernet };
-    hlen: byte value(sizeof(chaddr));
-    hops: byte;
-    xid: uint32;
-    secs: uint16;
-	broadcast: bit[1];
-	reserved: bit[15] const(0);
-    ciaddr: uint32;
-    yiaddr: uint32;
-    siaddr: uint32;
-    giaddr: uint32;
-    chaddr: byte[16];
-    sname: byte[64];
-    file: byte[128];
-    options: byte[remaining()];
-}
-
-There is more (options) in the file
-*)
-
-let dhcp_format =
-  MPS.packet_format [
-    MPS.fixed_int_field "op"     8;
-    MPS.fixed_int_field "htype"  8;
-    MPS.fixed_int_field "hlen"   8;
-    MPS.fixed_int_field "hops"   8;
-    MPS.fixed_int_field "xid"   32;
-    MPS.fixed_int_field "secs"  16;
-    MPS.fixed_int_field "broadcast" 1;
-    MPS.fixed_int_field "reserved" 15;
-    MPS.fixed_int_field "ciaddr"   32;
-    MPS.fixed_int_field "yiaddr"   32;
-    MPS.fixed_int_field "siaddr"   32;
-    MPS.fixed_int_field "giaddr"   32;
-    MPS.string_field    "chaddr"  (MPS.size (`int  16));
-    MPS.string_field    "sname"   (MPS.size (`int  64));
-    MPS.string_field    "file"    (MPS.size (`int 128));
-(*    MPS.fixed_int_field "options_code" 8;
-    MPS.fixed_int_field "option_len"   8;
-    MPS.string_field    "option_content" (MPS.size (`var "option_len")); *)
-  ]
-let dhcp_transitions = PS.empty_transition
-
-
-
-let dns_format =
-  MPS.packet_format [
-    MPS.fixed_int_field "id" 16;
-    MPS.fixed_int_field "qr" 1;
-    MPS.fixed_int_field "opcode" 4;
-    MPS.fixed_int_field "authoritative" 1;
-    MPS.fixed_int_field "truncation" 1;
-    MPS.fixed_int_field "rd" 1;
-    MPS.fixed_int_field "ra" 1;
-    MPS.fixed_int_field "zv" 3;
-    MPS.fixed_int_field "rcode" 4;
-    MPS.fixed_int_field "qdcount" 16;
-    MPS.fixed_int_field "ancount" 16;
-    MPS.fixed_int_field "nscount" 16;
-    MPS.fixed_int_field "arcount" 16;
-    MPS.string_field "questions" (MPS.size (`mul (`int 4, `var "qdcount")));
-  (* TODO *)
-  ]
-let dns_transitions = PS.empty_transition
-
-
 let gre_format = 
   MPS.packet_format [
     MPS.fixed_int_field "checksum_present" 1;
@@ -289,8 +220,12 @@ let udp_format =
       ~name:"udp_payload"
       ();
   ]
-let udp_transitions = PS.empty_transition
-
+let udp_transitions =
+  PS.switch "dst_port" [
+    PS.case_int_value 53  dns "udp_payload";
+    PS.case_int_value 67 dhcp "udp_payload";
+    PS.case_int_value 68 dhcp "udp_payload";
+  ]
 
 let tcp_format =
   MPS.packet_format [
@@ -321,6 +256,76 @@ let tcp_format =
 let tcp_transitions = PS.empty_transition
 
 
+
+
+(*
+packet dhcp {
+    op: byte variant {
+ |1 3-> BootRequest |2-> BootReply };
+    htype: byte variant { |1 -> Ethernet };
+    hlen: byte value(sizeof(chaddr));
+    hops: byte;
+    xid: uint32;
+    secs: uint16;
+	broadcast: bit[1];
+	reserved: bit[15] const(0);
+    ciaddr: uint32;
+    yiaddr: uint32;
+    siaddr: uint32;
+    giaddr: uint32;
+    chaddr: byte[16];
+    sname: byte[64];
+    file: byte[128];
+    options: byte[remaining()];
+}
+
+There is more (options) in the file
+*)
+
+let dhcp_format =
+  MPS.packet_format [
+    MPS.fixed_int_field "op"     8;
+    MPS.fixed_int_field "htype"  8;
+    MPS.fixed_int_field "hlen"   8;
+    MPS.fixed_int_field "hops"   8;
+    MPS.fixed_int_field "xid"   32;
+    MPS.fixed_int_field "secs"  16;
+    MPS.fixed_int_field "broadcast" 1;
+    MPS.fixed_int_field "reserved" 15;
+    MPS.fixed_int_field "ciaddr"   32;
+    MPS.fixed_int_field "yiaddr"   32;
+    MPS.fixed_int_field "siaddr"   32;
+    MPS.fixed_int_field "giaddr"   32;
+    MPS.string_field    "chaddr"  (MPS.size (`int  16));
+    MPS.string_field    "sname"   (MPS.size (`int  64));
+    MPS.string_field    "file"    (MPS.size (`int 128));
+(*    MPS.fixed_int_field "options_code" 8;
+    MPS.fixed_int_field "option_len"   8;
+    MPS.string_field    "option_content" (MPS.size (`var "option_len")); *)
+  ]
+let dhcp_transitions = PS.empty_transition
+
+
+
+let dns_format =
+  MPS.packet_format [
+    MPS.fixed_int_field "id" 16;
+    MPS.fixed_int_field "qr" 1;
+    MPS.fixed_int_field "opcode" 4;
+    MPS.fixed_int_field "authoritative" 1;
+    MPS.fixed_int_field "truncation" 1;
+    MPS.fixed_int_field "rd" 1;
+    MPS.fixed_int_field "ra" 1;
+    MPS.fixed_int_field "zv" 3;
+    MPS.fixed_int_field "rcode" 4;
+    MPS.fixed_int_field "qdcount" 16;
+    MPS.fixed_int_field "ancount" 16;
+    MPS.fixed_int_field "nscount" 16;
+    MPS.fixed_int_field "arcount" 16;
+    MPS.string_field "questions" (MPS.size (`mul (`int 4, `var "qdcount")));
+  (* TODO *)
+  ]
+let dns_transitions = PS.empty_transition
 
 
 
@@ -361,4 +366,5 @@ let internet_stack_from_ethernet () =
   Protocol_stack.add_protocol s arp arp_format arp_transitions;
   Protocol_stack.add_protocol s gre gre_format gre_transitions;
   Protocol_stack.add_protocol s dhcp dhcp_format dhcp_transitions;
+  Protocol_stack.add_protocol s dns dns_format dns_transitions;
   s

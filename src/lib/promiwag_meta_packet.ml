@@ -540,16 +540,15 @@ module Parser_generator = struct
         else
           get_stiel_dependency compiler needed_as v
       | Size_binary_expression (op, size_a, size_b) ->
-        debug$ sprintf "in size: %s"
-          (Stiel_to_str.typed_expression (compile_size compiler needed_as size_a));
+        (* debug$ sprintf "in size: %s" *)
+          (* (Stiel_to_str.typed_expression (compile_size compiler needed_as size_a)); *)
         (expr_op_of_size_op op)
           (Expr.to_unat (compile_size compiler needed_as size_a))
           (Expr.to_unat (compile_size compiler needed_as size_b))
       | Size_alignment (i, s) ->
         let c = compile_size compiler needed_as s in
-        (* `binary (`bin_add, c, `binary (`bin_mod, c, `literal_int i)) *)
-        debug$ sprintf "in size: %s"
-          (Stiel_to_str.typed_expression c);
+        (* debug$ sprintf "in size: %s" *)
+          (* (Stiel_to_str.typed_expression c); *)
         Expr.add c (Expr.modulo c (Expr.unat i))
       | Size_offset_of v ->
         get_stiel_dependency compiler `offset v
@@ -600,8 +599,8 @@ module Parser_generator = struct
           | s when 1 <= s && s <= 32 ->
             (* let pointer_expr = Stiel.buffer_expr pointer in *)
             let value_at_pointer = get_integer pointer in
-            debug$ sprintf "value_at_pointer: %s"
-              (Stiel_to_str.typed_expression value_at_pointer);
+            (* debug$ sprintf "value_at_pointer: %s" *)
+              (* (Stiel_to_str.typed_expression value_at_pointer); *)
             let aligned =
               Expr.bin_shr value_at_pointer
                 (Expr.unat (type_size - bofs - psz)) in

@@ -955,6 +955,15 @@ let test_clean_protocol_stack dev () =
               my_log "    TCP: @int -> @int\n\
                      \    seq: @int, ack: @int, window: @int, \
                      size of options: @int.\n" te_list);
+          ( Promiwag_standard_protocols.dhcp,
+            [ `value "op"; `value "xid"; `value "yiaddr"; `value "siaddr" ],
+            fun te_list ->
+              my_log "      DHCP: op: @int, xid: @hex,\n\
+                     \      You: @ipv4addr, Server: @ipv4addr.\n" te_list);
+          ( Promiwag_standard_protocols.dns,
+            [ `value "id"; `value "opcode"; ],
+            fun te_list ->
+              my_log "      DNS: id: @hex, opcode: @int.\n" te_list);
         ] in
 
     let packet = Generator.packet (Expr.buffer packet_pointer) in
@@ -964,7 +973,7 @@ let test_clean_protocol_stack dev () =
         ( (Do.log "===== New Packet =====\n" [])
           :: (Generator.automata_block the_internet stack_handler packet)) in
 
-    printf "Automata Block:\n%s\n" (Stiel_to_str.statement automata_block);
+    (* printf "Automata Block:\n%s\n" (Stiel_to_str.statement automata_block); *)
     
     automata_block
   in
