@@ -313,8 +313,9 @@ let tcp_format =
     MPS.fixed_int_field  "window" 16;
     MPS.fixed_int_field  "checksum" 16;
     MPS.fixed_int_field  "urg_pointer" 16;
-    MPS.string_field  "options" (MPS.size (`sub (`mul (`var "data_offset", `int 4),
-                                                 `offset "options")));
+    MPS.string_field  "options"
+      (MPS.size (`sub (`mul (`var "data_offset", `int 4),
+                       `add (`offset "urg_pointer", `int 2))));
     MPS.payload ~name:"tcp_payload" ();
   ]
 let tcp_transitions = PS.empty_transition

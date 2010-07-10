@@ -204,7 +204,7 @@ module To_string = struct
       spr "%sDeclare %s of type: %s;\n" cur_indent
         (variable_name t.name) (typed_variable_kind t.kind)
     | Do_log (f, l) ->
-      spr "%sLog (format: %s) [%s];\n" cur_indent f 
+      spr "%sLog (format: %S) [%s];\n" cur_indent f 
         (Str.concat "; " (Ls.map typed_expression l))
 
 

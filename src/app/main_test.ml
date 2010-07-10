@@ -873,7 +873,7 @@ let test_clean_protocol_stack dev () =
   let module Expr = Stiel.Expression in
   let module Var = Stiel.Variable in
   let module Do = Stiel.Statement in
-  let module Stiel_to_s = Promiwag.Stiel.To_string in
+  let module Stiel_to_str = Promiwag.Stiel.To_string in
   let module Stiel_to_c = Promiwag.Stiel.To_C in
   let module Meta_stack = Promiwag.Protocol_stack in
   let module Standard_protocols = Promiwag.Standard_protocols in
@@ -902,13 +902,6 @@ let test_clean_protocol_stack dev () =
 
   let automata_treatment packet_pointer =
     let stack_handler =
-      let make_make_block more name request =
-        Do.block (
-          [ Do.log (sprintf "  %s 'test' handler\n" name) [];] 
-          @ (Ls.map request
-               ~f:(fun te -> Do.log "   @expr = @hex\n" [te; te];))
-          @ (Ls.map request ~f:more)
-        ) in
       Generator.handler
         ~initial_protocol:Standard_protocols.ethernet [
           ( Standard_protocols.ethernet,
@@ -938,13 +931,28 @@ let test_clean_protocol_stack dev () =
           ( Standard_protocols.gre,
             [ `value "checksum_present"; `value "version"; `value "protocol"; ],
             fun te_list ->
-              my_log "    GRE: checksum_present: @int, \
-                          version: @int, protocol: @hex\n" te_list);
+              my_log "  GRE: checksum_present: @int, \
+                     \  version: @int, protocol: @hex\n" te_list);
           ( Promiwag_standard_protocols.ipv4,
-            [ `value "src"; `value "dest"; `value "protocol"; `size "options" ],
-            make_make_block             (* TODO *)
-              (fun te -> my_log "   addr @expr: @ipv4addr\n" [te; te])
-              "IPv4");
+            [ `value "src"; `value "dest"; `value "protocol";`value "ttl";
+              `size "options"; `value "can_fragment"; `value "frag_offset"; ],
+            fun te_list ->
+              my_log "  IPv4: @ipv4addr -> @ipv4addr\n\
+                     \  protocol: @hex, size of options: @int, TTL: @int,\n\
+                     \  fragment: (can: @int, offset: @int)\n" te_list);
+          ( Promiwag_standard_protocols.udp,
+            [ `value "src_port"; `value "dst_port"; `size "udp_payload"; ],
+            fun te_list ->
+              my_log "    UDP: @int -> @int\n\
+                     \    payload siwe: @int\n" te_list);
+          ( Promiwag_standard_protocols.tcp,
+            [ `value "src_port"; `value "dst_port"; 
+              `value "seq_number"; `value "ack_number";
+              `value "window"; `size "options"; ],
+            fun te_list ->
+              my_log "    TCP: @int -> @int\n\
+                     \    seq: @int, ack: @int, window: @int,\
+                     size of options: @int\n" te_list);
         ] in
 
     let packet = Generator.packet (Expr.buffer packet_pointer) in
@@ -952,7 +960,7 @@ let test_clean_protocol_stack dev () =
     let automata_block =
       Do.block (Generator.automata_block the_internet stack_handler packet) in
 
-    (* printf "Automata Block:\n%s\n" (Stiel2S.statement automata_block); *)
+    printf "Automata Block:\n%s\n" (Stiel_to_str.statement automata_block);
     
     automata_block
   in
