@@ -38,6 +38,9 @@ To do:
   - external procedures, defined with functions to transform parameters
   - Write_{int,...}_to_buffer i.e. a controled/typed asignement of *buffer.
   - big2little and little2big
+    http://www.codeproject.com/KB/cpp/endianness.aspx
+    http://msdn.microsoft.com/en-us/library/2bxt6kc4.aspx
+    http://www.gsp.com/cgi-bin/man.cgi?section=7&topic=operator
 
 * Promiwag_stiel: Future
   - full interpreter
