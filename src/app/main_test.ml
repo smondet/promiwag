@@ -180,8 +180,12 @@ let test_pcap_basic () =
   close_out out;
   ()
 
-
-
+let print_the_internet () =
+  let the_internet =
+    Promiwag.Standard_protocols.internet_stack_from_ethernet () in
+  printf "The Internet:\n%s\n"
+    (Promiwag.Protocol_stack.To_string.protocol_stack the_internet);
+  ()
 
 let test_clean_protocol_stack dev () =
   let module Stiel = Promiwag.Stiel in
@@ -336,6 +340,7 @@ let () =
       | "pcap" ->  test_pcap_basic
       | "base" -> test_c_ast
       | "cps" -> test_clean_protocol_stack Sys.argv.(2)
+      | "pi" -> print_the_internet
       | s -> failwith (sprintf "Unknown test: %s\n" s)
     in
     Printexc.print test (); 

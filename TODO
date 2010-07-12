@@ -18,7 +18,6 @@ To do:
     -> when the state related part will be implemented
        an API sould be defined for packet + transitions + state dependency
   - GRE's checksum sounds a bit hackish...
-  - transition from UDP/TCP needs two swtiches, or a "OR"
   
 
 * Promiwag_stiel.Verify:
