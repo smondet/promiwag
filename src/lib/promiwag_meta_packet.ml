@@ -92,6 +92,13 @@ module Packet_structure = struct
 
   let packet_format format = (format: format)
 
+  type packet_value = [ 
+  | `value of string
+  | `pointer of string
+  | `offset of string
+  | `size of string
+  ]
+
 end
 
 module To_string = struct
@@ -126,13 +133,8 @@ module Parser_generator = struct
     a request of pointer should be a C-like pointer
     a value is for now an unsigned integer of minimal size
   *)
-  type request = [ 
-  | `value of string
-  | `pointer of string
-  | `offset of string
-  | `size of string
-  ]
-
+  type request = Packet_structure.packet_value
+      
 
   module Stage_1 = struct 
       
@@ -434,7 +436,7 @@ module Parser_generator = struct
       | `for_all (** Create variables for everything that has to be
                      compiled, in particular, all the typed
                      expressions passed to [make_user_block] will be
-                     of the kind [`variable "name"]. *)
+                     wrappings of variable names. *)
       ]
 
     type size_error_handler =

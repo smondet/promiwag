@@ -2,8 +2,6 @@ open Promiwag_std
 
 module MP_format = Promiwag_meta_packet.Packet_structure
 
-type packet_value =  Promiwag_meta_packet.Parser_generator.request
-
 type switch_case =
   | Case_int_value of int * string * string
   | Case_int_range of int * int * string * string
@@ -107,9 +105,11 @@ module Automata_generator = struct
 
   module Packet_parsing = Promiwag_meta_packet.Parser_generator
 
+  type packet_value =  Promiwag_meta_packet.Packet_structure.packet_value
+
   type protocol_handler = {
     handled_format: string;
-    user_request: Packet_parsing.request list;
+    user_request: packet_value list;
     make_handler:  STIEL.typed_expression list -> STIEL.statement;
   }
 
