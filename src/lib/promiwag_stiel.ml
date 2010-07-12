@@ -969,6 +969,12 @@ module Transform = struct
           else
             Bool_expr_binary_int (op, pa, pb)
         end
+
+    let typed_expression compiler = function 
+      | Typed_int    (t, e) -> Typed_int    (t, int_expression compiler e)
+      | Typed_bool       e  -> Typed_bool   (bool_expression compiler e)
+      | Typed_buffer (t, e) -> Typed_buffer (t, buffer_expression compiler e)
+
   end
 
   let propagate_constants_in_int

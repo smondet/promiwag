@@ -833,8 +833,7 @@ let test_protocol_stack dev () =
            make_make_block (fun a -> Stiel.nop) "IPv4");
         ] in
 
-    let packet =
-      GenStiel.packet (Stiel.buffer_expr packet_pointer) in
+    let packet = GenStiel.packet  packet_pointer in
     
     let automata_block =
       Stiel.block (GenStiel.automata_block the_internet stack_handler packet) in
@@ -966,7 +965,7 @@ let test_clean_protocol_stack dev () =
               my_log "      DNS: id: @hex, opcode: @int.\n" te_list);
         ] in
 
-    let packet = Generator.packet (Expr.buffer packet_pointer) in
+    let packet = Generator.packet  packet_pointer in
     
     let automata_block =
       Do.block 
