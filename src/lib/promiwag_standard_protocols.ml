@@ -221,10 +221,17 @@ let udp_format =
       ();
   ]
 let udp_transitions =
-  PS.switch "dst_port" [
-    PS.case_int_value 53  dns "udp_payload";
-    PS.case_int_value 67 dhcp "udp_payload";
-    PS.case_int_value 68 dhcp "udp_payload";
+  PS.sequence [
+    PS.switch "dst_port" [
+      PS.case_int_value 53  dns "udp_payload";
+      PS.case_int_value 67 dhcp "udp_payload";
+      PS.case_int_value 68 dhcp "udp_payload";
+    ];
+    PS.switch "src_port" [
+      PS.case_int_value 53  dns "udp_payload";
+      PS.case_int_value 67 dhcp "udp_payload";
+      PS.case_int_value 68 dhcp "udp_payload";
+    ];
   ]
 
 let tcp_format =
