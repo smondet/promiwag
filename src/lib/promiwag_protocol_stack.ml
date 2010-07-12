@@ -114,14 +114,16 @@ module Automata_generator = struct
   }
 
   type error =
-    [ `buffer_over_flow of string 
+    [ `buffer_over_flow of
+        string * STIEL.typed_expression * STIEL.typed_expression
     | `unknown of string ]
 
   type error_handler = error -> STIEL.statement
 
   let default_error_handler = function
-    | `buffer_over_flow s -> Do.log (sprintf "Error BOF: %s" s) []
-    | `unknown s -> Do.log (sprintf "Error unknown: %s" s) []
+    | `buffer_over_flow (f, a, b) ->
+      Do.log (sprintf "Error BOF: fmt: %s, @int < @int\n" f) [a; b]
+    | `unknown s -> Do.log (sprintf "Error unknown: %s\n" s) []
 
   type protocol_stack_handler = {
     protocol_handlers: protocol_handler list;
@@ -177,6 +179,9 @@ module Automata_generator = struct
     int_expression_for_format compiler ""
 
   let get_out_statement compiler =
+    Do.exit_while    
+
+  let assign_next_to_out compiler =
     Var.assign compiler.var_next_format (get_out_value compiler)
 
   type atomic_transition = {
@@ -311,18 +316,20 @@ module Automata_generator = struct
       let packet = Var.expression compiler.var_current_packet in
       let packet_size =
         Opt.map Var.expression compiler.var_current_packet_size in
+      let on_size_error tea teb =
+        Do.block [
+          compiler.handler.error_handler (`buffer_over_flow (format, tea, teb));
+          get_out_statement compiler;
+        ] in
       let make_user_block l =
         let from_next_offset, the_rest =
           Ls.split_nth (Ls.length transition_offset_request)  l in
         let from_the_transition_conditions, from_the_user_request =
           Ls.split_nth (Ls.length transition_conditions_request)  the_rest in
-        [ (Do.cmt "Parsing User Block TODO") ]
-        (* :: (Ls.map from_the_transition_conditions *)
-        (*       ~f:(fun te -> *)
-        (*         Stiel_leg.log "Receiving @hex from transition conditions" [te];)) *)
+        [ (Do.cmt "Parsing User Block:") ]
         @ [ protocol_handler.make_handler from_the_user_request ]
         @ [ Do.cmt "Default behaviour is to stop and get out of the While:";
-            get_out_statement compiler; ]
+            assign_next_to_out compiler; ]
         @ (Ls.map transitions 
              ~f:(compile_transition compiler 
                    (Ls.combine transition_conditions_request
@@ -331,9 +338,9 @@ module Automata_generator = struct
       in
       (Do.cmt (sprintf "Protocol %s:" format))
       :: (Packet_parsing.Stage_2_stiel.informed_block
+            ~on_size_error
             ~create_variables:`for_all
             ~stage_1 ~packet ?packet_size ~make_user_block ())
-    (* @ [ Stiel_leg.cmt "Prepare the following... TODO" ] *)
     in
     Ht.add compiler.compiled_handlers format (Do.block statements);
     ()

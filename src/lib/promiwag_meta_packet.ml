@@ -460,6 +460,8 @@ module Parser_generator = struct
                      of the kind [`variable "name"]. *)
       ]
 
+    type size_error_handler =
+        STIEL.typed_expression -> STIEL.typed_expression -> STIEL.statement
 
     exception Compilation_error of string
 
@@ -720,10 +722,11 @@ module Parser_generator = struct
              (Stiel_to_str.typed_expression size_expression)
              maximal_constant_access);
       let statements =
+        let mca = (Expr.unat maximal_constant_access) in
         if (maximal_constant_access <> -1) && (not size_is_literal) then
           [ Do.cmt "Checking maximal_constant_access against packet size.";
-            Do.conditional ~statement_then:(Do.block escape_block)
-              (Expr.le size_expression (Expr.unat maximal_constant_access))]
+            Do.conditional ~statement_then:(escape_block size_expression mca)
+              (Expr.le size_expression mca)]
         else [] in
       statements
 
@@ -746,7 +749,7 @@ debug$ sprintf " (fst entity.buffer_access): %s"
                         "Checking buffer-access of field %s against packet size."
                         entity.stage_1_expression.Stage_1.s1_field);
            Do.conditional (Expr.le size_expr bufacc_expr)
-             ~statement_then:(Do.block escape_block); ] in
+             ~statement_then:(escape_block size_expr bufacc_expr); ] in
         statements
         
 
@@ -775,7 +778,7 @@ debug$ sprintf " (fst entity.buffer_access): %s"
         ?(create_variables:variable_creation_preference=`as_needed)
         ~(packet:Stiel_types.typed_expression)
         ?(packet_size:Stiel_types.typed_expression option)
-        ?(size_error_block=[Do.cmt "Default size_error_block."])
+        ?(on_size_error:size_error_handler option)
         ~(make_user_block: Stiel_types.typed_expression list -> 
           Stiel_types.statement list) () =
 
@@ -786,6 +789,10 @@ debug$ sprintf " (fst entity.buffer_access): %s"
       let ordered_entities =
         Ls.map compiler.stage_1.Stage_1.compiled_expressions 
           ~f:(compile_expression compiler packet) in
+
+      let size_error_block =
+        Opt.default (fun _ _ -> Do.cmt "Default size_error_block.") 
+          on_size_error  in
 
       compiler.location <- 
         Some "{Generating constant size/buffer-access checks}";

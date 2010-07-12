@@ -899,16 +899,28 @@ let test_clean_protocol_stack dev () =
            Expr.bin_and byte_ones $ Expr.bin_shr ie (Expr.u32  0);]));
     ] in
 
-  let automata_treatment packet_pointer =
+  let automata_treatment packet_pointer packet_size =
+    let error_handler = function
+    | `buffer_over_flow (f, a, b) ->
+      let message =
+        sprintf "### \"BOF-attempt\": In %s, \n\
+                \   computed offset (@expr = @int)\n\
+                \   is bigger than\n\
+                \   packet size (@expr = @int).\n" f in
+      Do.log message [b; b; a; a]
+    | `unknown s -> Do.log (sprintf "UNKNOWN ERROR:: %s\n" s) []
+    in
     let stack_handler =
       Generator.handler
+        ~error_handler
         ~initial_protocol:Standard_protocols.ethernet [
           ( Standard_protocols.ethernet,
             [ `pointer "dest_addr"; `pointer "src_addr"; ],
             function
               | [ pointer_dest; pointer_src ] ->
                 Do.block [
-                  my_log "Ethernet: @ethaddr -> @ethaddr.\n" [pointer_src; pointer_dest;];
+                  my_log "Ethernet: @ethaddr -> @ethaddr.\n" 
+                    [pointer_src; pointer_dest;];
                 ]
               | _ -> failwith "should have two typed expressions");
           ( Standard_protocols.arp,
@@ -938,7 +950,8 @@ let test_clean_protocol_stack dev () =
               `size "options"; `value "length";],
             fun te_list ->
               my_log "  IPv4: @ipv4addr -> @ipv4addr\n\
-                     \  protocol: @hex, TTL: @int, fragment: (can: @int, offset: @int)\n\
+                     \  protocol: @hex, TTL: @int, \
+                     fragment: (can: @int, offset: @int)\n\
                      \  size of options: @int, length: @int.\n"
                 te_list);
           ( Promiwag_standard_protocols.udp,
@@ -965,7 +978,7 @@ let test_clean_protocol_stack dev () =
               my_log "      DNS: id: @hex, opcode: @int.\n" te_list);
         ] in
 
-    let packet = Generator.packet  packet_pointer in
+    let packet = Generator.packet ~size:packet_size packet_pointer in
     
     let automata_block =
       Do.block 
@@ -986,7 +999,7 @@ let test_clean_protocol_stack dev () =
     Promiwag.Pcap_C.make_capture_of_stiel
       ~device ~on_error ~passed_pointer ~c_compiler
       (fun ~passed_argument ~packet_length ~packet_buffer -> 
-        automata_treatment packet_buffer) in
+        automata_treatment packet_buffer packet_length) in
 
   let full_test_c_file = Promiwag.Pcap_C.to_full_file pcap_capture in
 
