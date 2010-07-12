@@ -383,18 +383,6 @@ module Variable = struct
 
   let tv = typed_variable
 
-
-  let var = 
-    function
-      | `Sized_buffer (v, i) -> tv v $ Kind_buffer (Type_sized_buffer i)
-      | `Pointer v           -> tv v $ Kind_buffer Type_pointer    
-      | `U8   v              -> tv v $ Kind_int    Type_uint8      
-      | `U16  v              -> tv v $ Kind_int    Type_uint16     
-      | `U32  v              -> tv v $ Kind_int    Type_uint32     
-      | `U64  v              -> tv v $ Kind_int    Type_uint64     
-      | `Unat v              -> tv v $ Kind_int    Type_uint_native
-      | `Bool v              -> tv v $ Kind_bool   
-
   let sized_buffer ?unique i v = tv ?unique v $ Kind_buffer (Type_sized_buffer i)
   let pointer      ?unique   v = tv ?unique v $ Kind_buffer Type_pointer           
   let u8           ?unique   v = tv ?unique v $ Kind_int    Type_uint8             
