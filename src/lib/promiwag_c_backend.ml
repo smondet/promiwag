@@ -118,8 +118,8 @@ module C_LightAST = struct
   | `while_loop of expression * statement
   | `dowhile_loop of expression * statement
   (* | `for_loop of statement * statement * statement * statement *)
-  (*| `break
-    | `continue*)
+  | `break
+  (*  | `continue*)
   | `return of expression
   | `return_void
   | `simple_switch of expression * ((case_expression * block) list)
@@ -352,6 +352,7 @@ module To_big_string(Big_string: BIG_STRING) = struct
                statement thn; BS.str "else "; statement els; ]
     | `while_loop (exp, st) ->
       BS.cat [ BS.str "while "; parentize (expression exp); statement st;]
+    | `break -> BS.str "break;"
     | `dowhile_loop (exp, st) ->
       BS.cat [ BS.str "do "; statement st;
                BS.str "while "; parentize (expression exp); BS.str ";"; ]
