@@ -92,6 +92,7 @@ module Definition = struct
     | Do_block of statement list
     | Do_if of bool_expression * statement * statement
     | Do_while_loop of bool_expression * statement
+    | Do_exit_while
     | Do_assignment  of variable_name * typed_expression
     | Do_declaration of typed_variable
     | Do_log of string * typed_expression list
@@ -204,6 +205,7 @@ module To_string = struct
     | Do_while_loop    (e, a)    -> 
       spr "%sWhile [%s] Do\n%s\n" 
         cur_indent (bool_expression e) (statement ~indent a)
+    | Do_exit_while -> spr "%sExit While;\n" cur_indent
     | Do_assignment  (a, b) -> assign (variable_name    a) (typed_expression b)
     | Do_declaration t -> 
       spr "%sDeclare %s of type: %s;\n" cur_indent
@@ -442,6 +444,7 @@ module Statement = struct
     Do_if (Expression.bool condition, statement_then, statement_else)
       
   let while_loop c s = Do_while_loop (Expression.bool c, s)
+  let exit_while = Do_exit_while
 
   let cmt s = Do_comment s
 
@@ -728,6 +731,8 @@ module To_C = struct
     | Do_while_loop    (e, a)    -> 
       `while_loop (bool_expression compiler e, 
                    statement ~wrong_place_for_comment:true compiler a)
+    | Do_exit_while ->
+      `break
     | Do_assignment (a, b) ->
       assign (variable_name a) (typed_expression compiler b)
     | Do_declaration _ -> 
@@ -1094,6 +1099,7 @@ module Visit = struct
               statement compiler a, statement compiler b)
     | Do_while_loop    (e, a)    -> 
       ignore (bool_expression compiler e, statement compiler a)
+    | Do_exit_while -> ()
     | Do_assignment  (a, b) -> 
       ignore (variable_name compiler a, typed_expression compiler b)
     | Do_declaration t -> 
