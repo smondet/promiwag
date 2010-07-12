@@ -8,6 +8,7 @@ type switch_case =
 
 type transition =
   | Switch of string * switch_case list
+  | Sequence of transition list
   | No_transition
 
 
@@ -38,7 +39,8 @@ let switch field cases =
 let empty_transition =
   No_transition
 
-
+let sequence l = Sequence l
+  
 let add_protocol ps name format packet_transitions =
   Ht.add ps.stack_description name {
     name = name;
@@ -63,7 +65,7 @@ module To_string = struct
     | Case_int_range (a, b, format, payload) ->
       sprintf "| [%d .. %d] -> format \"%s\" at \"%s\"" a b format payload
 
-  let transition indent =
+  let rec transition indent =
     let sindent = make_indent indent in
     let nindent = make_indent (indent + 1) in
     function
@@ -72,6 +74,9 @@ module To_string = struct
           nindent
           (Str.concat (sprintf "\n%s" nindent) (Ls.map scl ~f:switch_case))
           sindent
+      | Sequence l ->
+        sprintf "\n%ssequence {%s\n%s}" 
+          sindent (Str.concat "," (Ls.map (transition (indent + 1)) l)) sindent
       | No_transition -> "None"
 
 
@@ -223,11 +228,12 @@ module Automata_generator = struct
             (Expr.le (Var.expression var_field) (Expr.unat ieb)) in
         atomic_transition ~condition ~next_payload next_format
 
-  let transform_transitions = function
+  let rec transform_transitions = function
     | No_transition -> []
     | Switch (field, cases) ->
       Ls.map cases ~f:(transform_input_case field)
-
+    | Sequence l ->
+      Ls.flatten (Ls.map transform_transitions l)
 
 
 
