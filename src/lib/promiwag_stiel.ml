@@ -3,97 +3,102 @@
 
 open Promiwag_std
 
-type integer_type =
-  | Type_uint8       
-  | Type_uint16      
-  | Type_uint32      
-  | Type_uint64       
-  | Type_uint_native
+module Definition = struct 
+
+  type integer_type =
+    | Type_uint8       
+    | Type_uint16      
+    | Type_uint32      
+    | Type_uint64       
+    | Type_uint_native
 
 
-type int_unary_operator =
-  | Int_unary_minus     (* -  *)
-  | Int_unary_plus      (* +  *)
+  type int_unary_operator =
+    | Int_unary_minus     (* -  *)
+    | Int_unary_plus      (* +  *)
 
-type int_binary_operator =
-  | Int_binop_add   (*  +  *)
-  | Int_binop_sub   (*  -  *)
-  | Int_binop_mul   (*  *  *)
-  | Int_binop_div   (*  /  *)
-  | Int_binop_mod   (*  %  *)
-  | Int_binop_bin_and  (*  &  *)
-  | Int_binop_bin_or   (*  |  *)
-  | Int_binop_bin_xor   (*  ^  *)
-  | Int_binop_bin_shl   (*  << *) 
-  | Int_binop_bin_shr   (*  >> *)
+  type int_binary_operator =
+    | Int_binop_add   (*  +  *)
+    | Int_binop_sub   (*  -  *)
+    | Int_binop_mul   (*  *  *)
+    | Int_binop_div   (*  /  *)
+    | Int_binop_mod   (*  %  *)
+    | Int_binop_bin_and  (*  &  *)
+    | Int_binop_bin_or   (*  |  *)
+    | Int_binop_bin_xor   (*  ^  *)
+    | Int_binop_bin_shl   (*  << *) 
+    | Int_binop_bin_shr   (*  >> *)
 
-type bool_binary_operator =
-  | Bool_binop_equals
-  | Bool_binop_notequals
-  | Bool_binop_strictly_greater
-  | Bool_binop_strictly_lower
-  | Bool_binop_equal_or_greater
-  | Bool_binop_equal_or_lower
+  type bool_binary_operator =
+    | Bool_binop_equals
+    | Bool_binop_notequals
+    | Bool_binop_strictly_greater
+    | Bool_binop_strictly_lower
+    | Bool_binop_equal_or_greater
+    | Bool_binop_equal_or_lower
 
-type variable_name = string
+  type variable_name = string
 
-type get_int_at_buffer =
-  | Get_native of integer_type
-  | Get_big_endian of integer_type
-  | Get_little_endian of integer_type
+  type get_int_at_buffer =
+    | Get_native of integer_type
+    | Get_big_endian of integer_type
+    | Get_little_endian of integer_type
 
-type buffer_type =
-  | Type_sized_buffer of int
-  | Type_pointer
-  | Type_sizable_buffer of int_expression
+  type buffer_type =
+    | Type_sized_buffer of int
+    | Type_pointer
+    | Type_sizable_buffer of int_expression
 
-and int_expression =
-  | Int_expr_unary of int_unary_operator * int_expression
-  | Int_expr_binary of int_binary_operator * int_expression * int_expression
-  | Int_expr_variable of variable_name
-  | Int_expr_buffer_content of get_int_at_buffer * buffer_expression
-  | Int_expr_literal of int64
+  and int_expression =
+    | Int_expr_unary of int_unary_operator * int_expression
+    | Int_expr_binary of int_binary_operator * int_expression * int_expression
+    | Int_expr_variable of variable_name
+    | Int_expr_buffer_content of get_int_at_buffer * buffer_expression
+    | Int_expr_literal of int64
 
-and buffer_expression =
-  | Buffer_expr_variable of variable_name
-  | Buffer_expr_offset of buffer_expression * int_expression
+  and buffer_expression =
+    | Buffer_expr_variable of variable_name
+    | Buffer_expr_offset of buffer_expression * int_expression
 
-and bool_expression =
-  | Bool_expr_true        
-  | Bool_expr_false       
-  | Bool_expr_variable of variable_name
-  | Bool_expr_and of bool_expression * bool_expression
-  | Bool_expr_or of bool_expression * bool_expression
-  | Bool_expr_not of bool_expression
-  | Bool_expr_binary_int of bool_binary_operator * int_expression * int_expression
+  and bool_expression =
+    | Bool_expr_true        
+    | Bool_expr_false       
+    | Bool_expr_variable of variable_name
+    | Bool_expr_and of bool_expression * bool_expression
+    | Bool_expr_or of bool_expression * bool_expression
+    | Bool_expr_not of bool_expression
+    | Bool_expr_binary_int of bool_binary_operator * int_expression * int_expression
 
-type typed_expression =
-  | Typed_int of integer_type * int_expression
-  | Typed_bool of bool_expression
-  | Typed_buffer of buffer_type * buffer_expression
+  type typed_expression =
+    | Typed_int of integer_type * int_expression
+    | Typed_bool of bool_expression
+    | Typed_buffer of buffer_type * buffer_expression
 
-type typed_variable_kind =
-  | Kind_int of integer_type
-  | Kind_bool
-  | Kind_buffer of buffer_type
+  type typed_variable_kind =
+    | Kind_int of integer_type
+    | Kind_bool
+    | Kind_buffer of buffer_type
 
-type typed_variable = {
-  name: variable_name;
-  kind: typed_variable_kind;
-}  
+  type typed_variable = {
+    name: variable_name;
+    kind: typed_variable_kind;
+  }  
 
-type statement =
-  | Do_nothing
-  | Do_comment of string
+  type statement =
+    | Do_nothing
+    | Do_comment of string
   (* | Do_int_evaluation of int_expression ---> expressions must keep
      purely functional hence, evaluation is useless *)
-  | Do_block of statement list
-  | Do_if of bool_expression * statement * statement
-  | Do_while_loop of bool_expression * statement
-  | Do_assignment  of variable_name * typed_expression
-  | Do_declaration of typed_variable
-  | Do_log of string * typed_expression list
+    | Do_block of statement list
+    | Do_if of bool_expression * statement * statement
+    | Do_while_loop of bool_expression * statement
+    | Do_assignment  of variable_name * typed_expression
+    | Do_declaration of typed_variable
+    | Do_log of string * typed_expression list
 
+end
+
+open Definition
 
 module To_string = struct
     
@@ -1126,6 +1131,15 @@ module Verify = struct
 end
 
 
+module Standard_renaming = struct
+
+  module STIEL = Definition
+  module Expr = Expression
+  module Var = Variable
+  module Do = Statement
+  module Stiel_to_str = To_string
+  module Stiel_to_C = To_C
+end
 
 
 

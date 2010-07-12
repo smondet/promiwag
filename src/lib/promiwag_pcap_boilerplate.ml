@@ -105,24 +105,22 @@ module C = struct
        (locals, statements))
 
   
-  module Stiel = Promiwag_stiel
-  module Expr = Stiel.Expression
-  module Var = Stiel.Variable
-  module Do = Stiel.Statement
-  module Stiel_to_C = Stiel.To_C
+  module Stiel = Promiwag_stiel.Definition
+  open Promiwag_stiel.Standard_renaming
+
 
   type stiel_treatment =
-      passed_argument:Stiel.typed_expression ->
-      packet_length:Stiel.typed_expression -> 
-      packet_buffer:Stiel.typed_expression
-      -> Stiel.statement
+      passed_argument:STIEL.typed_expression ->
+      packet_length:STIEL.typed_expression -> 
+      packet_buffer:STIEL.typed_expression
+      -> STIEL.statement
       
   let make_capture_of_stiel
-      ~(c_compiler:Stiel.To_C.compiler)
+      ~(c_compiler:Stiel_to_C.compiler)
       ~(device:[`string of string | `C of C_LightAST.expression])
-      ~(on_error:(string -> Stiel.typed_expression (* pointer: error_buffer *) ->
-                  Stiel.statement))
-      ~(passed_pointer:Stiel.typed_expression)
+      ~(on_error:(string -> STIEL.typed_expression (* pointer: error_buffer *) ->
+                  STIEL.statement))
+      ~(passed_pointer:STIEL.typed_expression)
       stiel_treatment =
     let var_name c =
       match Variable.expression c with
@@ -130,11 +128,11 @@ module C = struct
       | other -> failwith "make_capture_of_stiel: stiel_var_of_c_var \
                              does not receive a variable" in
     let c_passed_expression = 
-      Stiel.To_C.typed_expression c_compiler passed_pointer in
+      Stiel_to_C.typed_expression c_compiler passed_pointer in
     let c_device =
       match device with `string s -> `literal_string s | `C e -> e in
     let c_on_error s e =
-      Stiel.To_C.statement c_compiler
+      Stiel_to_C.statement c_compiler
         (on_error s (Var.expression (Var.pointer ~unique:false (
           match e with
           | `variable v -> v
@@ -150,7 +148,7 @@ module C = struct
         Var.expression (Var.pointer ~unique:false (var_name packet_buffer)) in
       let stiel_statement =
         stiel_treatment  ~passed_argument ~packet_length ~packet_buffer in
-      match Stiel.To_C.statement c_compiler stiel_statement with
+      match Stiel_to_C.statement c_compiler stiel_statement with
       | `block b -> b
       | other -> ([], [other])
     in

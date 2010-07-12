@@ -444,11 +444,8 @@ module Parser_generator = struct
     
     open Packet_structure
 
-    module Stiel_types = Promiwag_stiel
-    module Expr = Stiel_types.Expression
-    module Var = Promiwag_stiel.Variable
-    module Do = Promiwag_stiel.Statement
-    module Stiel_to_str = Promiwag_stiel.To_string
+    module Stiel_types = Promiwag_stiel.Definition
+    open Promiwag_stiel.Standard_renaming
 
     type variable_creation_preference =
       [`minimalistically (** Only when absolutely needed, this may mean 
