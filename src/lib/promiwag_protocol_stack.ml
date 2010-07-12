@@ -1,45 +1,23 @@
 open Promiwag_std
 
-module Stiel_types = Promiwag_stiel
-module Stiel = Promiwag_stiel.Construct_legacy
 module MP_format = Promiwag_meta_packet.Packet_structure
 module Partial_eval = Promiwag_stiel.Transform.Partial_evaluation
 
 type packet_value =  Promiwag_meta_packet.Parser_generator.request
-(*  [ 
-| `value of string
-| `pointer of string
-| `offset of string
-| `size of string
-] *)
 
-let stiel_var = function
-  | `value   s -> sprintf "<v:%s" s 
-  | `pointer s -> sprintf "<p:%s" s 
-  | `offset  s -> sprintf "<o:%s" s 
-  | `size    s -> sprintf "<s:%s" s 
-let packet_value_of_string s =
-  let pre = Str.sub s 0 3 in
-  let suf = Str.sub s 3 (Str.length s - 3) in
-  match pre with
-  | "<v:" -> `value   suf
-  | "<p:" -> `pointer suf
-  | "<o:" -> `offset  suf
-  | "<s:" -> `size    suf
-  | _ -> failwith "packet_value_of_string: Wrong prefix"
+type switch_case =
+  | Case_int_value of int * string * string
+  | Case_int_range of int * int * string * string
 
+type transition =
+  | Switch of string * switch_case list
+  | No_transition
 
-type atomic_transition = {
-  condition: Stiel_types.bool_expression;
-  next_format: string;
-  next_payload: string;
-}
-  
 
 type protocol = {
   name: string;
   format: MP_format.format;
-  transitions: atomic_transition list;
+  transitions: transition;
 }
 
 type protocol_stack = {
@@ -47,51 +25,15 @@ type protocol_stack = {
   stack_description: (string, protocol) Ht.t;
 }
 
-type input_case =
-  | Case_int_value of Stiel_types.int_expression * string * string
-  | Case_int_range of
-      Stiel_types.int_expression * Stiel_types.int_expression * string * string
-
-type input_transition =
-  | Switch of string * input_case list
-  | No_transition
-
 let empty_protcol_stack () =
   {stack_description = Ht.create 42; }
- 
 
-let atomic_transition
-    ?(condition=Stiel_types.Bool_expr_false)
-    ~next_payload next_format =
-  {condition = condition; next_format = next_format; 
-   next_payload = next_payload;}
-
-let transform_input_next (name, ofs) =
-  (name, fun e -> Stiel.offset e ofs)
-
-let transform_input_case field = 
-    let var_field = stiel_var (`value field) in
-    function
-  | Case_int_value (ie, next_format, next_payload) -> 
-    let condition = Stiel.eq (Stiel.int_var var_field) ie in
-    atomic_transition ~condition ~next_payload next_format
-  | Case_int_range (iea, ieb, next_format, next_payload) -> 
-    let condition =
-      Stiel.bool 
-        (`And (`E (Stiel.le iea (Stiel.int_var var_field)),
-               `E (Stiel.le (Stiel.int_var var_field) ieb))) in
-    atomic_transition ~condition ~next_payload next_format
-
-let transform_input_transitions = function
-  | No_transition -> []
-  | Switch (field, cases) ->
-    Ls.map cases ~f:(transform_input_case field)
 
 let case_int_value int_value next_format next_payload =
-  Case_int_value (Stiel.uint int_value, next_format, next_payload)
+  Case_int_value (int_value, next_format, next_payload)
 
 let case_int_range bottom top next_format next_payload =
-  Case_int_range (Stiel.uint bottom, Stiel.uint top, next_format, next_payload)
+  Case_int_range (bottom, top, next_format, next_payload)
 
 let switch field cases =
   Switch (field, cases)
@@ -100,12 +42,11 @@ let empty_transition =
   No_transition
 
 
-
 let add_protocol ps name format packet_transitions =
   Ht.add ps.stack_description name {
     name = name;
     format = format;
-    transitions = transform_input_transitions packet_transitions;
+    transitions = packet_transitions;
   };
   ()
     
@@ -119,27 +60,35 @@ module To_string = struct
 
   let make_indent i = Str.make (2 * i) ' '
 
-  let atomic_transition ?(indent=0) at = 
-    let indent_str = make_indent indent in
-    let more_indent = make_indent (indent + 1) in
-    sprintf "%sWhen [%s]\n%s-> Next Is \"%s\"\n%sAt Offset Of \"%s\""
-      indent_str (Stiel2S.bool_expression at.condition) more_indent
-      at.next_format more_indent at.next_payload
-  
+  let switch_case = function
+    | Case_int_value (v, format, payload) ->
+      sprintf "| %d -> format \"%s\" at \"%s\"" v format payload
+    | Case_int_range (a, b, format, payload) ->
+      sprintf "| [%d .. %d] -> format \"%s\" at \"%s\"" a b format payload
+
+  let transition indent =
+    let sindent = make_indent indent in
+    let nindent = make_indent (indent + 1) in
+    function
+      | Switch (field, scl) -> 
+        sprintf "\n%sswitch (value of \"%s\") {\n%s%s\n%s}" sindent field
+          nindent
+          (Str.concat (sprintf "\n%s" nindent) (Ls.map scl ~f:switch_case))
+          sindent
+      | No_transition -> "None"
+
+
       
   let protocol ?(indent=0) p =
     let indent_str = make_indent indent in
     let next_indent = make_indent (indent + 1) in
-    let transitions =
-      match p.transitions with
-      | [] -> sprintf "%sNo transitions." next_indent
-      | l ->
-        (Str.concat "\n" (Ls.map l ~f:(atomic_transition ~indent:(indent + 1))))
-    in
-    sprintf "%sProtocol \"%s\": {\n%s%s%s} ==> {\n%s\n%s}"
+    let next_next_indent = make_indent (indent + 2) in
+    sprintf "%sProtocol \"%s\":\n%sFormat: {\n%s%s%s}\n%sTransitions ==> %s"
       indent_str p.name next_indent
-      (Packet2S.format ~sep:next_indent ~suffix:";\n" p.format) 
-      indent_str transitions indent_str
+      next_next_indent
+      (Packet2S.format ~sep:next_next_indent ~suffix:";\n" p.format) 
+      next_indent next_indent
+      (transition (indent + 2) p.transitions)
       
       
   let protocol_stack ps =
@@ -153,6 +102,9 @@ end
 
 
 module Automata_generator = struct
+
+  module Stiel_types = Promiwag_stiel
+  module Stiel = Promiwag_stiel.Construct_legacy
 
   module Packet_parsing = Promiwag_meta_packet.Parser_generator
 
@@ -202,29 +154,6 @@ module Automata_generator = struct
   let typed_pointer p = Stiel.expr_pointer p.stiel_pointer
   let typed_size p = Opt.map Stiel.expr_unat p.stiel_size
 
-(*
-
-
-generate (just for handlers and their dependencies):
-
-  while (current_format != NONE && <continue_expression>) {
-    current_format = next_format;
-    current_payload = offsetize(previous_payload);
-    current_packet_size = previous - offset;
-    if (current_format == FORMAT_INT) {
-
-       informed_block (payload rightly offseted)
-       next_format = COMPUTED
-    }
-
-    if (current_format ...) {
-
-    }  
-
-  }
-
-*)
-
   type compiler = {
     protocol_stack: protocol_stack;
     handler: protocol_stack_handler;
@@ -251,6 +180,53 @@ generate (just for handlers and their dependencies):
   let get_out_statement compiler =
     Stiel.assign compiler.var_next_format
       (Stiel.expr_unat (get_out_value compiler))
+
+  type atomic_transition = {
+    condition: Stiel_types.bool_expression;
+    next_format: string;
+    next_payload: string;
+  }
+  
+  let stiel_var = function
+    | `value   s -> sprintf "<v:%s" s 
+    | `pointer s -> sprintf "<p:%s" s 
+    | `offset  s -> sprintf "<o:%s" s 
+    | `size    s -> sprintf "<s:%s" s 
+  let packet_value_of_string s =
+    let pre = Str.sub s 0 3 in
+    let suf = Str.sub s 3 (Str.length s - 3) in
+    match pre with
+    | "<v:" -> `value   suf
+    | "<p:" -> `pointer suf
+    | "<o:" -> `offset  suf
+    | "<s:" -> `size    suf
+    | _ -> failwith "packet_value_of_string: Wrong prefix"
+
+  let atomic_transition
+      ?(condition=Stiel_types.Bool_expr_false)
+      ~next_payload next_format =
+    {condition = condition; next_format = next_format; 
+     next_payload = next_payload;}
+
+  let transform_input_case field = 
+    let var_field = stiel_var (`value field) in
+    function
+      | Case_int_value (ie, next_format, next_payload) -> 
+        let condition = Stiel.eq (Stiel.int_var var_field) (Stiel.uint ie) in
+        atomic_transition ~condition ~next_payload next_format
+      | Case_int_range (iea, ieb, next_format, next_payload) -> 
+        let condition =
+          Stiel.bool 
+            (`And (`E (Stiel.le (Stiel.uint iea) (Stiel.int_var var_field)),
+                   `E (Stiel.le (Stiel.int_var var_field) (Stiel.uint ieb)))) in
+        atomic_transition ~condition ~next_payload next_format
+
+  let transform_transitions = function
+    | No_transition -> []
+    | Switch (field, cases) ->
+      Ls.map cases ~f:(transform_input_case field)
+
+
 
 
   let compile_transition compiler cond_req_exprs ofs_req_exprs transition =
@@ -320,7 +296,7 @@ generate (just for handlers and their dependencies):
     let format = protocol_handler.handled_format in
     let statements =
       let packet_format = protocol.format in
-      let transitions = protocol.transitions in
+      let transitions = transform_transitions protocol.transitions in
       let transition_conditions_request =
         let module V =  Promiwag_stiel.Visit in
         let l = ref [] in

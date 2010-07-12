@@ -11,13 +11,15 @@ To do:
     or Meta_packet + Meta_protocol  Packet_parsing Protocol_automaton (?)
 
 * Promiwag_meta_packet, Promiwag_protocol_stack:
-  - like DHCP options (like a null-terminated list)
-  - like DNS arrays
+  - like DHCP options (like a null-terminated list) and like DNS arrays
+    -> those are state-related, when a state will be implemented
+       the automatat should be able to add its requests to the data-base
+       and go deeper
+    -> when the state related part will be implemented
+       an API sould be defined for packet + transitions + state dependency
   - GRE's checksum sounds a bit hackish...
   - transition from UDP/TCP needs two swtiches, or a "OR"
-
-* Promiwag_standard_protocols: 
-  - DHCP/DNS transitions from UDP
+  
 
 * Promiwag_stiel.Verify:
   - recursivity for variables (that's an environment check)
