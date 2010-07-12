@@ -135,8 +135,6 @@ let test_c_ast () =
   let out = open_out "test.c" in
   String_tree.print ~out (C2StrTree.file my_prog);
   close_out out;
-  (* gcc -Wall -ansi -pedantic test.c && ./a.out  *)
-  (* indent -linux test.c && cat test.c  *)
   ()
 
 let test_pcap_basic () =
@@ -180,7 +178,6 @@ let test_pcap_basic () =
   let out = open_out "pcaptest.c" in
   String_tree.print ~out (C2StrTree.file test_pcap);
   close_out out;
-  (* gcc -Wall -lpcap  pcaptest.c && ./a.out *)
   ()
 
 
@@ -191,8 +188,6 @@ let test_clean_protocol_stack dev () =
   let module Expr = Stiel.Expression in
   let module Var = Stiel.Variable in
   let module Do = Stiel.Statement in
-  let module Stiel_to_str = Promiwag.Stiel.To_string in
-  let module Stiel_to_c = Promiwag.Stiel.To_C in
   let module Meta_stack = Promiwag.Protocol_stack in
   let module Standard_protocols = Promiwag.Standard_protocols in
   let module Generator = Meta_stack.Automata_generator in
@@ -322,7 +317,6 @@ let test_clean_protocol_stack dev () =
 
   let full_test_c_file = Promiwag.Pcap_C.to_full_file pcap_capture in
 
-  
   let out = open_out "/tmp/pcaptest.c" in
   String_tree.print ~out (C2StrTree.file full_test_c_file);
   close_out out;
@@ -330,8 +324,6 @@ let test_clean_protocol_stack dev () =
           \  gcc -lpcap /tmp/pcaptest.c -o /tmp/pcaptest \n\
           \  /tmp/pcaptest\n";
   ()
-
-
 
 let () =
   printf "Promiwag's main test.\n";
@@ -346,10 +338,7 @@ let () =
       | "cps" -> test_clean_protocol_stack Sys.argv.(2)
       | s -> failwith (sprintf "Unknown test: %s\n" s)
     in
-    Printexc.print test (); (* with
-                               | e -> 
-                               printf "Excpetion occured: %s\nBacktrace:\n%s\n" 
-                               (Printexc.to_string e) (Printexc.get_backtrace ()) *)
+    Printexc.print test (); 
   );
   printf "\nDone.\n";
   ()
