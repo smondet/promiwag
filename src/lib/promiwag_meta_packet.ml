@@ -119,29 +119,6 @@ module To_string = struct
 end
 
 
-
-
-module C_packet = struct
-
-  open Promiwag_c_backend
-
-  type t = {
-    expression: Typed_expression.t;
-    size: Typed_expression.t option;
-    format: string option;
-  }
-
-  let create ?size ?format expression =
-    {expression = expression; size = size; format = format}
-
-  let expression t = t.expression
-  let size t = t.size
-  let format t = t.format
-  let get_size t = Opt.get t.size
-  let get_format t = Opt.get t.format
-
-end
-
 module Parser_generator = struct
 
   (*
