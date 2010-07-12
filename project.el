@@ -15,6 +15,8 @@
        t t)
       (kill-region before (point)))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Compilation:
 
 (setq omake-command
       (if (eq system-type 'darwin) 
@@ -24,6 +26,9 @@
 (set-mk-command omake-command)
 (setq compile-command omake-command)
 (setq compilation-read-command nil)
+
+;; Remove usual call to eshell:
+(seb-skey "mk" 'compile)
 
 
 
