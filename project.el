@@ -1,7 +1,3 @@
-(set-mk-command 
- (if (eq system-type 'darwin) 
-     "/Users/seb/usr/godi311/bin//omake"
-   "omake"))
 
 (chgbg 'g)
 
@@ -18,6 +14,16 @@
                number history-format)
        t t)
       (kill-region before (point)))))
+
+
+(setq omake-command
+      (if (eq system-type 'darwin) 
+          "/Users/seb/usr/godi311/bin//omake --project"
+        "omake --project"))
+
+(set-mk-command omake-command)
+(setq compile-command omake-command)
+(setq compilation-read-command nil)
 
 
 
