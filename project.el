@@ -1,5 +1,8 @@
 
+
 (chgbg 'g)
+(setq frame-title-format "Promiwag – %b")
+
 
 ;(setq history-format "%cD%n%s%b")
 (setq history-format "%s%n%b")
