@@ -1,6 +1,12 @@
 
 To do:
 
+BUGS:
+
+- check '<=' Vs '<' (bug with TCP only-ack packets "20 < 20")
+
+
+FEATURES:
 
 * Automata_generator:
   ? 'more lazy' binary tree of (condition, statement_then), with special
@@ -18,7 +24,7 @@ To do:
     -> when the state related part will be implemented
        an API sould be defined for packet + transitions + state dependency
   - GRE's checksum sounds a bit hackish...
-  
+ 
 
 * Promiwag_stiel.Verify:
   - recursivity for variables (that's an environment check)
@@ -32,6 +38,8 @@ To do:
   - check that ints are positive
 
 * Promiwag_stiel: Language
+  - allow annotations (Comment of string | Logic of why-like ...)
+    at least for statements
   ? add the "Exception" int,bool expressions (?)
   - pure functions and call in expressions
   - procedures  and call statement
