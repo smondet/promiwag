@@ -329,6 +329,60 @@ let test_clean_protocol_stack dev () =
           \  /tmp/pcaptest\n";
   ()
 
+let test_minimal_parsing_code () =
+  let module Stiel = Promiwag.Stiel in
+  let module Expr = Stiel.Expression in
+  let module Var = Stiel.Variable in
+  let module Do = Stiel.Statement in
+  let module Meta_stack = Promiwag.Protocol_stack in
+  let module Standard_protocols = Promiwag.Standard_protocols in
+  let module Generator = Meta_stack.Automata_generator in
+  let module Stiel_to_str = Stiel.To_string in
+  let eth_and_ipv4 =
+    let module SP = Standard_protocols in
+    let s = Meta_stack.empty_protcol_stack () in
+    Meta_stack.add_protocol s SP.ethernet SP.ethernet_format SP.ethernet_transitions;
+    Meta_stack.add_protocol s SP.ipv4 SP.ipv4_format SP.ipv4_transitions;
+    s in
+
+  let automata_treatment =
+    let packet_pointer = Var.expression (Var.pointer "packet_pointer") in
+    let packet_size = Var.expression (Var.unat "packet_size") in
+    let error_handler = function
+    | `buffer_over_flow (f, a, b) ->
+      let message = sprintf "BOF (%s): @int > @int\n" f in
+      Do.log message [b; a]
+    | `unknown s -> Do.log (sprintf "UNKNOWN ERROR:: %s\n" s) []
+    in
+    let stack_handler =
+      Generator.handler
+        ~error_handler
+        ~initial_protocol:Standard_protocols.ethernet [
+          ( Standard_protocols.ethernet,
+            [ ],
+            function
+              | [ ] ->
+                Do.log "Ethernet\n" []
+              | _ -> failwith "should have two typed expressions");
+          ( Promiwag_standard_protocols.ipv4,
+            [ `value "length";],
+            fun te_list ->
+              Do.log "IPv4\n" []);
+        ] in
+
+    let packet = Generator.packet ~size:packet_size packet_pointer in
+    
+    let automata_block =
+      Do.block 
+        ( (Do.log "===== New Packet =====\n" [])
+          :: (Generator.automata_block eth_and_ipv4 stack_handler packet)) in
+
+      automata_block
+  in
+  
+  printf "Automata Block:\n%s\n" (Stiel_to_str.statement automata_treatment);
+  ()
+
 let () =
   printf "Promiwag's main test.\n";
   if Array.length Sys.argv <= 1 then
@@ -340,6 +394,7 @@ let () =
       | "pcap" ->  test_pcap_basic
       | "base" -> test_c_ast
       | "cps" -> test_clean_protocol_stack Sys.argv.(2)
+      | "minpars" -> test_minimal_parsing_code
       | "pi" -> print_the_internet
       | s -> failwith (sprintf "Unknown test: %s\n" s)
     in

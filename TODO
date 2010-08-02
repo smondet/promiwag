@@ -15,6 +15,8 @@ FEATURES:
   - separate protocol description from compilation (e.g. atomic_transition)
     => module Meta_protocol and Protocol_automaton_generator
     or Meta_packet + Meta_protocol  Packet_parsing Protocol_automaton (?)
+  - the generator should generate code to check that the packet size decreases
+    (no "zero-offset" payload)
 
 * Promiwag_meta_packet, Promiwag_protocol_stack:
   - like DHCP options (like a null-terminated list) and like DNS arrays
