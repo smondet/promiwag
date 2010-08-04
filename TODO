@@ -17,6 +17,8 @@ FEATURES:
     or Meta_packet + Meta_protocol  Packet_parsing Protocol_automaton (?)
   - the generator should generate code to check that the packet size decreases
     (no "zero-offset" payload)
+    -> this should be checked by Why
+    => to test once it is done
 
 * Promiwag_meta_packet, Promiwag_protocol_stack:
   - like DHCP options (like a null-terminated list) and like DNS arrays
@@ -40,8 +42,6 @@ FEATURES:
   - check that ints are positive
 
 * Promiwag_stiel: Language
-  - allow annotations (Comment of string | Logic of why-like ...)
-    at least for statements
   ? add the "Exception" int,bool expressions (?)
   - pure functions and call in expressions
   - procedures  and call statement
@@ -51,11 +51,15 @@ FEATURES:
     http://www.codeproject.com/KB/cpp/endianness.aspx
     http://msdn.microsoft.com/en-us/library/2bxt6kc4.aspx
     http://www.gsp.com/cgi-bin/man.cgi?section=7&topic=operator
+  - Add the "list" statement
+    -> support for transformations e.g. 
+    t = k * 2 + k * 2 --> decl tmp; tmp = k * 2; t = @ * tmp;
 
 * Promiwag_stiel: Future
   - full interpreter
   - export to Coq or ?
   - float expressions
+  - to ocaml
 
 * use Format, or EasyFormat for printing C and Stiel
 
