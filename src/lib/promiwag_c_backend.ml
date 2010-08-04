@@ -108,6 +108,7 @@ module C_LightAST = struct
   | `initialized of variable_name * c_type * expression
   | `uninitialized of variable_name * c_type
   | `comment of string
+  | `list of local_variable list
   ]
   type block = (local_variable list) * (statement list)
   and statement = [
@@ -126,6 +127,7 @@ module C_LightAST = struct
   (* | `label labelname | `goto gototarget *)
   | `assignment of expression * expression
   | `comment of string
+  | `list of statement list
   ]
 (*
 | `assign                        -- = 
@@ -327,15 +329,17 @@ module To_big_string(Big_string: BIG_STRING) = struct
              BS.str " */"; BS.new_line () ]
 
 
-  let local_variable: C.local_variable -> BS.t = function
+
+  let and_newline printed = BS.cat [printed; BS.new_line ()]
+
+
+  let rec local_variable: C.local_variable -> BS.t = function
     | `initialized (name, typ, exp) -> 
       BS.cat [typed_var (name, typ); BS.str " = "; expression exp; BS.str ";"]
     | `uninitialized (name, typ) ->
       BS.cat [typed_var (name, typ); BS.str ";"]
     | `comment s -> comment ~at_dangerous_place:false s
-
-  let and_newline printed = BS.cat [printed; BS.new_line ()]
-
+    | `list l -> BS.cat (Ls.map (and_newline *** local_variable) l)
 
   let rec block: C.block -> BS.t = fun (local_vars, statements) ->
     BS.cat [
@@ -373,6 +377,7 @@ module To_big_string(Big_string: BIG_STRING) = struct
     | `assignment (var, exp) -> 
       BS.cat [expression var; BS.str " = "; expression exp; BS.str ";"; ]
     | `comment s -> comment ~at_dangerous_place:true s
+    | `list l -> BS.cat (Ls.map (and_newline *** statement) l)
 
 
   let function_definition: C.function_definition -> BS.t = 
