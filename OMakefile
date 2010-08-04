@@ -9,6 +9,7 @@ USE_OCAMLFIND = true
 
 OCAMLPACKS[] =
    extlib
+   easy-format
 #   pcre
 #   sexplib.core
 

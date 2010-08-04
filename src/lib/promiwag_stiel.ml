@@ -248,6 +248,240 @@ module To_string = struct
 
 end
 
+
+module To_format = struct
+  open Easy_format
+
+  type compiler = {
+    atom_type: atom_param;
+    atom_keyword: atom_param;
+    atom_operator: atom_param;
+    atom_funciton: atom_param;
+    atom_literal: atom_param;
+    atom_comment: atom_param;
+    list_expression:  string * string * string * list_param;
+    list_sentence:  string * string * string * list_param;
+    list_coma:  string * string * string * list_param;
+    list_typed_expression: string * string * string * list_param;
+    list_block: string * string * string * list_param;
+    list_statements: string * string * string * list_param;
+    list_variability: string * string * string * list_param;
+    list_comment: string * string * string * list_param;
+    label_while: label_param;
+    label_logic: label_param;
+    label_alternative: label_param;
+  }
+  let default_compiler () =
+    let list_for_statements = 
+      { list with
+        stick_to_label = true;
+        align_closing = true;
+        wrap_body = `Force_breaks;
+        indent_body = 0;
+      } in
+    let list_for_sentence =
+      { list with
+        stick_to_label = true;
+        align_closing = false;
+        space_after_opening = false;
+        space_before_closing = false;
+        wrap_body = `Always_wrap;
+        indent_body = 0;
+      } in
+
+    {
+    atom_type =                 atom ;  
+    atom_keyword =              atom ;     
+    atom_operator =             atom ;      
+    atom_funciton =             atom ;      
+    atom_literal =              atom ;     
+    atom_comment =              atom ;     
+    list_expression = ("(", "", ")", list_for_sentence);
+    list_sentence = ("", "", "", list_for_sentence);
+    list_coma = ("(", ",", ")", list);
+    list_typed_expression = ("[", ":", "]", list);              
+    list_block =  ("{", "", "}", {list_for_statements with indent_body = 4;} );
+    list_statements =  ("", "", "", list_for_statements);
+    list_variability =  ("", "", "", list);
+    list_comment =  ("(*", "", "*)", list);
+    label_while =               label;    
+    label_logic =               label;    
+    label_alternative =         label;          
+    }
+
+  let integer_type compiler t =
+    Atom (To_string.integer_type t, compiler.atom_type)
+
+  let int_unary_operator compiler o =
+    Atom (To_string.int_unary_operator o, compiler.atom_operator)
+
+  let int_binary_operator compiler o =
+    Atom (To_string.int_binary_operator o, compiler.atom_operator)
+
+  let bool_binary_operator compiler o =
+    Atom (To_string.bool_binary_operator o, compiler.atom_operator)
+
+  let get_int_at_buffer compiler o =
+    Atom (To_string.get_int_at_buffer o, compiler.atom_funciton)
+
+  let variable_name compiler o =
+    Atom (To_string.variable_name o, compiler.atom_literal)
+
+  let rec buffer_type compiler o =
+    Atom (To_string.buffer_type o, compiler.atom_type)
+
+  and int_expression compiler = function
+    | Int_expr_unary  (op, ex)        ->
+      List (compiler.list_expression,
+            [ int_unary_operator compiler op; int_expression compiler ex])
+    | Int_expr_binary (op, ea, eb)    -> 
+      List (compiler.list_expression,
+        [(int_expression compiler ea);
+         (int_binary_operator compiler op);
+         (int_expression compiler eb)])
+    | Int_expr_variable  v            -> variable_name compiler v
+    | Int_expr_buffer_content (t, ex) ->
+      List (compiler.list_expression,
+            [get_int_at_buffer compiler t;
+             Atom ("@", compiler.atom_operator);
+             buffer_expression compiler ex])
+    | Int_expr_literal        i64     ->
+      Atom (Int64.to_string i64, compiler.atom_literal)
+
+  and buffer_expression compiler = function
+    | Buffer_expr_variable v         -> variable_name compiler v
+    | Buffer_expr_offset (bex, iex)  -> 
+      List (compiler.list_expression,
+            [buffer_expression compiler bex;
+             Atom (":>", compiler.atom_operator);
+             int_expression compiler iex])
+
+  and bool_expression compiler = function
+    | Bool_expr_true   -> Atom ("True", compiler.atom_literal)
+    | Bool_expr_false  -> Atom ("False", compiler.atom_literal)
+    | Bool_expr_variable v -> variable_name compiler v
+    | Bool_expr_and        (a, b)     ->
+      List (compiler.list_expression,
+            [bool_expression compiler a;
+             Atom ("And", compiler.atom_operator);
+             bool_expression compiler b])
+    | Bool_expr_or         (a, b)     ->
+      List (compiler.list_expression,
+            [bool_expression compiler a;
+             Atom ("Or", compiler.atom_operator);
+             bool_expression compiler b])
+    | Bool_expr_not        ex         ->
+      List (compiler.list_expression,
+            [Atom ("Not", compiler.atom_operator);
+             bool_expression compiler ex])
+    | Bool_expr_binary_int (op, a, b) ->
+      List (compiler.list_expression,
+            [(int_expression compiler a);
+             (bool_binary_operator compiler op);
+             (int_expression compiler b)])
+
+  let typed_expression compiler = function
+    | Typed_int    (t, e) -> List (compiler.list_typed_expression,
+                                   [ integer_type compiler t;
+                                     int_expression compiler e])
+    | Typed_bool       e  -> List (compiler.list_typed_expression, 
+                                   [ Atom ("bool", compiler.atom_type);
+                                     bool_expression compiler e])
+    | Typed_buffer (t, e) -> List (compiler.list_typed_expression, 
+                                   [buffer_type compiler t;
+                                    buffer_expression compiler e])
+
+  let typed_variable_kind compiler = function
+    | Kind_int     t -> integer_type compiler t
+    | Kind_bool      -> Atom ("bool", compiler.atom_type)
+    | Kind_buffer  t -> buffer_type compiler t
+
+  let kwd compiler s = Atom (s, compiler.atom_keyword)
+
+  let logic compiler = function
+    | Logic_bool_expr b -> 
+      Label ((kwd compiler "Logic:", compiler.label_logic), bool_expression compiler b)
+    | Logic_variability (i,v) ->
+      List (compiler.list_variability,
+            [
+              Label ((kwd compiler "Invariant:", compiler.label_logic),
+                     bool_expression compiler i);
+              Label ((kwd compiler "Variant:", compiler.label_logic),
+                     bool_expression compiler v);])
+
+  let statement_annotation compiler = function
+    | Annot_comment s -> List (compiler.list_comment, [Atom (s, compiler.atom_comment)])
+    | Annot_specify l ->  List (compiler.list_comment, [logic compiler l])
+    | Annot_alternative (`C, s) -> 
+      List (compiler.list_comment, 
+            [Atom (sprintf "C: %s" s, compiler.atom_comment)])
+    | Annot_alternative (`Why, s) -> 
+      List (compiler.list_comment, 
+            [Atom (sprintf "Why: %s" s, compiler.atom_comment)])
+
+
+  let rec statement compiler = function 
+    | Do_nothing                 -> kwd compiler "Nop;"
+    | Do_block          e        -> 
+      List (compiler.list_block, Ls.map (statement compiler) e)
+    | Do_if            (e, a, b) ->
+      List (compiler.list_statements,
+            [ Label ((kwd compiler "If", compiler.label_alternative),
+                     bool_expression compiler e);
+              Label ((kwd compiler "Then", compiler.label_alternative),
+                     statement compiler a);
+              Label ((kwd compiler "Else", compiler.label_alternative),
+                     statement compiler b);])
+    | Do_while_loop    (e, a)    -> 
+      Label (
+        (List (compiler.list_sentence,
+               [ kwd compiler "While";
+                 bool_expression compiler e;
+                 kwd compiler "Do" ]), compiler.label_alternative),
+        statement compiler a)
+    | Do_exit_while -> kwd compiler "Exit While;" 
+    | Do_assignment  (a, b) -> 
+      List (compiler.list_sentence,
+            [variable_name compiler a;
+             Atom (":=", compiler.atom_operator);
+             typed_expression compiler b;
+             kwd compiler ";";
+            ])
+    | Do_declaration t -> 
+      List (compiler.list_sentence,
+            [kwd compiler "Declare";
+             variable_name compiler t.name;
+             kwd compiler "As";
+             typed_variable_kind compiler t.kind;
+             kwd compiler ";";
+            ])
+    | Do_log (f, l) ->
+      List (compiler.list_sentence,
+            [kwd compiler "Log";
+             Atom (sprintf "(Format: %S)" f, compiler.atom_literal);
+             List (compiler.list_coma,
+                   Ls.map (typed_expression compiler) l);
+             kwd compiler ";";
+            ])
+
+    | Do_annotated_statement (annot, st) ->
+      List (compiler.list_statements,
+            [ statement_annotation compiler annot;
+              statement compiler st ])
+
+
+end
+
+module With_formatter = struct
+
+  let statement_to_string s =
+    (Easy_format.Pretty.to_string
+       (To_format.statement (To_format.default_compiler ()) s))
+
+end
+
+
+
 module Expression = struct
 
   let fail s = failwith (sprintf "STIEL.Expr: %s" s)

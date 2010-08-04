@@ -380,7 +380,8 @@ let test_minimal_parsing_code () =
       automata_block
   in
   
-  printf "Automata Block:\n%s\n" (Stiel_to_str.statement automata_treatment);
+  printf "Automata Block:\n%s\n"
+    (Stiel.With_formatter.statement_to_string automata_treatment);
   ()
 
 let () =
