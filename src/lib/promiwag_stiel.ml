@@ -84,9 +84,19 @@ module Definition = struct
     kind: typed_variable_kind;
   }  
 
+  type logic = 
+    | Logic_bool_expr of bool_expression
+    | Logic_variability of bool_expression * bool_expression
+
+  type statement_annotation = 
+    | Annot_comment of string
+    | Annot_specify of logic
+    | Annot_alternative of [ `C | `Why ] * string
+
+
   type statement =
     | Do_nothing
-    | Do_comment of string
+   (* | Do_comment of string *)
   (* | Do_int_evaluation of int_expression ---> expressions must keep
      purely functional hence, evaluation is useless *)
     | Do_block of statement list
@@ -96,6 +106,7 @@ module Definition = struct
     | Do_assignment  of variable_name * typed_expression
     | Do_declaration of typed_variable
     | Do_log of string * typed_expression list
+    | Do_annotated_statement of statement_annotation * statement
 
 end
 
@@ -187,15 +198,32 @@ module To_string = struct
     | Kind_bool      ->     "bool"
     | Kind_buffer  t -> spr "%s" (buffer_type t)
 
+  let logic ?(before="") = function
+    | Logic_bool_expr b -> 
+      spr "%sLogic: %s" before (bool_expression b)
+    | Logic_variability (i,v) ->
+      spr "%sInvariant: %s\n%sVariant: %s" 
+      before (bool_expression i) before (bool_expression v)
+
+  let statement_annotation ?(before="") = function
+    | Annot_comment s -> spr "%s%s" before s
+    | Annot_specify l -> logic ~before l
+    | Annot_alternative (`C, s) -> 
+      spr "%sC: %s" before s
+    | Annot_alternative (`Why, s) -> 
+      spr "%sWhy: %s" before s
+
+
   let rec statement ?(indent=0) =
     let cur_indent = String.make indent ' ' in
     let cat = String.concat "" in
     let catmap f l = cat (List.map f l) in
     let assign a b = spr "%s%s := %s;\n" cur_indent a b in
+    let prev_indent = indent in
     let indent = indent + 2 in
     function 
     | Do_nothing                 -> spr "%sNop;\n" cur_indent
-    | Do_comment        s        -> spr "%sComment: %s;\n" cur_indent s
+    (* | Do_comment        s        -> spr "%sComment: %s;\n" cur_indent s *)
     | Do_block          e        -> 
       spr "%s{\n%s%s}\n" cur_indent (catmap (statement ~indent) e) cur_indent
     | Do_if            (e, a, b) ->
@@ -213,7 +241,10 @@ module To_string = struct
     | Do_log (f, l) ->
       spr "%sLog (format: %S) [%s];\n" cur_indent f 
         (Str.concat "; " (Ls.map typed_expression l))
-
+    | Do_annotated_statement (annot, st) ->
+      spr "%s\n%s"
+        (statement_annotation ~before:(spr "%s# " cur_indent) annot)
+        (statement ~indent:prev_indent st)
 
 end
 
@@ -434,7 +465,7 @@ module Statement = struct
   let while_loop c s = Do_while_loop (Expression.bool c, s)
   let exit_while = Do_exit_while
 
-  let cmt s = Do_comment s
+  let cmt s = Do_annotated_statement (Annot_comment s, Do_nothing)
 
 
   let meta_log user_printers format te_list =
@@ -629,6 +660,8 @@ module To_C = struct
     let non_decls =
       Ls.filter stlist ~f:(function
         | Do_declaration typed_var as d -> add d typed_var.name
+        | Do_annotated_statement (ann, Do_declaration tv) as d ->
+          add d tv.name
         | _ -> true) in
     let nb_vars = Ls.length !vars in
     let nb_unique_vars = Ls.length (Ls.unique !vars) in
@@ -695,6 +728,16 @@ module To_C = struct
     (`expression (`cast (`void, `call (`variable "printf", 
                                        (`literal_string !fmt) :: arg_list))))
 
+  let logic = To_string.logic 
+
+  let statement_annotation = function
+    | Annot_comment s -> `comment s
+    | Annot_specify l -> `comment (spr "Logic: %s" (logic l))
+    | Annot_alternative (`C, s) -> todo "Alternative C code"
+    | Annot_alternative (`Why, s) -> 
+      `comment (spr "Why code: %s" s)
+
+
   let rec block compiler = function
     | Do_block          e        ->
       let decls, stats = _check_and_reorder_block compiler e in
@@ -706,11 +749,6 @@ module To_C = struct
     let assign a b = `assignment (`variable a, b) in
     match s with
     | Do_nothing                 -> `empty
-    | Do_comment               s ->
-      if wrong_place_for_comment then
-        `block ([], [`comment s])
-      else
-        `comment s
     | Do_block  e as b -> `block (block compiler b)
     | Do_if            (e, a, b) ->
       `conditional (bool_expression compiler e,
@@ -726,7 +764,14 @@ module To_C = struct
     | Do_declaration _ -> 
       fail compiler "Calling 'statement' on a declaration"
     | Do_log (f, l) -> printf_of_log compiler f l
+    | Do_annotated_statement (ann, Do_declaration tv) ->
+      fail compiler "Calling 'statement' on a declaration"
+    | Do_annotated_statement (ann, st) ->
+      `list [statement_annotation ann; statement compiler st]
   and declaration compiler = function
+    | Do_annotated_statement (ann, Do_declaration tv) ->
+      `list [statement_annotation ann; 
+             declaration compiler (Do_declaration tv)]
     | Do_declaration typed_var ->
       `uninitialized (typed_var.name,
                       typed_variable_kind compiler typed_var.kind)
@@ -1079,7 +1124,6 @@ module Visit = struct
   let rec statement compiler =
     function 
     | Do_nothing                 -> ()
-    | Do_comment        s        -> ()
     | Do_block          e        -> 
       Ls.iter (statement compiler) e
     | Do_if            (e, a, b) ->
@@ -1095,7 +1139,7 @@ module Visit = struct
               typed_variable_kind compiler t.kind)
     | Do_log (f, l) ->
       ignore (Ls.map (typed_expression compiler) l)
-
+    | Do_annotated_statement (a, s) -> statement compiler s
 
 end
 
