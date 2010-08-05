@@ -260,6 +260,7 @@ module To_format = struct
     atom_literal: atom_param;
     atom_comment: atom_param;
     list_expression:  string * string * string * list_param;
+    list_statement:  string * string * string * list_param;
     list_sentence:  string * string * string * list_param;
     list_coma:  string * string * string * list_param;
     list_typed_expression: string * string * string * list_param;
@@ -267,7 +268,7 @@ module To_format = struct
     list_statements: string * string * string * list_param;
     list_variability: string * string * string * list_param;
     list_comment: string * string * string * list_param;
-    label_while: label_param;
+    label_statement: label_param;
     label_logic: label_param;
     label_alternative: label_param;
   }
@@ -288,25 +289,26 @@ module To_format = struct
         wrap_body = `Always_wrap;
         indent_body = 0;
       } in
-
+    let label = {label with indent_after_label = 4 } in
     {
-    atom_type =                 atom ;  
-    atom_keyword =              atom ;     
-    atom_operator =             atom ;      
-    atom_funciton =             atom ;      
-    atom_literal =              atom ;     
-    atom_comment =              atom ;     
-    list_expression = ("(", "", ")", list_for_sentence);
-    list_sentence = ("", "", "", list_for_sentence);
-    list_coma = ("(", ",", ")", list);
-    list_typed_expression = ("[", ":", "]", list);              
-    list_block =  ("{", "", "}", {list_for_statements with indent_body = 4;} );
-    list_statements =  ("", "", "", list_for_statements);
-    list_variability =  ("", "", "", list);
-    list_comment =  ("(*", "", "*)", list);
-    label_while =               label;    
-    label_logic =               label;    
-    label_alternative =         label;          
+      atom_type =                 atom ;  
+      atom_keyword =              atom ;     
+      atom_operator =             atom ;      
+      atom_funciton =             atom ;      
+      atom_literal =              atom ;     
+      atom_comment =              atom ;     
+      list_expression = ("(", "", ")", list_for_sentence);
+      list_statement = ("", "", ";", list_for_sentence);
+      list_sentence = ("", "", "", list_for_sentence);
+      list_coma = ("(", ",", ")", list_for_sentence);
+      list_typed_expression = ("[", ":", "]", list_for_sentence);              
+      list_block =  ("{", "", "}", {list_for_statements with indent_body = 4;} );
+      list_statements =  ("", "", "", list_for_statements);
+      list_variability =  ("", "", "", list);
+      list_comment =  ("(*", "", "*)", list);
+      label_statement =               label;    
+      label_logic =               label;    
+      label_alternative =         label;          
     }
 
   let integer_type compiler t =
@@ -420,8 +422,11 @@ module To_format = struct
             [Atom (sprintf "Why: %s" s, compiler.atom_comment)])
 
 
-  let rec statement compiler = function 
-    | Do_nothing                 -> kwd compiler "Nop;"
+  let rec statement compiler =
+    let stmt l = List (compiler.list_statement, l) in
+    let labeled_stmt lb l = Label ((lb, compiler.label_statement), stmt l) in
+    function 
+    | Do_nothing                 -> stmt [kwd compiler "Nop"]
     | Do_block          e        -> 
       List (compiler.list_block, Ls.map (statement compiler) e)
     | Do_if            (e, a, b) ->
@@ -439,31 +444,24 @@ module To_format = struct
                  bool_expression compiler e;
                  kwd compiler "Do" ]), compiler.label_alternative),
         statement compiler a)
-    | Do_exit_while -> kwd compiler "Exit While;" 
+    | Do_exit_while -> stmt [kwd compiler "Exit While"]
     | Do_assignment  (a, b) -> 
-      List (compiler.list_sentence,
-            [variable_name compiler a;
-             Atom (":=", compiler.atom_operator);
-             typed_expression compiler b;
-             kwd compiler ";";
-            ])
+      labeled_stmt (variable_name compiler a) [
+        Atom (":=", compiler.atom_operator);
+        typed_expression compiler b;
+      ]
     | Do_declaration t -> 
-      List (compiler.list_sentence,
-            [kwd compiler "Declare";
-             variable_name compiler t.name;
-             kwd compiler "As";
-             typed_variable_kind compiler t.kind;
-             kwd compiler ";";
-            ])
+      labeled_stmt (kwd compiler "Declare") [
+        variable_name compiler t.name;
+        kwd compiler "As";
+        typed_variable_kind compiler t.kind;
+      ]
     | Do_log (f, l) ->
-      List (compiler.list_sentence,
-            [kwd compiler "Log";
-             Atom (sprintf "(Format: %S)" f, compiler.atom_literal);
-             List (compiler.list_coma,
-                   Ls.map (typed_expression compiler) l);
-             kwd compiler ";";
-            ])
-
+      labeled_stmt (kwd compiler "Log") [
+        Atom (sprintf "(Format: %S)" f, compiler.atom_literal);
+        List (compiler.list_coma,
+              Ls.map (typed_expression compiler) l);
+      ]
     | Do_annotated_statement (annot, st) ->
       List (compiler.list_statements,
             [ statement_annotation compiler annot;
