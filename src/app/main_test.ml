@@ -391,7 +391,9 @@ let test_why_output () =
     Io.with_file_out "minimal_parsing.mlw" (fun o ->
       Io.nwrite o s;
     );
-    "=> In minimal_parsing.mlw");
+    "=> Just try: \n\
+     why -alt-ergo minimal_parsing.mlw\n\
+     why-dp -prover Alt-Ergo minimal_parsing_why.why");
   test_minimal_parsing_code ()
 
 

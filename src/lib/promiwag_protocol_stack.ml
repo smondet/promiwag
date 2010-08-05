@@ -184,7 +184,15 @@ module Automata_generator = struct
     int_expression_for_format compiler ""
 
   let get_out_statement compiler =
-    Do.exit_while    
+    match compiler.var_current_packet_size with
+    | Some vps ->
+      Annot.why 
+        (Do.block [
+          Var.assign vps (Expr.sub (Var.expression vps) (Expr.unat 1));
+          Do.exit_while ])
+        Do.exit_while
+    | None ->
+      Do.exit_while
 
   let assign_next_to_out compiler =
     Var.assign compiler.var_next_format (get_out_value compiler)
@@ -332,10 +340,10 @@ module Automata_generator = struct
           Ls.split_nth (Ls.length transition_offset_request)  l in
         let from_the_transition_conditions, from_the_user_request =
           Ls.split_nth (Ls.length transition_conditions_request)  the_rest in
-        [ (Do.cmt "Parsing User Block:") ]
-        @ [ protocol_handler.make_handler from_the_user_request ]
-        @ [ Do.cmt "Default behaviour is to stop and get out of the While:";
-            assign_next_to_out compiler; ]
+        [ Annot.cmt "Parsing User Block:"
+            (protocol_handler.make_handler from_the_user_request) ]
+        @ [ Annot.cmt "Default behaviour is to stop and get out of the While:"
+              (assign_next_to_out compiler); ]
         @ (Ls.map transitions 
              ~f:(compile_transition compiler 
                    (Ls.combine transition_conditions_request
@@ -358,8 +366,8 @@ module Automata_generator = struct
         begin match get_protocol compiler.protocol_stack format with
         | None -> 
           Ht.add compiler.compiled_handlers format (Do.block [
-            Do.cmt (sprintf "Protocol %s not known" format);
-            get_out_statement compiler;
+            Annot.cmt (sprintf "Protocol %s not known" format)
+              (get_out_statement compiler);
           ]);
         | Some protocol -> 
           compile_protocol_handler compiler protocol handler
@@ -389,8 +397,9 @@ module Automata_generator = struct
          (typed_pointer packet_expression))
       @ (Opt.map_default
            (fun v ->
-             Var.declare_and_assign
-               (Opt.get compiler.var_current_packet_size) v)
+             Ls.map (Annot.why (Promiwag_stiel.To_why_string.mark_packet_length))
+               (Var.declare_and_assign
+                  (Opt.get compiler.var_current_packet_size) v))
            [] (typed_size packet_expression))
       @ [ Var.declare compiler.var_current_format;
           Var.assign compiler.var_current_format 
@@ -402,23 +411,46 @@ module Automata_generator = struct
         (Expr.neq
            (Var.expression compiler.var_current_format) (get_out_value compiler))
         handler.continue_expression in
-    let while_block =
+    let while_contents, format_values =
       (* TODO one day: arrange them (optionaly) as a binary decision tree *)
       let r = ref [] in
+      let format_values = ref [] in
       let cur_fmt_var_ie = Var.expression compiler.var_current_format in
       Ht.iter (fun format statement_then ->
         let format_ie = int_expression_for_format compiler format in
+        format_values := format_ie :: !format_values;
         let st =
           Do.conditional (Expr.eq cur_fmt_var_ie format_ie) ~statement_then in
         r := st :: !r;
       ) compiler.compiled_handlers;
-      (Ls.rev !r) @ [
+      ((Ls.rev !r) @ [
         Var.assign compiler.var_current_format
-          (Var.expression compiler.var_next_format);
-      ]
+          (Var.expression compiler.var_next_format);],
+       !format_values)
     in
+    let while_block =
+      match compiler.var_current_packet_size with
+      | None -> Do.block while_contents
+      | Some vps ->
+        Annot.variability
+          (Expr.band
+             (Expr.ge (Var.expression vps) (Expr.unat 0)) 
+             (Expr.ls_or 
+                (Ls.map format_values
+                   ~f:(Expr.eq (Var.expression compiler.var_current_format)))))
+          (Var.expression vps)
+          (Do.block 
+             (while_contents @
+                [ Annot.why
+                    (Do.conditional 
+                       (Expr.eq (Var.expression compiler.var_current_format)
+                          (get_out_value compiler))
+                       ~statement_then:(get_out_statement compiler))
+                    Do.nop
+                ]))
+           in
     before_the_while
-    @ [Do.while_loop while_condition (Do.block while_block)]
+    @ [Do.while_loop while_condition while_block]
       
 
 end
