@@ -19,8 +19,8 @@ module String_tree = struct
   let cat l = Cat l
   let new_line () = Str "\n"
     
-  let rec print ?(out=stdout) = function
-    | Str s -> output_string out s
+  let rec print ?(out=Io.stdout) = function
+    | Str s -> Io.nwrite out s
     | Cat l -> Ls.iter (print ~out) l
 
 end
@@ -132,9 +132,9 @@ let test_c_ast () =
   printf "File:\n\n";
   String_tree.print (C2StrTree.file my_prog);
   
-  let out = open_out "test.c" in
-  String_tree.print ~out (C2StrTree.file my_prog);
-  close_out out;
+  Io.with_file_out "test.c" (fun out ->
+    String_tree.print ~out (C2StrTree.file my_prog);
+  );
   ()
 
 let test_pcap_basic () =
@@ -175,9 +175,9 @@ let test_pcap_basic () =
     toplevels @ [ C.Function.definition main_pcap ] in
   String_tree.print (C2StrTree.file test_pcap);
 
-  let out = open_out "pcaptest.c" in
-  String_tree.print ~out (C2StrTree.file test_pcap);
-  close_out out;
+  Io.with_file_out "pcaptest.c" (fun out ->
+    String_tree.print ~out (C2StrTree.file test_pcap);
+  );
   ()
 
 let print_the_internet () =
@@ -320,13 +320,24 @@ let test_clean_protocol_stack dev () =
         automata_treatment packet_buffer packet_length) in
 
   let full_test_c_file = Promiwag.Pcap_C.to_full_file pcap_capture in
+  let why_checkable_program = 
+    Promiwag.Stiel.To_why_string.statement_to_string 
+      (automata_treatment
+         (Var.expression (Var.pointer ~unique:false "packet_buffer_expression"))
+         (Var.expression (Var.pointer ~unique:false "packet_buffer_length"))) in
 
-  let out = open_out "/tmp/pcaptest.c" in
-  String_tree.print ~out (C2StrTree.file full_test_c_file);
-  close_out out;
-  printf "\  Now you can:\n\
-          \  gcc -lpcap /tmp/pcaptest.c -o /tmp/pcaptest \n\
-          \  /tmp/pcaptest\n";
+  Io.with_file_out "/tmp/pcap_procotol_parser.c" (fun out ->
+    String_tree.print ~out (C2StrTree.file full_test_c_file);
+  );
+  printf "Now you can compile and run (as root?):\n\
+         \  gcc -lpcap /tmp/pcap_procotol_parser.c -o /tmp/pcap_procotol_parser \n\
+         \  /tmp/pcap_procotol_parser\n";
+  Io.with_file_out "verify_parsing_automaton.mlw" (fun o ->
+    Io.nwrite o why_checkable_program;
+  );
+  printf "Or you can prove: \n\
+         \  why -alt-ergo verify_parsing_automaton.mlw\n\
+         \  why-dp -prover Alt-Ergo verify_parsing_automaton_why.why";
   ()
 
 let statement_to_string = ref Promiwag.Stiel.With_formatter.statement_to_string 

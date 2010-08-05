@@ -55,6 +55,8 @@ module Io = struct
     let open_out f = 
         IO.output_channel (Pervasives.open_out f)
 
+    let stdout = output_channel stdout
+
     let with_file_out filename f = 
       let o = open_out filename in
       try let r = f o in close_out o; r with e -> close_out o; raise e
