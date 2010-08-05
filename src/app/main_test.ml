@@ -329,7 +329,9 @@ let test_clean_protocol_stack dev () =
           \  /tmp/pcaptest\n";
   ()
 
-let test_minimal_parsing_code () =
+let statement_to_string = ref Promiwag.Stiel.With_formatter.statement_to_string 
+
+let test_minimal_parsing_code  () =
   let module Stiel = Promiwag.Stiel in
   let module Expr = Stiel.Expression in
   let module Var = Stiel.Variable in
@@ -380,9 +382,18 @@ let test_minimal_parsing_code () =
       automata_block
   in
   
-  printf "Automata Block:\n%s\n"
-    (Stiel.With_formatter.statement_to_string automata_treatment);
+  printf "Automata Block:\n%s\n" (!statement_to_string automata_treatment);
   ()
+
+let test_why_output () =
+  statement_to_string := (fun at ->
+    let s = Promiwag.Stiel.To_why_string.statement_to_string at in
+    Io.with_file_out "minimal_parsing.mlw" (fun o ->
+      Io.nwrite o s;
+    );
+    "=> In minimal_parsing.mlw");
+  test_minimal_parsing_code ()
+
 
 let () =
   printf "Promiwag's main test.\n";
@@ -397,6 +408,7 @@ let () =
       | "cps" -> test_clean_protocol_stack Sys.argv.(2)
       | "minpars" -> test_minimal_parsing_code
       | "pi" -> print_the_internet
+      | "why" -> test_why_output
       | s -> failwith (sprintf "Unknown test: %s\n" s)
     in
     Printexc.print test (); 
