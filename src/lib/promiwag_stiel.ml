@@ -91,10 +91,8 @@ module Definition = struct
   type statement_annotation = 
     | Annot_comment of string
     | Annot_specify of logic
-    | Annot_alternative of [ `C | `Why ] * string
-
-
-  type statement =
+    | Annot_alternative of [ `C | `Why ] * statement
+  and statement =
     | Do_nothing
    (* | Do_comment of string *)
   (* | Do_int_evaluation of int_expression ---> expressions must keep
@@ -107,6 +105,7 @@ module Definition = struct
     | Do_declaration of typed_variable
     | Do_log of string * typed_expression list
     | Do_annotated_statement of statement_annotation * statement
+
 
 end
 
@@ -205,16 +204,14 @@ module To_string = struct
       spr "%sInvariant: %s\n%sVariant: %s" 
       before (bool_expression i) before (bool_expression v)
 
-  let statement_annotation ?(before="") = function
+  let rec statement_annotation ?(before="") = function
     | Annot_comment s -> spr "%s%s" before s
     | Annot_specify l -> logic ~before l
     | Annot_alternative (`C, s) -> 
-      spr "%sC: %s" before s
+      spr "%sC: %s" before (statement s)
     | Annot_alternative (`Why, s) -> 
-      spr "%sWhy: %s" before s
-
-
-  let rec statement ?(indent=0) =
+      spr "%sWhy: %s" before (statement s)
+  and statement ?(indent=0) =
     let cur_indent = String.make indent ' ' in
     let cat = String.concat "" in
     let catmap f l = cat (List.map f l) in
@@ -411,18 +408,18 @@ module To_format = struct
               Label ((kwd compiler "Variant:", compiler.label_logic),
                      bool_expression compiler v);])
 
-  let statement_annotation compiler = function
+  let rec statement_annotation compiler = function
     | Annot_comment s -> List (compiler.list_comment, [Atom (s, compiler.atom_comment)])
     | Annot_specify l ->  List (compiler.list_comment, [logic compiler l])
     | Annot_alternative (`C, s) -> 
       List (compiler.list_comment, 
-            [Atom (sprintf "C: %s" s, compiler.atom_comment)])
+            [Atom ("C:", compiler.atom_comment);
+             statement compiler s])
     | Annot_alternative (`Why, s) -> 
       List (compiler.list_comment, 
-            [Atom (sprintf "Why: %s" s, compiler.atom_comment)])
-
-
-  let rec statement compiler =
+            [Atom ("Why:", compiler.atom_comment);
+             statement compiler s])
+  and statement compiler =
     let stmt l = List (compiler.list_statement, l) in
     let labeled_stmt lb l = Label ((lb, compiler.label_statement), stmt l) in
     function 
@@ -967,7 +964,7 @@ module To_C = struct
     | Annot_specify l -> `comment (spr "Logic: %s" (logic l))
     | Annot_alternative (`C, s) -> todo "Alternative C code"
     | Annot_alternative (`Why, s) -> 
-      `comment (spr "Why code: %s" s)
+      `comment (spr "Why code: %s" (To_string.statement s))
 
 
   let rec block compiler = function
@@ -1620,21 +1617,21 @@ module To_why_string = struct
               Label ((kwd compiler "variant", compiler.label_logic),
                      bool_expression ~logical:true compiler v);])
 
-  let statement_annotation compiler = function
-    | Annot_comment s -> List (compiler.list_comment, [Atom (s, compiler.atom_comment)])
-    | Annot_specify l ->  List (compiler.list_specification, [logic compiler l])
-    | Annot_alternative (`C, s) -> 
-      List (compiler.list_comment, 
-            [Atom (sprintf "C: %s" s, compiler.atom_comment)])
-    | Annot_alternative (`Why, s) -> 
-      List (compiler.list_comment, 
-            [Atom (sprintf "Why: %s" s, compiler.atom_comment)])
 
   let _make_stmt compiler l = List (compiler.list_statement, l)
   let _make_labeled_stmt compiler lb l =
     Label ((lb, compiler.label_statement), _make_stmt compiler l)
 
-  let rec statement compiler = 
+  let rec statement_annotation compiler = function
+    | Annot_comment s -> List (compiler.list_comment, [Atom (s, compiler.atom_comment)])
+    | Annot_specify l ->  List (compiler.list_specification, [logic compiler l])
+    | Annot_alternative (`C, s) -> 
+      List (compiler.list_comment, 
+            [Atom ("C:", compiler.atom_comment);
+             statement compiler s])
+    | Annot_alternative (`Why, s) -> failwith "Shouldn't be here"
+
+  and statement compiler = 
     let stmt = _make_stmt compiler in
     let labeled_stmt = _make_labeled_stmt compiler in
     function 
@@ -1682,7 +1679,7 @@ module To_why_string = struct
       end
     | Do_log (f, l) -> (kwd compiler "(* Log *) void")
     | Do_annotated_statement (Annot_alternative (`Why, s), st) ->
-      kwd compiler s
+      statement compiler s
     | Do_annotated_statement (annot, st) ->
       List (compiler.list_statements,
             [ statement_annotation compiler annot;
