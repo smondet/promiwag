@@ -54,6 +54,21 @@ module Io = struct
         IO.input_channel i
     let open_out f = 
         IO.output_channel (Pervasives.open_out f)
+
+    let with_file_out filename f = 
+      let o = open_out filename in
+      try let r = f o in close_out o; r with e -> close_out o; raise e
+
+    let with_file_in filename f = 
+      let i = open_in filename in
+      try let r = f i in close_in i; r with e -> close_in i; raise e
+
+    let with_new_tmp ?(suffix=".tmp") ?(prefix="promiwag_") f =
+      let name, o = Filename.open_temp_file prefix suffix in
+      let o = output_channel o in
+      try let r = f o name in close_out o; r with e -> close_out o; raise e
+
+
 end
 
 
