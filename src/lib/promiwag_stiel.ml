@@ -86,7 +86,7 @@ module Definition = struct
 
   type logic = 
     | Logic_bool_expr of bool_expression
-    | Logic_variability of bool_expression * bool_expression
+    | Logic_variability of bool_expression * int_expression
 
   type statement_annotation = 
     | Annot_comment of string
@@ -202,7 +202,7 @@ module To_string = struct
       spr "%sLogic: %s" before (bool_expression b)
     | Logic_variability (i,v) ->
       spr "%sInvariant: %s\n%sVariant: %s" 
-      before (bool_expression i) before (bool_expression v)
+      before (bool_expression i) before (int_expression v)
 
   let rec statement_annotation ?(before="") = function
     | Annot_comment s -> spr "%s%s" before s
@@ -406,7 +406,7 @@ module To_format = struct
               Label ((kwd compiler "Invariant:", compiler.label_logic),
                      bool_expression compiler i);
               Label ((kwd compiler "Variant:", compiler.label_logic),
-                     bool_expression compiler v);])
+                     int_expression compiler v);])
 
   let rec statement_annotation compiler = function
     | Annot_comment s -> List (compiler.list_comment, [Atom (s, compiler.atom_comment)])
@@ -614,6 +614,17 @@ module Expression = struct
   let ge  a b = Typed_bool (Bool_expr_binary_int (Bool_binop_equal_or_greater , int a, int b))
   let le  a b = Typed_bool (Bool_expr_binary_int (Bool_binop_equal_or_lower   , int a, int b))
 
+  let rec ls_and  = function
+    | [] -> t
+    | [a] -> a
+    | [a ; b] -> band a b
+    | h :: t -> band h (ls_and t)
+  let rec ls_or  = function
+    | [] -> f
+    | [a] -> a
+    | [a ; b] -> bor a b
+    | h :: t -> bor h (ls_or t)
+
   let offset b i =
     let t = 
       match b with
@@ -760,7 +771,19 @@ module Statement = struct
 
 end
 
+module Annotated_statement = struct
 
+  let cmt c s = Do_annotated_statement (Annot_comment c, s)
+
+  let why w s = 
+    Do_annotated_statement (Annot_alternative (`Why, w), s)
+
+  let variability inv var s =
+    Do_annotated_statement 
+      (Annot_specify (Logic_variability 
+                        (Expression.bool inv, Expression.int var)), s)
+
+end
 
 module To_C = struct
 
@@ -1491,12 +1514,12 @@ module To_why_string = struct
       | Int_binop_sub     ->   "-" 
       | Int_binop_mul     ->   "*" 
       | Int_binop_div     ->   "/" 
-      | Int_binop_mod     ->   "mod" 
-      | Int_binop_bin_and ->   "band" 
-      | Int_binop_bin_or  ->   "bor" 
-      | Int_binop_bin_xor ->   "xor" 
-      | Int_binop_bin_shl ->   "lsr"  
-      | Int_binop_bin_shr ->   "lsl" 
+      | Int_binop_mod     ->   "%" 
+      | Int_binop_bin_and -> "+" (*  "land" *)
+      | Int_binop_bin_or  -> "+" (*  "lor"  *)
+      | Int_binop_bin_xor -> "+" (*  "xor"  *)
+      | Int_binop_bin_shl -> "+" (*  "lsr"  *)
+      | Int_binop_bin_shr -> "+" (*  "lsl"  *)
 
     let bool_binary_operator = function
       | Bool_binop_equals            -> "="   
@@ -1510,8 +1533,6 @@ module To_why_string = struct
       | Get_native         it -> spr "get-native-%s" (integer_type it)
       | Get_big_endian     it -> spr "get-bigend-%s" (integer_type it)
       | Get_little_endian  it -> spr "get-ltlend-%s" (integer_type it)
-
-    let variable_name s = spr "!%s" s
 
     let buffer_type = function
       | Type_sized_buffer   i -> spr "buffer-of-size-[%d]" i
@@ -1535,27 +1556,28 @@ module To_why_string = struct
   let get_int_at_buffer compiler o =
     Atom (Simple_to_string.get_int_at_buffer o, compiler.atom_funciton)
 
-  let variable_name compiler o =
-    Atom (Simple_to_string.variable_name o, compiler.atom_literal)
+  let variable_name ?(logical=false) compiler o =
+    let name s = if logical then s else sprintf "!%s" s in
+    Atom (name o, compiler.atom_literal)
 
   let rec buffer_type compiler o =
     Atom (Simple_to_string.buffer_type o, compiler.atom_type)
 
-  and int_expression compiler = function
+  and int_expression ?(logical=false) compiler = function
     | Int_expr_unary  (op, ex)        ->
       List (compiler.list_expression,
-            [ int_unary_operator compiler op; int_expression compiler ex])
+            [ int_unary_operator compiler op; int_expression ~logical compiler ex])
     | Int_expr_binary (op, ea, eb)    -> 
       List (compiler.list_expression,
-        [(int_expression compiler ea);
+        [(int_expression ~logical compiler ea);
          (int_binary_operator compiler op);
-         (int_expression compiler eb)])
-    | Int_expr_variable  v            -> variable_name compiler v
+         (int_expression ~logical compiler eb)])
+    | Int_expr_variable  v            -> variable_name ~logical compiler v
     | Int_expr_buffer_content
         (_, Buffer_expr_offset (Buffer_expr_variable v, int_expr)) ->
       List (compiler.list_expression,
             [ Atom ("buffer_access ", compiler.atom_operator);
-             int_expression compiler int_expr])
+             int_expression ~logical compiler int_expr])
     | Int_expr_buffer_content _ as s->
       failwith 
         (sprintf "Forbiden buffer access expression: %s" 
@@ -1574,26 +1596,26 @@ module To_why_string = struct
   and bool_expression ?(logical=false) compiler = function
     | Bool_expr_true   -> Atom ("true", compiler.atom_literal)
     | Bool_expr_false  -> Atom ("false", compiler.atom_literal)
-    | Bool_expr_variable v -> variable_name compiler v
+    | Bool_expr_variable v -> variable_name ~logical compiler v
     | Bool_expr_and        (a, b)     ->
       List (compiler.list_expression,
-            [bool_expression compiler a;
+            [bool_expression ~logical compiler a;
              Atom ((if logical then "and" else "&&"), compiler.atom_operator);
-             bool_expression compiler b])
+             bool_expression ~logical compiler b])
     | Bool_expr_or         (a, b)     ->
       List (compiler.list_expression,
-            [bool_expression compiler a;
+            [bool_expression ~logical compiler a;
              Atom ((if logical then "or" else "||"), compiler.atom_operator);
-             bool_expression compiler b])
+             bool_expression ~logical compiler b])
     | Bool_expr_not        ex         ->
       List (compiler.list_expression,
             [Atom ("not", compiler.atom_operator);
-             bool_expression compiler ex])
+             bool_expression ~logical compiler ex])
     | Bool_expr_binary_int (op, a, b) ->
       List (compiler.list_expression,
-            [(int_expression compiler a);
+            [(int_expression ~logical compiler a);
              (bool_binary_operator compiler op);
-             (int_expression compiler b)])
+             (int_expression ~logical compiler b)])
 
   let typed_expression compiler = function
     | Typed_int    (t, e) -> int_expression compiler e
@@ -1615,7 +1637,7 @@ module To_why_string = struct
               Label ((kwd compiler "invariant", compiler.label_logic),
                      bool_expression ~logical:true compiler i);
               Label ((kwd compiler "variant", compiler.label_logic),
-                     bool_expression ~logical:true compiler v);])
+                     int_expression ~logical:true compiler v);])
 
 
   let _make_stmt compiler l = List (compiler.list_statement, l)
@@ -1685,12 +1707,37 @@ module To_why_string = struct
             [ statement_annotation compiler annot;
               statement compiler st ])
 
+  let mark_packet_length = Statement.cmt "why-packet-length-parameter"
+
   let statement_to_string s =
     let compiler = (default_compiler ()) in
+    let packet_length_parameter =
+      let res = ref "" in
+      let f = function
+        | Do_annotated_statement (Annot_alternative (`Why, mpl), 
+                                  Do_declaration v)
+            when mpl = mark_packet_length -> res := v.name; true
+        | _ -> false in
+      match Ls.find_opt (Statement.unblock s) ~f with
+      | None -> failwith "Did not find the packet length mark; Why is useless."
+      | Some s -> !res
+    in
+
     let why =
       _make_labeled_stmt compiler 
-        (kwd compiler "let statement () =") [statement compiler s] in
-    (sprintf "%s {true}" (Easy_format.Pretty.to_string  why))
+        (kwd compiler "let statement () =") [
+          kwd compiler (sprintf "{ %s >= 0 }" packet_length_parameter);
+          statement compiler s] in
+    (sprintf "exception Exit_while\n\
+              parameter %s: int ref\n\
+              parameter buffer_access:\n\
+              \   index:int ->\n\
+              \   { 0 <= index < %s } int reads %s { result >= 0 }\n\
+              %s {true}"
+       packet_length_parameter
+       packet_length_parameter
+       packet_length_parameter
+       (Easy_format.Pretty.to_string  why))
       
 
 end
@@ -1702,6 +1749,7 @@ module Standard_renaming = struct
   module Expr = Expression
   module Var = Variable
   module Do = Statement
+  module Annot = Annotated_statement
   module Stiel_to_str = To_string
   module Stiel_to_C = To_C
 end
