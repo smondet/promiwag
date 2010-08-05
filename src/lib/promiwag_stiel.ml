@@ -997,18 +997,16 @@ module To_C = struct
         ~statements:(Ls.map stats ~f:(statement compiler)) ()
     | _ -> fail compiler "Called 'block' on a non-block statement"
       
-  and statement ?(wrong_place_for_comment=false) compiler s =
+  and statement compiler s =
     let assign a b = `assignment (`variable a, b) in
     match s with
     | Do_nothing                 -> `empty
     | Do_block  e as b -> `block (block compiler b)
     | Do_if            (e, a, b) ->
       `conditional (bool_expression compiler e,
-                    statement ~wrong_place_for_comment:true compiler a,
-                    statement ~wrong_place_for_comment:true compiler b)
+                    statement compiler a, statement compiler b)
     | Do_while_loop    (e, a)    -> 
-      `while_loop (bool_expression compiler e, 
-                   statement ~wrong_place_for_comment:true compiler a)
+      `while_loop (bool_expression compiler e, statement compiler a)
     | Do_exit_while ->
       `break
     | Do_assignment (a, b) ->
@@ -1019,7 +1017,7 @@ module To_C = struct
     | Do_annotated_statement (ann, Do_declaration tv) ->
       fail compiler "Calling 'statement' on a declaration"
     | Do_annotated_statement (ann, st) ->
-      `list [statement_annotation ann; statement compiler st]
+      `block ([], [statement_annotation ann; statement compiler st])
   and declaration compiler = function
     | Do_annotated_statement (ann, Do_declaration tv) ->
       `list [statement_annotation ann; 
