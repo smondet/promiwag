@@ -341,8 +341,7 @@ module Automata_generator = struct
         let from_the_transition_conditions, from_the_user_request =
           Ls.split_nth (Ls.length transition_conditions_request)  the_rest in
         [ Annot.cmt "Parsing User Block:"
-            (Annot.why (Do.cmt "Removed for Why.")
-               (protocol_handler.make_handler from_the_user_request)) ]
+            (protocol_handler.make_handler from_the_user_request) ]
         @ [ Annot.cmt "Default behaviour is to stop and get out of the While:"
               (assign_next_to_out compiler); ]
         @ (Ls.map transitions 
