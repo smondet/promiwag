@@ -33,5 +33,15 @@
 ;; Remove usual call to eshell:
 (seb-skey "mk" 'compile)
 
+(progn 
+  (compile omake-command)
+  (magit-status "./")
+  (windmove-right)
+  (split-window-vertically 20)
+  (windmove-down)
+  (split-window-vertically 20)
+  (find-file "TODO")
+  (windmove-down)
+  (eshell))
 
 
