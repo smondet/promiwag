@@ -342,7 +342,7 @@ let test_clean_protocol_stack dev () =
     Io.nwrite o why_checkable_program;
   );
   printf "Or you can prove: \n\
-         \  why -alt-ergo verify_parsing_automaton.mlw\n\
+         \  why -fast-wp -alt-ergo verify_parsing_automaton.mlw\n\
          \  why-dp -prover Alt-Ergo verify_parsing_automaton_why.why";
   ()
 
@@ -384,7 +384,7 @@ let test_minimal_parsing_code  () =
                 Do.log "Ethernet\n" []
               | _ -> failwith "should have two typed expressions");
           ( Promiwag_standard_protocols.ipv4,
-            [ `value "length";],
+            [ `value "length" ],
             fun te_list ->
               Do.log "IPv4\n" []);
         ] in
@@ -409,7 +409,7 @@ let test_why_output () =
       Io.nwrite o s;
     );
     "=> Just try: \n\
-     why -alt-ergo minimal_parsing.mlw\n\
+     why -fast-wp -alt-ergo minimal_parsing.mlw\n\
      why-dp -prover Alt-Ergo minimal_parsing_why.why");
   test_minimal_parsing_code ()
 
