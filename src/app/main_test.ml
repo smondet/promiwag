@@ -187,7 +187,7 @@ let print_the_internet () =
     (Promiwag.Protocol_stack.To_string.protocol_stack the_internet);
   ()
 
-let test_clean_protocol_stack dev () =
+let make_clean_protocol_stack dev =
   let module Stiel = Promiwag.Stiel in
   let module Expr = Stiel.Expression in
   let module Var = Stiel.Variable in
@@ -325,6 +325,12 @@ let test_clean_protocol_stack dev () =
       (automata_treatment
          (Var.expression (Var.pointer ~unique:false "packet_buffer_expression"))
          (Var.expression (Var.pointer ~unique:false "packet_buffer_length"))) in
+
+  (full_test_c_file, why_checkable_program)
+
+let test_clean_protocol_stack dev () =
+  let (full_test_c_file, why_checkable_program) =
+    make_clean_protocol_stack dev in
 
   Io.with_file_out "/tmp/pcap_procotol_parser.c" (fun out ->
     String_tree.print ~out (C2StrTree.file full_test_c_file);
