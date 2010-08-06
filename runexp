@@ -5,7 +5,7 @@ dateofexp=`date +"%Y-%m-%d_%Hh%Mm%S"`
 omake && promiwag_test cps eth0
 
 echo "Why: $(date)"
-why -alt-ergo verify_parsing_automaton.mlw > exp_${dateofexp}_why.log
+why -fast-wp -alt-ergo verify_parsing_automaton.mlw > exp_${dateofexp}_why.log
 echo "Alt-Ergo: $(date)"
 why-dp -prover Alt-Ergo verify_parsing_automaton_why.why > exp_${dateofexp}_altergo.log
 echo "End: $(date)"
