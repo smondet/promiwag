@@ -120,7 +120,141 @@ module System = struct
 
 end
 
+module Test_protocol_stacks = struct
 
+  open Promiwag.Meta_packet.Packet_structure
+  module Protocol_stack = Promiwag_protocol_stack
+  open  Promiwag.Protocol_stack
+
+  let req_max_field format =
+    Ls.flatten $ Ls.map format ~f:(function
+    | Item_field (name, Type_unsigned_integer size)
+    | Item_field (name, Type_signed_integer size)
+    | Item_field (name, Type_little_endian (Type_unsigned_integer size))
+    | Item_field (name, Type_little_endian (Type_signed_integer size)) ->
+      [ `value   name;
+        `pointer name;
+        `offset  name;
+        `size    name; ]
+    | Item_field (name, Type_string size) ->
+      [ `pointer name;
+        `offset  name;
+        `size    name; ]
+    | _-> failwith "req_max_field")
+
+  let a_name = "complex_right_a"
+  let b_name = "simple_right_b"
+  let c_name = "complex_right_c"
+
+  let a_format =
+    packet_format [
+      field "field_00" (fixed_string 8);
+      field "field_01" (fixed_string 6);
+      field "field_02" (fixed_string 6); (* 20 bytes *)
+      field "field_byte" (fixed_int 8);
+      field "field_04" (fixed_int 3);
+      field "field_05" (fixed_int 4);
+      field "field_06" (fixed_int 1);
+      field "field_07" (fixed_int 16); (* 32 bits *)
+      field "field_08" (fixed_int 16);
+      field "field_09" (fixed_int 3);
+      field "field_10" (fixed_int 12);
+      field "field_11" (fixed_int 1); (* 32 bits, 28 bytes whole *)
+      string_field "field_12" (size (`var "field_byte"));
+      fixed_int_field "field_13" 12;
+      string_field "like_ip_options" 
+        (size
+           (`align32 (`sub (`mul (`var "field_byte", `int 4),
+                            `offset "field_13"))));
+      fixed_int_field "after_like_ip_options" 12;
+      payload 
+        ~size:(size (`sub (`var "field_byte",
+                           `add (`offset "field_11", `int 2))))
+        ~name:"a_payload"
+      ();
+
+    ]
+  let a_transitions =
+    sequence [
+      switch "field_09" [
+        case_int_value 3  b_name "a_payload";
+        case_int_value 2  c_name "a_payload";
+      ];
+      switch "field_11" [
+        case_int_value 3  b_name "like_ip_options";
+      ];
+    ]
+
+  let b_format =
+    packet_format [
+      field "bone" (fixed_int 15);
+    ]
+  let b_transitions = empty_transition
+  let b_transitions_wrong =
+    switch "bone" [
+      case_int_value 0 b_name "bone" (* infinite loop *)
+    ]
+
+  let c_format =
+    packet_format [
+      field "a" (fixed_int 2);
+      field "b" (fixed_int 2);
+      string_field "s" (size (`sub (`var "a", `var "b")));
+    ]
+  let c_transitions = empty_transition
+
+  let make_handled_stack l =
+    let stack = Protocol_stack.empty_protcol_stack () in
+    Ls.iter l ~f:(fun (n,f,t) -> Protocol_stack.add_protocol stack n f t);
+    let handlers =
+      Ls.map l
+        ~f:(fun (n,f,t) -> (n, req_max_field f, 
+                            fun l -> Promiwag.Stiel.Statement.nop)) in
+    (stack, (let (a, _, _) = Ls.hd l in a), handlers)
+
+  let right_1 () =
+    let good_ones = [
+      a_name, a_format, a_transitions;      
+      b_name, b_format, b_transitions;
+      c_name, c_format, c_transitions;
+    ] in
+    make_handled_stack good_ones
+
+  let wrong_1 () =
+    make_handled_stack [
+      a_name, a_format, a_transitions;      
+      b_name, b_format, b_transitions_wrong;
+      c_name, c_format, c_transitions;
+    ]
+
+  let make_why (stack, initial_protocol, handlers) =
+    let module Stiel = Promiwag.Stiel in
+    let module Expr = Stiel.Expression in
+    let module Var = Stiel.Variable in
+    let module Do = Stiel.Statement in
+    let module Meta_stack = Promiwag.Protocol_stack in
+    let module Generator = Meta_stack.Automata_generator in
+    let automata_treatment packet_pointer packet_size =
+      let error_handler = function
+        | `buffer_over_flow (f, a, b) -> Do.log "??" []
+        | `unknown s -> Do.log "!!!" [] in
+      let stack_handler =
+        Generator.handler ~error_handler ~initial_protocol  handlers in
+      let packet = Generator.packet ~size:packet_size packet_pointer in
+      let automata_block =
+        Do.block 
+          ( (Do.log "===== New Packet =====\n" [])
+            :: (Generator.automata_block stack stack_handler packet)) in
+      automata_block in
+    let why_checkable_program = 
+      Promiwag.Stiel.To_why_string.statement_to_string 
+        (automata_treatment
+           (Var.expression (Var.pointer ~unique:false "packet_buffer_expression"))
+           (Var.expression (Var.pointer ~unique:false "packet_buffer_length"))) in
+    why_checkable_program
+
+
+end
 
 
 let call_printf format_str exp_list =
@@ -443,7 +577,7 @@ let test_clean_protocol_stack dev () =
   ()
 
 let test_proving () =
-
+  let module Stacks = Test_protocol_stacks in
   let dir_prefix = 
     let dir = sprintf "/tmp/promiwag_proving_%s" (System.timestamp ()) in
     System.run_command (sprintf "rm -fr %s" dir);
@@ -452,7 +586,7 @@ let test_proving () =
 
   let do_bench (name, program) =
     let file_prefix =
-      sprintf "%s/%s" name dir_prefix in
+      sprintf "%s/%s" dir_prefix name in
 
     let file = fun s -> file_prefix ^ s in
     
@@ -463,15 +597,26 @@ let test_proving () =
     printf "Running `%s'.\n%!" why;
     System.run_command why;
     let why_dp =
-      sprintf "why-dp -prover Alt-Ergo %s > %s" 
+      sprintf "why-dp -timeout 3600 -prover Alt-Ergo %s > %s" 
         (file "_why.why") 
         (file "_alt_ergo.out") in
     printf "Running `%s'.\n%!" why_dp;
     System.run_command why_dp;
+    (fun () ->
+      let grep =
+        sprintf "egrep '(^total(   :| w)|^valid   :)' %s" (file "_alt_ergo.out")
+      in
+      let greped = System.slurp_command grep in
+      printf "=== Test '%s':\n%s\n" name greped;
+    )
   in
-  Ls.iter do_bench [
-    ("clean_ps", snd $ make_clean_protocol_stack "dummy")
-  ];
+  let recap =
+    Ls.map do_bench [
+      ("clean_ps", snd $ make_clean_protocol_stack "dummy");
+      ("right_1", Stacks.make_why (Stacks.right_1 ()));
+      ("wrong_1", Stacks.make_why (Stacks.wrong_1 ()));
+    ]in
+  Ls.iter (fun f -> f ()) recap;
   ()
 
 
@@ -494,7 +639,7 @@ let test_minimal_parsing_code  () =
     Meta_stack.add_protocol s SP.ethernet SP.ethernet_format SP.ethernet_transitions;
     Meta_stack.add_protocol s SP.ipv4 SP.ipv4_format SP.ipv4_transitions;
     s in
-
+ 
   let automata_treatment =
     let packet_pointer = Var.expression (Var.pointer "packet_pointer") in
     let packet_size = Var.expression (Var.unat "packet_size") in
