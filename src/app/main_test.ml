@@ -27,6 +27,100 @@ end
 module C2StrTree = Promiwag.C_backend.To_big_string(String_tree)
 
 
+module System = struct
+
+  (** create a directory but doesn't raise an exception if the
+      directory * already exist *)
+  let mkdir_safe dir perm =
+    try Unix.mkdir dir perm with Unix.Unix_error (Unix.EEXIST, _, _) -> ()
+
+  (** create a directory, and create parent if doesn't exist
+      i.e. mkdir -p *)
+  let mkdir_p ?(perm=0o700) dir =
+    let rec p_mkdir dir =
+      let p_name = Filename.dirname dir in
+      if p_name <> "/" && p_name <> "."
+      then p_mkdir p_name;
+      mkdir_safe dir perm in
+    p_mkdir dir 
+
+  let read_command_output f s =
+    let ic = Unix.open_process_in s in
+    (try
+       while true do
+         f (input_char ic)
+       done
+     with End_of_file -> ());
+    match Unix.close_process_in ic with
+    | Unix.WEXITED 0 -> ()
+    | _ -> invalid_arg ("read_command_output: " ^ s)
+
+  let slurp_command s =
+    let buf = Buffer.create 100 in
+    read_command_output (Buffer.add_char buf) s;
+    Buffer.contents buf
+
+  exception Command_error of string * Unix.process_status
+  let run_command c =
+    match Unix.system c with
+    | Unix.WEXITED 0 -> ()
+    | err -> raise (Command_error (c, err))
+
+  let timestamp () =
+    let module U = Unix in
+    let t = U.time () in
+    let st = U.localtime t in
+    let sec   = st.U.tm_sec in 
+    let min   = st.U.tm_min in 
+    let hour  = st.U.tm_hour in
+    let mday  = st.U.tm_mday in
+    let mon   = st.U.tm_mon + 1 in 
+    let year  = st.U.tm_year + 1900 in
+    sprintf "%d_%02d_%02d_%02dh%02dm%02ds"
+      year mon mday hour min sec
+
+
+  module Feed = struct
+  (* Warning: the following function crashes in OCaml 3.09.2,
+     because of that bug: http://caml.inria.fr/mantis/view.php?id=4062
+     (close_out is applied a second time during Unix.close_process) *)
+    let kfeed f command data =
+      let (ic, oc) as channels = Unix.open_process command in
+      output_string oc data;
+      close_out oc;
+      let exn = ref None in
+      begin 
+        try
+          while true do
+            f (input_char ic)
+          done
+        with
+        | End_of_file -> ()
+        | e -> exn := Some e
+      end;
+      begin match Unix.close_process channels with
+      | Unix.WEXITED 0 -> ()
+      | _ -> invalid_arg ("feed_command: " ^ command)
+      end;
+      (match !exn with Some e -> raise e | None -> ())
+
+    let feed = kfeed print_char
+      
+    let ffeed oc command data = kfeed (output_char oc) command data
+      
+    let bfeed buf command data = kfeed (Buffer.add_char buf) command data
+      
+    let str command data = 
+      let buf = Buffer.create (2 * String.length data) in
+      bfeed buf command data;
+      Buffer.contents buf
+  end
+
+end
+
+
+
+
 let call_printf format_str exp_list =
   `expression (`cast (`void, `call (`variable "printf",
                                     `literal_string format_str :: exp_list)))
@@ -346,6 +440,31 @@ let test_clean_protocol_stack dev () =
          \  why-dp -prover Alt-Ergo verify_parsing_automaton_why.why";
   ()
 
+let test_proving () =
+  let _, why_checkable_program = make_clean_protocol_stack "dummy" in
+
+  let file_prefix = 
+    let dir = sprintf "/tmp/promiwag_proving_%s" (System.timestamp ()) in
+    System.run_command (sprintf "rm -fr %s" dir);
+    System.mkdir_p dir;
+    sprintf "%s/clean_ps" dir in
+
+  let file = fun s -> file_prefix ^ s in
+
+  Io.with_file_out (file ".mlw") (fun o ->
+    Io.nwrite o why_checkable_program;
+  );
+  let why = sprintf "why -fast-wp -alt-ergo %s" (file ".mlw") in
+  printf "Running `%s'.\n%!" why;
+  System.run_command why;
+  let why_dp = sprintf "why-dp -prover Alt-Ergo %s" (file "_why.why") in
+  printf "Running `%s'.\n%!" why_dp;
+  System.run_command why_dp;
+  ()
+
+
+
+
 let statement_to_string = ref Promiwag.Stiel.With_formatter.statement_to_string 
 
 let test_minimal_parsing_code  () =
@@ -428,6 +547,7 @@ let () =
       | "minpars" -> test_minimal_parsing_code
       | "pi" -> print_the_internet
       | "why" -> test_why_output
+      | "prove" -> test_proving
       | s -> failwith (sprintf "Unknown test: %s\n" s)
     in
     Printexc.print test (); 
