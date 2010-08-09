@@ -1513,11 +1513,11 @@ module To_why_string = struct
       | Int_binop_mul     ->   "*" 
       | Int_binop_div     ->   "/" 
       | Int_binop_mod     ->   "%" 
-      | Int_binop_bin_and -> "%" (*  "land" *)
-      | Int_binop_bin_or  -> "%" (*  "lor"  *)
-      | Int_binop_bin_xor -> "%" (*  "xor"  *)
-      | Int_binop_bin_shl -> "%" (*  "lsr"  *)
-      | Int_binop_bin_shr -> "%" (*  "lsl"  *)
+      | Int_binop_bin_and -> "bin_land"
+      | Int_binop_bin_or  -> "bin_lor" 
+      | Int_binop_bin_xor -> "bin_xor" 
+      | Int_binop_bin_shl -> "bin_lsr" 
+      | Int_binop_bin_shr -> "bin_lsl" 
 
     let bool_binary_operator = function
       | Bool_binop_equals            -> "="   
@@ -1558,6 +1558,19 @@ module To_why_string = struct
     let name s = if logical then s else sprintf "!%s" s in
     Atom (name o, compiler.atom_literal)
 
+  let easy_int_binary_operator = function
+    | Int_binop_add     -> true 
+    | Int_binop_sub     -> true 
+    | Int_binop_mul     -> true 
+    | Int_binop_div     -> true 
+    | Int_binop_mod     -> true 
+    | Int_binop_bin_and -> false
+    | Int_binop_bin_or  -> false
+    | Int_binop_bin_xor -> false
+    | Int_binop_bin_shl -> false
+    | Int_binop_bin_shr -> false
+
+
   let rec buffer_type compiler o =
     Atom (Simple_to_string.buffer_type o, compiler.atom_type)
 
@@ -1565,11 +1578,16 @@ module To_why_string = struct
     | Int_expr_unary  (op, ex)        ->
       List (compiler.list_expression,
             [ int_unary_operator compiler op; int_expression ~logical compiler ex])
-    | Int_expr_binary (op, ea, eb)    -> 
+    | Int_expr_binary (op, ea, eb) when easy_int_binary_operator op -> 
       List (compiler.list_expression,
         [(int_expression ~logical compiler ea);
          (int_binary_operator compiler op);
          (int_expression ~logical compiler eb)])
+    | Int_expr_binary (op, ea, eb) -> 
+      List (compiler.list_expression,
+            [(int_binary_operator compiler op);
+             (int_expression ~logical compiler ea);
+             (int_expression ~logical compiler eb)])
     | Int_expr_variable  v            -> variable_name ~logical compiler v
     | Int_expr_buffer_content
         (_, Buffer_expr_offset (Buffer_expr_variable v, int_expr)) ->
@@ -1727,6 +1745,12 @@ module To_why_string = struct
           kwd compiler (sprintf "{ %s >= 0 }" packet_length_parameter);
           statement compiler s] in
     (sprintf "exception Exit_while\n\
+              parameter bin_mod : a:int -> b:int -> {} int { 0 <= result <= b }\n\
+              parameter bin_land: a:int -> b:int -> {} int { 0 <= result }\n\
+              parameter bin_lor : a:int -> b:int -> {} int { 0 <= result }\n\
+              parameter bin_xor : a:int -> b:int -> {} int { 0 <= result }\n\
+              parameter bin_lsr : a:int -> b:int -> {} int { 0 <= result }\n\
+              parameter bin_lsl : a:int -> b:int -> {} int { 0 <= result }\n\
               parameter %s: int ref\n\
               parameter buffer_access:\n\
               \   index:int ->\n\
