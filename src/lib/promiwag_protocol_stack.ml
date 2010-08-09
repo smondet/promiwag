@@ -443,8 +443,10 @@ module Automata_generator = struct
              (while_contents @
                 [ Annot.why
                     (Do.conditional 
-                       (Expr.eq (Var.expression compiler.var_current_format)
-                          (get_out_value compiler))
+                       (Expr.bor 
+                          (Expr.eq (Var.expression compiler.var_current_format)
+                             (get_out_value compiler))
+                          (Expr.le (Var.expression vps) (Expr.unat 1)))
                        ~statement_then:(get_out_statement compiler))
                     Do.nop
                 ]))
