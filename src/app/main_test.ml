@@ -205,7 +205,8 @@ module Test_protocol_stacks = struct
 
   let make_handled_stack l =
     let stack = Protocol_stack.empty_protcol_stack () in
-    Ls.iter l ~f:(fun (n,f,t) -> Protocol_stack.add_protocol stack n f t);
+    Ls.iter l ~f:(fun (n,format,transitions) ->
+      Protocol_stack.add_protocol stack ~format ~transitions n);
     let handlers =
       Ls.map l
         ~f:(fun (n,f,t) -> (n, req_max_field f, 
@@ -636,8 +637,10 @@ let test_minimal_parsing_code  () =
   let eth_and_ipv4 =
     let module SP = Standard_protocols in
     let s = Meta_stack.empty_protcol_stack () in
-    Meta_stack.add_protocol s SP.ethernet SP.ethernet_format SP.ethernet_transitions;
-    Meta_stack.add_protocol s SP.ipv4 SP.ipv4_format SP.ipv4_transitions;
+    Meta_stack.add_protocol s SP.ethernet 
+      ~format:SP.ethernet_format ~transitions:SP.ethernet_transitions;
+    Meta_stack.add_protocol s SP.ipv4 
+      ~format:SP.ipv4_format ~transitions:SP.ipv4_transitions;
     s in
  
   let automata_treatment =

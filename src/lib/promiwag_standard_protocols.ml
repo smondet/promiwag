@@ -197,6 +197,9 @@ let ipv4_transitions =
     PS.case_int_value 33 dccp "ip_payload";
     PS.case_int_value 47 gre  "ip_payload";
   ]
+let ipv4_checks =
+  [ PS.check_range "ihl" 5 15 ]
+
 let ipv4_tos_precedence_string = [
   (0, "Routine");
   (1, "Priority");
@@ -340,12 +343,16 @@ let dns_transitions = PS.empty_transition
 
 let internet_stack_from_ethernet () =
   let s = Protocol_stack.empty_protcol_stack () in
-  Protocol_stack.add_protocol s ethernet ethernet_format ethernet_transitions;
-  Protocol_stack.add_protocol s ipv4 ipv4_format ipv4_transitions;
-  Protocol_stack.add_protocol s udp udp_format udp_transitions;
-  Protocol_stack.add_protocol s tcp tcp_format tcp_transitions;
-  Protocol_stack.add_protocol s arp arp_format arp_transitions;
-  Protocol_stack.add_protocol s gre gre_format gre_transitions;
-  Protocol_stack.add_protocol s dhcp dhcp_format dhcp_transitions;
-  Protocol_stack.add_protocol s dns dns_format dns_transitions;
+  let add n format transitions =
+    Protocol_stack.add_protocol s ~format ~transitions n in
+  add ethernet ethernet_format ethernet_transitions;
+  add udp      udp_format udp_transitions;
+  add tcp      tcp_format tcp_transitions;
+  add arp      arp_format arp_transitions;
+  add gre      gre_format gre_transitions;
+  add dhcp     dhcp_format dhcp_transitions;
+  add dns      dns_format dns_transitions;
+  Protocol_stack.add_protocol s ipv4 
+    ~format:ipv4_format ~transitions:ipv4_transitions
+    ~runtime_checks:ipv4_checks;
   s

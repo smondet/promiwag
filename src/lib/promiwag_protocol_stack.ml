@@ -11,11 +11,14 @@ type transition =
   | Sequence of transition list
   | No_transition
 
+type runtime_check = 
+  | Range of string * int * int
 
 type protocol = {
   name: string;
   format: MP_format.format;
   transitions: transition;
+  runtime_checks: runtime_check list;
 }
 
 type protocol_stack = {
@@ -41,11 +44,15 @@ let empty_transition =
 
 let sequence l = Sequence l
   
-let add_protocol ps name format packet_transitions =
+let check_range f a b = Range (f, a, b)
+
+let add_protocol ps ~format ?(transitions=No_transition)
+    ?(runtime_checks=[]) name =
   Ht.add ps.stack_description name {
     name = name;
     format = format;
-    transitions = packet_transitions;
+    transitions = transitions;
+    runtime_checks = runtime_checks;
   };
   ()
     
