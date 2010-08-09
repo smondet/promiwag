@@ -136,6 +136,9 @@ module Test_protocol_stacks = struct
         `pointer name;
         `offset  name;
         `size    name; ]
+    | Item_field ("unsized_payload" as name, Type_string size) ->
+      [ `pointer name;
+        `offset  name;]
     | Item_field (name, Type_string size) ->
       [ `pointer name;
         `offset  name;
@@ -192,40 +195,74 @@ module Test_protocol_stacks = struct
   let b_transitions = empty_transition
   let b_transitions_wrong =
     switch "bone" [
-      case_int_value 0 b_name "bone" (* infinite loop *)
+      case_int_value 0 a_name "bone" (* potential infinite loop *)
     ]
 
   let c_format =
     packet_format [
       field "a" (fixed_int 2);
-      field "b" (fixed_int 2);
-      string_field "s" (size (`sub (`var "a", `var "b")));
+      string_field "aa" (size (`int 2));
+      field "b" (fixed_int 20);
+      string_field "s" (size (`sub (`int 10, `var "b")));
+      payload ~name:"unsized_payload" ();
     ]
   let c_transitions = empty_transition
+  let c_transitions_inifinite_loop =
+    switch "b" [
+      case_int_value 0 "another" "b";
+      case_int_value 1 "another" "a"; (* infinite loop *)
+    ]
+  let c_transitions_unknown_size =
+    switch "a" [
+      case_int_value 0 "another" "b";
+      case_int_value 1 "another" "unsized_payload"; (* offset not 'reachable',
+                                                       10 - b may be negative. *)
+    ]
+  let c_checks_for_unknown_size = [
+    check_range "b" 0 4
+  ]
 
   let make_handled_stack l =
     let stack = Protocol_stack.empty_protcol_stack () in
-    Ls.iter l ~f:(fun (n,format,transitions) ->
-      Protocol_stack.add_protocol stack ~format ~transitions n);
+    Ls.iter l ~f:(fun (n,format,transitions,runtime_checks) ->
+      Protocol_stack.add_protocol stack ~format ~transitions ~runtime_checks n);
     let handlers =
       Ls.map l
-        ~f:(fun (n,f,t) -> (n, req_max_field f, 
+        ~f:(fun (n,f,t,c) -> (n, req_max_field f, 
                             fun l -> Promiwag.Stiel.Statement.nop)) in
-    (stack, (let (a, _, _) = Ls.hd l in a), handlers)
+    (stack, (let (a, _, _, _) = Ls.hd l in a), handlers)
 
   let right_1 () =
     let good_ones = [
-      a_name, a_format, a_transitions;      
-      b_name, b_format, b_transitions;
-      c_name, c_format, c_transitions;
+      a_name, a_format, a_transitions, [];      
+      b_name, b_format, b_transitions, [];
+      c_name, c_format, c_transitions, [];
     ] in
     make_handled_stack good_ones
 
   let wrong_1 () =
     make_handled_stack [
-      a_name, a_format, a_transitions;      
-      b_name, b_format, b_transitions_wrong;
-      c_name, c_format, c_transitions;
+      a_name, a_format, a_transitions, [];      
+      b_name, b_format, b_transitions_wrong, [];
+      c_name, c_format, c_transitions, [];
+    ]
+  let wrong_2 () =
+    make_handled_stack [
+      a_name, a_format, a_transitions, [];      
+      b_name, b_format, b_transitions, [];
+      c_name, c_format, c_transitions_inifinite_loop, [];
+    ]
+  let wrong_3 () =
+    make_handled_stack [
+      a_name, a_format, a_transitions, [];      
+      b_name, b_format, b_transitions, [];
+      c_name, c_format, c_transitions_unknown_size, [];
+    ]
+  let right_2 () =
+    make_handled_stack [
+      a_name, a_format, a_transitions, [];      
+      b_name, b_format, b_transitions, [];
+      c_name, c_format, c_transitions_unknown_size, c_checks_for_unknown_size;
     ]
 
   let make_why (stack, initial_protocol, handlers) =
@@ -588,38 +625,48 @@ let test_proving () =
     System.mkdir_p dir; dir 
   in
 
-  let do_bench (name, program) =
+  let do_bench (name, do_program) =
     let file_prefix =
       sprintf "%s/%s" dir_prefix name in
 
     let file = fun s -> file_prefix ^ s in
     
-    Io.with_file_out (file ".mlw") (fun o ->
-      Io.nwrite o program;
-    );
-    let why = sprintf "why -fast-wp -alt-ergo %s" (file ".mlw") in
-    printf "Running `%s'.\n%!" why;
-    System.run_command why;
-    let why_dp =
-      sprintf "why-dp -timeout 3600 -prover Alt-Ergo %s > %s" 
-        (file "_why.why") 
-        (file "_alt_ergo.out") in
-    printf "Running `%s'.\n%!" why_dp;
-    System.run_command why_dp;
-    (fun () ->
-      let grep =
-        sprintf "egrep '(^total(   :| w)|^valid   :)' %s" (file "_alt_ergo.out")
-      in
-      let greped = System.slurp_command grep in
-      printf "=== Test '%s':\n%s\n" name greped;
-    )
+    let str_result =
+      try
+        let program = do_program () in
+        
+        Io.with_file_out (file ".mlw") (fun o ->
+          Io.nwrite o program;
+        );
+        let why = sprintf "why -fast-wp -alt-ergo %s" (file ".mlw") in
+        printf "Running `%s'.\n%!" why;
+        System.run_command why;
+        let why_dp =
+          sprintf "why-dp -timeout 60 -prover Alt-Ergo %s > %s" 
+            (file "_why.why") 
+            (file "_alt_ergo.out") in
+        printf "Running `%s'.\n%!" why_dp;
+        System.run_command why_dp;
+        let grep =
+          sprintf "egrep '(^total(   :| w)|^valid   :)' %s" (file "_alt_ergo.out")
+        in
+        let greped = System.slurp_command grep in
+        greped
+      with
+      | e -> sprintf "Exception:\n  %s\n" (Printexc.to_string e)
+    in
+    (fun () -> printf "=== Test '%s':\n%s\n" name str_result;)
   in
   let recap =
     Ls.map do_bench [
-      ("clean_ps", snd $ make_clean_protocol_stack "dummy");
-      ("right_1", Stacks.make_why (Stacks.right_1 ()));
-      ("wrong_1", Stacks.make_why (Stacks.wrong_1 ()));
+      ("clean_ps", fun () ->  snd $ make_clean_protocol_stack "dummy");
+      ("right_1",  fun () ->  Stacks.make_why (Stacks.right_1 ()));
+      ("wrong_1",  fun () ->  Stacks.make_why (Stacks.wrong_1 ()));
+      ("wrong_2",  fun () ->  Stacks.make_why (Stacks.wrong_2 ()));
+      ("wrong_3",  fun () ->  Stacks.make_why (Stacks.wrong_3 ()));
+      ("right_2",  fun () ->  Stacks.make_why (Stacks.right_2 ()));
     ]in
+  printf "===== Recapitulation:\n";
   Ls.iter (fun f -> f ()) recap;
   ()
 
@@ -695,7 +742,7 @@ let () =
   if Array.length Sys.argv <= 1 then
     printf "Nothing to do\n"
   else (
-    Printexc.record_backtrace true;
+    (* Printexc.record_backtrace true; *)
     let test =
       match Sys.argv.(1) with
       | "pcap" ->  test_pcap_basic
