@@ -128,7 +128,8 @@ module Automata_generator = struct
   type error =
     [ `buffer_over_flow of
         string * STIEL.typed_expression * STIEL.typed_expression
-    | `unknown of string ]
+    | `unknown of string
+    | `range_check of string * int * int * STIEL.typed_expression ]
 
   type error_handler = error -> STIEL.statement
 
@@ -136,6 +137,8 @@ module Automata_generator = struct
     | `buffer_over_flow (f, a, b) ->
       Do.log (sprintf "Error BOF: fmt: %s, @int < @int\n" f) [a; b]
     | `unknown s -> Do.log (sprintf "Error unknown: %s\n" s) []
+    | `range_check (f, a, b, te) ->
+      Do.log (sprintf "Range for %s: @int not in [| %d, %d |]\n" f a b) [te]
 
   type protocol_stack_handler = {
     protocol_handlers: protocol_handler list;
@@ -307,11 +310,28 @@ module Automata_generator = struct
     | None -> default_handler name
     | Some h -> h
 
+  let compile_runtime_checks compiler runtime_checks from_runtime_checks =
+    Ls.map2 runtime_checks from_runtime_checks
+      ~f:(fun check te ->
+        match check with
+        | Range (f, a, b) ->
+          Annot.cmt (sprintf "Runtime check: %d <= %s <= %d" a f b)
+            (Do.conditional 
+               (Expr.bnot (Expr.band 
+                            (Expr.le (Expr.unat a) te)
+                            (Expr.le te (Expr.unat b))))
+               ~statement_then:(Do.block [
+                 compiler.handler.error_handler (`range_check (f, a, b, te));
+                 get_out_statement compiler;
+               ])))
+
+
   let compile_protocol_handler compiler protocol protocol_handler =
     let format = protocol_handler.handled_format in
     let statements =
       let packet_format = protocol.format in
       let transitions = transform_transitions protocol.transitions in
+      let runtime_checks = protocol.runtime_checks in
       let transition_conditions_request =
         let module Visit =  Promiwag_stiel.Visit in
         let l = ref [] in
@@ -327,9 +347,11 @@ module Automata_generator = struct
       Ls.iter transitions ~f:(fun t ->
         FIFO.push compiler.todo_queue 
           (find_handler compiler t.next_format));
+      let runtime_checks_request =
+        Ls.map runtime_checks ~f:(function Range (f, _, _) -> `value f) in
 
       let request =
-        transition_offset_request
+        runtime_checks_request @ transition_offset_request
         @ transition_conditions_request @ protocol_handler.user_request in
       let stage_1 =
         Packet_parsing.Stage_1.compile_with_dependencies
@@ -343,11 +365,14 @@ module Automata_generator = struct
           get_out_statement compiler;
         ] in
       let make_user_block l =
+        let from_runtime_checks, the_rest =
+          Ls.split_nth (Ls.length runtime_checks_request)  l in
         let from_next_offset, the_rest =
-          Ls.split_nth (Ls.length transition_offset_request)  l in
+          Ls.split_nth (Ls.length transition_offset_request)  the_rest in
         let from_the_transition_conditions, from_the_user_request =
           Ls.split_nth (Ls.length transition_conditions_request)  the_rest in
-        [ Annot.cmt "Parsing User Block:"
+        (compile_runtime_checks compiler runtime_checks from_runtime_checks)
+        @ [ Annot.cmt "Parsing User Block:"
             (protocol_handler.make_handler from_the_user_request) ]
         @ [ Annot.cmt "Default behaviour is to stop and get out of the While:"
               (assign_next_to_out compiler); ]

@@ -236,9 +236,7 @@ module Test_protocol_stacks = struct
     let module Meta_stack = Promiwag.Protocol_stack in
     let module Generator = Meta_stack.Automata_generator in
     let automata_treatment packet_pointer packet_size =
-      let error_handler = function
-        | `buffer_over_flow (f, a, b) -> Do.log "??" []
-        | `unknown s -> Do.log "!!!" [] in
+      let error_handler = function _ -> Do.log "??" [] in
       let stack_handler =
         Generator.handler ~error_handler ~initial_protocol  handlers in
       let packet = Generator.packet ~size:packet_size packet_pointer in
@@ -457,6 +455,11 @@ let make_clean_protocol_stack dev =
                 \   is bigger than\n\
                 \   packet size (@expr = @int).\n" f in
       Do.log message [b; b; a; a]
+    | `range_check (f, a, b, te) ->
+      let message =
+        sprintf "### \"Runtime check:\": \"%s\" (= @int) not in [%d, %d]\n"
+          f a b in
+      Do.log message [te]
     | `unknown s -> Do.log (sprintf "UNKNOWN ERROR:: %s\n" s) []
     in
     let stack_handler =
@@ -646,15 +649,9 @@ let test_minimal_parsing_code  () =
   let automata_treatment =
     let packet_pointer = Var.expression (Var.pointer "packet_pointer") in
     let packet_size = Var.expression (Var.unat "packet_size") in
-    let error_handler = function
-    | `buffer_over_flow (f, a, b) ->
-      let message = sprintf "BOF (%s): @int > @int\n" f in
-      Do.log message [b; a]
-    | `unknown s -> Do.log (sprintf "UNKNOWN ERROR:: %s\n" s) []
-    in
     let stack_handler =
       Generator.handler
-        ~error_handler
+        (*~error_handler*)
         ~initial_protocol:Standard_protocols.ethernet [
           ( Standard_protocols.ethernet,
             [ ],
