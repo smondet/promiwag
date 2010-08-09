@@ -1513,11 +1513,11 @@ module To_why_string = struct
       | Int_binop_mul     ->   "*" 
       | Int_binop_div     ->   "/" 
       | Int_binop_mod     ->   "%" 
-      | Int_binop_bin_and -> "+" (*  "land" *)
-      | Int_binop_bin_or  -> "+" (*  "lor"  *)
-      | Int_binop_bin_xor -> "+" (*  "xor"  *)
-      | Int_binop_bin_shl -> "+" (*  "lsr"  *)
-      | Int_binop_bin_shr -> "+" (*  "lsl"  *)
+      | Int_binop_bin_and -> "%" (*  "land" *)
+      | Int_binop_bin_or  -> "%" (*  "lor"  *)
+      | Int_binop_bin_xor -> "%" (*  "xor"  *)
+      | Int_binop_bin_shl -> "%" (*  "lsr"  *)
+      | Int_binop_bin_shr -> "%" (*  "lsl"  *)
 
     let bool_binary_operator = function
       | Bool_binop_equals            -> "="   
@@ -1621,7 +1621,7 @@ module To_why_string = struct
     | Typed_buffer (t, e) -> buffer_expression compiler e
 
   let typed_variable_kind compiler = function
-    | Kind_int     t -> Atom ("ref 42", compiler.atom_type)
+    | Kind_int     t -> Atom ("ref (-42)", compiler.atom_type)
     | Kind_bool      -> Atom ("bool", compiler.atom_type)
     | Kind_buffer  t ->  Atom ("ref 807738", compiler.atom_type)
 
