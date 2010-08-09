@@ -44,6 +44,13 @@ module System = struct
       mkdir_safe dir perm in
     p_mkdir dir 
 
+  exception Command_error of string * Unix.process_status
+  let run_command c =
+    match Unix.system c with
+    | Unix.WEXITED 0 -> ()
+    | err -> raise (Command_error (c, err))
+
+
   let read_command_output f s =
     let ic = Unix.open_process_in s in
     (try
@@ -53,18 +60,13 @@ module System = struct
      with End_of_file -> ());
     match Unix.close_process_in ic with
     | Unix.WEXITED 0 -> ()
-    | _ -> invalid_arg ("read_command_output: " ^ s)
+    | e -> raise (Command_error (s, e))
 
   let slurp_command s =
     let buf = Buffer.create 100 in
     read_command_output (Buffer.add_char buf) s;
     Buffer.contents buf
 
-  exception Command_error of string * Unix.process_status
-  let run_command c =
-    match Unix.system c with
-    | Unix.WEXITED 0 -> ()
-    | err -> raise (Command_error (c, err))
 
   let timestamp () =
     let module U = Unix in
@@ -441,25 +443,35 @@ let test_clean_protocol_stack dev () =
   ()
 
 let test_proving () =
-  let _, why_checkable_program = make_clean_protocol_stack "dummy" in
 
-  let file_prefix = 
+  let dir_prefix = 
     let dir = sprintf "/tmp/promiwag_proving_%s" (System.timestamp ()) in
     System.run_command (sprintf "rm -fr %s" dir);
-    System.mkdir_p dir;
-    sprintf "%s/clean_ps" dir in
+    System.mkdir_p dir; dir 
+  in
 
-  let file = fun s -> file_prefix ^ s in
+  let do_bench (name, program) =
+    let file_prefix =
+      sprintf "%s/%s" name dir_prefix in
 
-  Io.with_file_out (file ".mlw") (fun o ->
-    Io.nwrite o why_checkable_program;
-  );
-  let why = sprintf "why -fast-wp -alt-ergo %s" (file ".mlw") in
-  printf "Running `%s'.\n%!" why;
-  System.run_command why;
-  let why_dp = sprintf "why-dp -prover Alt-Ergo %s" (file "_why.why") in
-  printf "Running `%s'.\n%!" why_dp;
-  System.run_command why_dp;
+    let file = fun s -> file_prefix ^ s in
+    
+    Io.with_file_out (file ".mlw") (fun o ->
+      Io.nwrite o program;
+    );
+    let why = sprintf "why -fast-wp -alt-ergo %s" (file ".mlw") in
+    printf "Running `%s'.\n%!" why;
+    System.run_command why;
+    let why_dp =
+      sprintf "why-dp -prover Alt-Ergo %s > %s" 
+        (file "_why.why") 
+        (file "_alt_ergo.out") in
+    printf "Running `%s'.\n%!" why_dp;
+    System.run_command why_dp;
+  in
+  Ls.iter do_bench [
+    ("clean_ps", snd $ make_clean_protocol_stack "dummy")
+  ];
   ()
 
 
