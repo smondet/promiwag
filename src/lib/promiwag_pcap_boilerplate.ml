@@ -20,8 +20,8 @@ module C = struct
       packet_buffer:Variable.t -> C_LightAST.block
       
   type make_capture_fun =
-      to_open:[ `device of C_LightAST.expression | 
-          `file of C_LightAST.expression ] ->
+      to_open:[ `device of C_LightAST.expression
+              | `file of C_LightAST.expression ] ->
       packet_treatment:packet_treatment_fun ->
       passed_expression:Typed_expression.t ->
       on_error:(string -> C_LightAST.expression -> C_LightAST.statement)  ->

@@ -589,8 +589,10 @@ let make_clean_protocol_stack to_open =
     let to_open =
       if Str.starts_with to_open "file:" then 
         `file (`literal_string (Str.slice ~first:5 to_open))
+      else if Str.starts_with to_open "dev:" then
+        `device (`literal_string (Str.slice ~first:4 to_open))
       else
-        `device (`literal_string to_open)
+        `file (`array_index (`variable "argv", `literal_int 1))
     in
     let on_error a e = Do.log (sprintf "libPCAP ERROR: %s\n" a) [] in
     let passed_pointer = Var.expression (Var.pointer ~unique:false "NULL") in
@@ -761,7 +763,7 @@ let () =
       match Sys.argv.(1) with
       | "pcap" ->  test_pcap_basic
       | "base" -> test_c_ast
-      | "cps" -> test_clean_protocol_stack Sys.argv.(2)
+      | "cps" -> test_clean_protocol_stack (try Sys.argv.(2) with _ -> "")
       | "minpars" -> test_minimal_parsing_code
       | "pi" -> print_the_internet
       | "why" -> test_why_output
