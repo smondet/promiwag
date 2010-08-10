@@ -81,6 +81,10 @@ module System = struct
     sprintf "%d_%02d_%02d_%02dh%02dm%02ds"
       year mon mday hour min sec
 
+  let global_tmp_dir = ref "./tmp_promiwag/"
+  let tmp s = 
+    mkdir_p !global_tmp_dir;
+    !global_tmp_dir ^ s
 
   module Feed = struct
   (* Warning: the following function crashes in OCaml 3.09.2,
@@ -603,24 +607,28 @@ let test_clean_protocol_stack dev () =
   let (full_test_c_file, why_checkable_program) =
     make_clean_protocol_stack dev in
 
-  Io.with_file_out "/tmp/pcap_procotol_parser.c" (fun out ->
+  let pcap_prefix = System.tmp "pcap_procotol_parser" in
+  let c_file = sprintf "%s.c" pcap_prefix in
+  Io.with_file_out c_file (fun out ->
     String_tree.print ~out (C2StrTree.file full_test_c_file);
   );
   printf "Now you can compile and run (as root?):\n\
-         \  gcc -lpcap /tmp/pcap_procotol_parser.c -o /tmp/pcap_procotol_parser \n\
-         \  /tmp/pcap_procotol_parser\n";
-  Io.with_file_out "verify_parsing_automaton.mlw" (fun o ->
+         \  gcc -lpcap %s -o %s \n\
+         \  %s\n" c_file pcap_prefix pcap_prefix;
+  let mlw_prefix = System.tmp "verify_parsing_automaton.mlw" in
+  Io.with_file_out (sprintf "%s.mlw" mlw_prefix) (fun o ->
     Io.nwrite o why_checkable_program;
   );
   printf "Or you can prove: \n\
-         \  why -fast-wp -alt-ergo verify_parsing_automaton.mlw\n\
-         \  why-dp -prover Alt-Ergo verify_parsing_automaton_why.why";
+         \  why -fast-wp -alt-ergo %s.mlw\n\
+         \  why-dp -prover Alt-Ergo %s_why.why" mlw_prefix mlw_prefix;
   ()
 
 let test_proving () =
   let module Stacks = Test_protocol_stacks in
   let dir_prefix = 
-    let dir = sprintf "/tmp/promiwag_proving_%s" (System.timestamp ()) in
+    let dir = 
+      System.tmp $ sprintf "promiwag_proving_%s" (System.timestamp ()) in
     System.run_command (sprintf "rm -fr %s" dir);
     System.mkdir_p dir; dir 
   in
@@ -728,12 +736,13 @@ let test_minimal_parsing_code  () =
 let test_why_output () =
   statement_to_string := (fun at ->
     let s = Promiwag.Stiel.To_why_string.statement_to_string at in
-    Io.with_file_out "minimal_parsing.mlw" (fun o ->
+    let prefix = System.tmp "minimal_parsing" in
+    Io.with_file_out (sprintf "%s.mlw" prefix) (fun o ->
       Io.nwrite o s;
     );
-    "=> Just try: \n\
-     why -fast-wp -alt-ergo minimal_parsing.mlw\n\
-     why-dp -prover Alt-Ergo minimal_parsing_why.why");
+    (sprintf "=> Just try: \n\
+             why -fast-wp -alt-ergo %s.mlw\n\
+             why-dp -prover Alt-Ergo %s_why.why" prefix prefix));
   test_minimal_parsing_code ()
 
 

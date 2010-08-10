@@ -3,3 +3,4 @@
 *.omc
 _build/*
 promiwag_test
+tmp_*
