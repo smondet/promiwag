@@ -4,7 +4,6 @@ To do:
 BUGS:
 
 - check '<=' Vs '<' (bug with TCP only-ack packets "20 < 20")
-- string field not aligned does not complain
 
 
 FEATURES:

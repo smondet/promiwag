@@ -136,17 +136,11 @@ module Test_protocol_stacks = struct
     | Item_field (name, Type_signed_integer size)
     | Item_field (name, Type_little_endian (Type_unsigned_integer size))
     | Item_field (name, Type_little_endian (Type_signed_integer size)) ->
-      [ `value   name;
-        `pointer name;
-        `offset  name;
-        `size    name; ]
+      [ `value   name; `size    name; ]
     | Item_field ("unsized_payload" as name, Type_string size) ->
-      [ `pointer name;
-        `offset  name;]
+      [ `pointer name; `offset  name;]
     | Item_field (name, Type_string size) ->
-      [ `pointer name;
-        `offset  name;
-        `size    name; ]
+      [ `pointer name; `offset  name; `size    name; ]
     | _-> failwith "req_max_field")
 
   let a_name = "complex_right_a"
@@ -168,15 +162,15 @@ module Test_protocol_stacks = struct
       field "field_10" (fixed_int 12);
       field "field_11" (fixed_int 1); (* 32 bits, 28 bytes whole *)
       string_field "field_12" (size (`var "field_byte"));
-      fixed_int_field "field_13" 12;
+      fixed_int_field "field_13" 16;
       string_field "like_ip_options" 
         (size
            (`align32 (`sub (`mul (`var "field_byte", `int 4),
                             `offset "field_13"))));
-      fixed_int_field "after_like_ip_options" 12;
+      fixed_int_field "after_like_ip_options" 16;
       payload 
         ~size:(size (`sub (`var "field_byte",
-                           `add (`offset "field_11", `int 2))))
+                           `add (`offset "field_13", `int 2))))
         ~name:"a_payload"
       ();
 
@@ -204,9 +198,17 @@ module Test_protocol_stacks = struct
 
   let c_format =
     packet_format [
-      field "a" (fixed_int 2);
+      field "a" (fixed_int 8);
       string_field "aa" (size (`int 2));
-      field "b" (fixed_int 20);
+      field "b" (fixed_int 24);
+      string_field "s" (size (`sub (`int 10, `var "b")));
+      payload ~name:"unsized_payload" ();
+    ]
+  let c_format_does_not_compile =
+    packet_format [
+      field "a" (fixed_int 4); (* 4 <> 0 mod 8 *)
+      string_field "aa" (size (`int 2));
+      field "b" (fixed_int 24);
       string_field "s" (size (`sub (`int 10, `var "b")));
       payload ~name:"unsized_payload" ();
     ]
@@ -267,6 +269,12 @@ module Test_protocol_stacks = struct
       a_name, a_format, a_transitions, [];      
       b_name, b_format, b_transitions, [];
       c_name, c_format, c_transitions_unknown_size, c_checks_for_unknown_size;
+    ]
+  let wrong_4 () =
+    make_handled_stack [
+      a_name, a_format, a_transitions, [];      
+      b_name, b_format, b_transitions, [];
+      c_name, c_format_does_not_compile, c_transitions, [];
     ]
 
   let make_why (stack, initial_protocol, handlers) =
@@ -680,6 +688,7 @@ let test_proving () =
       ("wrong_2",  fun () ->  Stacks.make_why (Stacks.wrong_2 ()));
       ("wrong_3",  fun () ->  Stacks.make_why (Stacks.wrong_3 ()));
       ("right_2",  fun () ->  Stacks.make_why (Stacks.right_2 ()));
+      ("wrong_4",  fun () ->  Stacks.make_why (Stacks.wrong_4 ()));
     ]in
   printf "===== Recapitulation:\n";
   Ls.iter (fun f -> f ()) recap;

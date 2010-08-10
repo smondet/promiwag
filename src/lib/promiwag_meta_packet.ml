@@ -622,6 +622,15 @@ module Parser_generator = struct
       let offset = offset compiler byte_offset in
       let pointer = pointer_in_packet compiler packet byte_offset in
 
+      if not (compile_offset_to = `none && compile_pointer_to = `none) then
+        begin match bit_offset with
+        | Size_fixed fsz when fsz mod 8 <> 0 ->
+          error compiler (sprintf 
+                            "Requesting an offset or a pointer to a \
+                             not byte-aligned field (by %d bits)" fsz)
+        | _ -> ()
+        end;
+      
       let compiled_offset =
         match compile_offset_to with
         | `none -> Stiel_not_compiled
@@ -656,7 +665,8 @@ module Parser_generator = struct
       (* Things related to the size are a bit redundant here: *)
       let compiled_value, access_size =
         match compile_value_to with
-        | `none -> (Stiel_not_compiled, 0)
+        | `none ->
+          (Stiel_not_compiled, 0)
         | `expression ->
           let value, size = value compiler pointer bit_offset final in
           (Stiel_expression value, size)
@@ -686,7 +696,7 @@ module Parser_generator = struct
             let i = Int64.to_int i64 in
             max m (i + (s / 8))
           | _ -> m) in
-      debug$ sprintf "Maximal: %d" maximal_constant_access;
+      (* debug$ sprintf "Maximal: %d" maximal_constant_access; *)
       let stop_now, size_is_literal =
         match Expr.int size_expression with
         | Stiel_types.Int_expr_literal i64 ->
@@ -718,8 +728,8 @@ module Parser_generator = struct
       | None, _  
       | _ , (Stiel_types.Int_expr_literal _, _) -> []
       | Some size_expr, (offset_expr, type_bits) ->
-debug$ sprintf " (fst entity.buffer_access): %s"
-  (Stiel_to_str.typed_expression (fst entity.buffer_access));
+        (* debug$ sprintf " (fst entity.buffer_access): %s" *)
+        (*   (Stiel_to_str.typed_expression (fst entity.buffer_access)); *)
         let bufacc_expr = 
           Expr.add (Expr.to_unat (fst entity.buffer_access))
             (Expr.unat (type_bits / 8)) in
