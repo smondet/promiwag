@@ -64,7 +64,7 @@
           ;; mlse descend into the directory and repeat the process
           (setq ml-files-list
                 (append
-                 (files-in-bmlow-directory
+                 (files-in-below-directory
                   (car (car current-directory-list)))
                  ml-files-list)))))
       ;; move to the next filename in the list; this also
