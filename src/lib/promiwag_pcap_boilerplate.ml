@@ -20,14 +20,15 @@ module C = struct
       packet_buffer:Variable.t -> C_LightAST.block
       
   type make_capture_fun =
-      device:C_LightAST.expression ->
+      to_open:[ `device of C_LightAST.expression | 
+          `file of C_LightAST.expression ] ->
       packet_treatment:packet_treatment_fun ->
       passed_expression:Typed_expression.t ->
       on_error:(string -> C_LightAST.expression -> C_LightAST.statement)  ->
       C_LightAST.toplevel list * C_LightAST.block
 
   let make_capture: make_capture_fun =
-    fun ~device ~packet_treatment ~passed_expression ~on_error ->
+    fun ~to_open ~packet_treatment ~passed_expression ~on_error ->
       let error_buffer = 
         Variable.create ~name:"error_buffer" 
           ~c_type:(`array ([`variable "PCAP_ERRBUF_SIZE"], `signed_char))
@@ -42,7 +43,7 @@ module C = struct
         Variable.declaration pcap_source;
       ] in
       let handler = 
-        let name = "testpcap_handler" in
+        let name = "pcap_handler" in
         let return_type = `void in
         let arg_user = 
           Variable.create ~name:"user" ~c_type:(`pointer `unsigned_char) () in
@@ -83,21 +84,34 @@ module C = struct
               user_block_statements in
           (declarations, statements) in
         Function.create ~name ~return_type ~arguments ~block () in
-      let statements = [
-        `comment "Pcap statements:";
-        Construct.assignment_call pcap_source "pcap_open_live"
-          [ device; pcap_max_packet_size;  pcap_promiscuity; 
-            pcap_time_out; Variable.expression error_buffer ];
-        `conditional 
-          (`binary (`bin_eq, Variable.expression pcap_source, `variable "NULL"),
-           on_error "pcap_open_live" (Variable.expression error_buffer), `empty);
-        Construct.void_named_call "pcap_loop" [
-          Variable.expression pcap_source;
-          `literal_int (-1); Function.variable handler;
-          `cast (`pointer `unsigned_char, 
-                 Typed_expression.expression passed_expression)];
-        Construct.void_named_call "pcap_close" [ Variable.expression pcap_source ];
-      ] in
+      let statements = 
+        (`comment "Pcap statements:") ::
+          (match to_open with
+          | `device device ->
+            [ Construct.assignment_call pcap_source "pcap_open_live"
+                [ device; pcap_max_packet_size;  pcap_promiscuity; 
+                  pcap_time_out; Variable.expression error_buffer ];
+              `conditional 
+                (`binary (`bin_eq, Variable.expression pcap_source, `variable "NULL"),
+                 on_error "pcap_open_live"
+                   (Variable.expression error_buffer), `empty);
+            ]
+          | `file file -> 
+            [ Construct.assignment_call pcap_source "pcap_open_offline"
+                [ file; Variable.expression error_buffer ];
+              `conditional 
+                (`binary (`bin_eq, Variable.expression pcap_source, `variable "NULL"),
+                 on_error "pcap_open_offline"
+                   (Variable.expression error_buffer), `empty);
+            ]) @
+          [
+            Construct.void_named_call "pcap_loop" [
+              Variable.expression pcap_source;
+              `literal_int (-1); Function.variable handler;
+              `cast (`pointer `unsigned_char, 
+                     Typed_expression.expression passed_expression)];
+            Construct.void_named_call "pcap_close" [ Variable.expression pcap_source ];
+          ] in
 
       ((`comment "Pcap's includes:") ::
           (Construct.sharp_includes ["stdio.h"; "pcap.h";]) @ 
@@ -117,7 +131,7 @@ module C = struct
       
   let make_capture_of_stiel
       ~(c_compiler:Stiel_to_C.compiler)
-      ~(device:[`string of string | `C of C_LightAST.expression])
+      ~to_open
       ~(on_error:(string -> STIEL.typed_expression (* pointer: error_buffer *) ->
                   STIEL.statement))
       ~(passed_pointer:STIEL.typed_expression)
@@ -129,8 +143,6 @@ module C = struct
                              does not receive a variable" in
     let c_passed_expression = 
       Stiel_to_C.typed_expression c_compiler passed_pointer in
-    let c_device =
-      match device with `string s -> `literal_string s | `C e -> e in
     let c_on_error s e =
       Stiel_to_C.statement c_compiler
         (on_error s (Var.expression (Var.pointer ~unique:false (
@@ -155,7 +167,7 @@ module C = struct
     let cte =
       Typed_expression.create ~c_type:(`pointer `unsigned_char) in
     make_capture 
-      ~device:c_device
+      ~to_open
       ~on_error:c_on_error
       ~passed_expression:(cte ~expression:c_passed_expression ())
       ~packet_treatment

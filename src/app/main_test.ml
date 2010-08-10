@@ -417,7 +417,7 @@ let test_pcap_basic () =
   let toplevels, (block_vars, block_sts) =
     let passed_expression =
       C.Variable.address_typed_expression passed_structure in
-    let device = `literal_string "eth0" in
+    let to_open = `device (`literal_string "eth0") in
     let on_error s e = 
       `block (C.Construct.block () ~statements:[
         call_printf "PCAP ERROR: %s: %s\n" [`literal_string s; e];
@@ -436,7 +436,7 @@ let test_pcap_basic () =
                      `binary (`bin_add, `literal_int 1, counter_mem_contents));
       ]
     in
-    Pcap.make_capture ~device ~on_error ~passed_expression ~packet_treatment in
+    Pcap.make_capture ~to_open ~on_error ~passed_expression ~packet_treatment in
   let main_pcap, _, _ = 
     C.Construct.standard_main 
       ((C.Variable.declaration passed_structure) :: block_vars, 
@@ -457,7 +457,7 @@ let print_the_internet () =
     (Promiwag.Protocol_stack.To_string.protocol_stack the_internet);
   ()
 
-let make_clean_protocol_stack dev =
+let make_clean_protocol_stack to_open =
   let module Stiel = Promiwag.Stiel in
   let module Expr = Stiel.Expression in
   let module Var = Stiel.Variable in
@@ -586,11 +586,16 @@ let make_clean_protocol_stack dev =
   let pcap_capture =
     let c_compiler =
       Promiwag.Stiel.To_C.compiler ~platform:Promiwag.Platform.default in
-    let device = `string dev in
+    let to_open =
+      if Str.starts_with to_open "file:" then 
+        `file (`literal_string (Str.slice ~first:5 to_open))
+      else
+        `device (`literal_string to_open)
+    in
     let on_error a e = Do.log (sprintf "libPCAP ERROR: %s\n" a) [] in
     let passed_pointer = Var.expression (Var.pointer ~unique:false "NULL") in
     Promiwag.Pcap_C.make_capture_of_stiel
-      ~device ~on_error ~passed_pointer ~c_compiler
+      ~to_open ~on_error ~passed_pointer ~c_compiler
       (fun ~passed_argument ~packet_length ~packet_buffer -> 
         automata_treatment packet_buffer packet_length) in
 
