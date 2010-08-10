@@ -563,10 +563,11 @@ let make_clean_protocol_stack to_open =
           ( Promiwag_standard_protocols.tcp,
             [ `value "src_port"; `value "dst_port"; 
               `value "seq_number"; `value "ack_number";
-              `value "window"; `size "options"; ],
+              `value "data_offset"; `value "window"; `size "options"; ],
             fun te_list ->
               my_log "    TCP: @int -> @int\n\
-                     \    seq: @int, ack: @int, window: @int, \
+                     \    seq: @int, ack: @int, \n\
+                     \    data_offset: @int, window: @int, \
                      size of options: @int.\n" te_list);
           ( Promiwag_standard_protocols.dhcp,
             [ `value "op"; `value "xid"; `value "yiaddr"; `value "siaddr" ],
