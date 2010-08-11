@@ -46,7 +46,7 @@ let sequence l = Sequence l
   
 let check_range f a b = Range (f, a, b)
 
-let add_protocol ps ~format ?(transitions=No_transition)
+let add_protocol ps ?(format=MP_format.empty) ?(transitions=No_transition)
     ?(runtime_checks=[]) name =
   Ht.add ps.stack_description name {
     name = name;

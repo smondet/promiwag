@@ -90,6 +90,8 @@ module Packet_structure = struct
 
   type format = content_item list
 
+  let empty = []
+
   let packet_format format = (format: format)
 
   type packet_value = [ 

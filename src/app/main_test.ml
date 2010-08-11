@@ -497,19 +497,19 @@ let make_clean_protocol_stack to_open =
 
   let automata_treatment packet_pointer packet_size =
     let error_handler = function
-    | `buffer_over_flow (f, a, b) ->
-      let message =
-        sprintf "### \"BOF-attempt\": In %s, \n\
+      | `buffer_over_flow (f, a, b) ->
+        let message =
+          sprintf "### \"BOF-attempt\": In %s, \n\
                 \   computed offset (@expr = @int)\n\
                 \   is bigger than\n\
                 \   packet size (@expr = @int).\n" f in
-      Do.log message [b; b; a; a]
-    | `range_check (f, a, b, te) ->
-      let message =
-        sprintf "### \"Runtime check:\": \"%s\" (= @int) not in [%d, %d]\n"
-          f a b in
-      Do.log message [te]
-    | `unknown s -> Do.log (sprintf "UNKNOWN ERROR:: %s\n" s) []
+        Do.log message [b; b; a; a]
+      | `range_check (f, a, b, te) ->
+        let message =
+          sprintf "### \"Runtime check:\": \"%s\" (= @int) not in [%d, %d]\n"
+            f a b in
+        Do.log message [te]
+      | `unknown s -> Do.log (sprintf "UNKNOWN ERROR:: %s\n" s) []
     in
     let stack_handler =
       Generator.handler
@@ -578,6 +578,13 @@ let make_clean_protocol_stack to_open =
             [ `value "id"; `value "opcode"; ],
             fun te_list ->
               my_log "      DNS: id: @hex, opcode: @int.\n" te_list);
+          (* Example adding one "Empty protcol": *)
+          ( let dccp = Promiwag_standard_protocols.dccp in
+            Promiwag_protocol_stack.add_protocol the_internet dccp;
+            dccp,
+            [],
+            fun te_list ->
+              my_log "      DCCP not handled.\n" te_list);
         ] in
 
     let packet = Generator.packet ~size:packet_size packet_pointer in
