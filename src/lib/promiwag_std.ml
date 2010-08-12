@@ -161,6 +161,21 @@ module Unique = struct
 
 end
   
+module Hash = struct
+
+  let strings:  (string, int) Ht.t = Ht.create 42
+
+  let string s = 
+    match Ht.find_opt strings s with
+    | Some h -> h
+    | None ->
+      let u = Unique.int () in
+      Ht.add strings s u;
+      u
+
+
+end
+
 let ($) f x = f x
 
 let debug_mode: [`stdout | `silent ] ref = ref `stdout
