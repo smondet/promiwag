@@ -585,6 +585,7 @@ let make_clean_protocol_stack to_open =
             [],
             fun te_list ->
               my_log "      DCCP not handled.\n" te_list);
+              (* Do.exit_named_while "brout"); *)
         ] in
 
     let packet = Generator.packet ~size:packet_size packet_pointer in
@@ -638,7 +639,7 @@ let test_clean_protocol_stack dev () =
   printf "Now you can compile and run (as root?):\n\
          \  gcc -lpcap %s -o %s \n\
          \  %s\n" c_file pcap_prefix pcap_prefix;
-  let mlw_prefix = System.tmp "verify_parsing_automaton.mlw" in
+  let mlw_prefix = System.tmp "verify_parsing_automaton" in
   Io.with_file_out (sprintf "%s.mlw" mlw_prefix) (fun o ->
     Io.nwrite o why_checkable_program;
   );

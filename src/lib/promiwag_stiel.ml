@@ -99,8 +99,8 @@ module Definition = struct
      purely functional hence, evaluation is useless *)
     | Do_block of statement list
     | Do_if of bool_expression * statement * statement
-    | Do_while_loop of bool_expression * statement
-    | Do_exit_while
+    | Do_while_loop of string * bool_expression * statement
+    | Do_exit_while of string
     | Do_assignment  of variable_name * typed_expression
     | Do_declaration of typed_variable
     | Do_log of string * typed_expression list
@@ -227,10 +227,10 @@ module To_string = struct
       spr "%sIf [%s] Then\n%s%sElse\n%s\n"
         cur_indent (bool_expression e) (statement ~indent a) 
         cur_indent (statement ~indent b)
-    | Do_while_loop    (e, a)    -> 
-      spr "%sWhile [%s] Do\n%s\n" 
-        cur_indent (bool_expression e) (statement ~indent a)
-    | Do_exit_while -> spr "%sExit While;\n" cur_indent
+    | Do_while_loop    (s, e, a)    -> 
+      spr "%sWhile:\"%s\" [%s] Do\n%s\n" 
+        cur_indent s (bool_expression e) (statement ~indent a)
+    | Do_exit_while s -> spr "%sExit While %s;\n" cur_indent s
     | Do_assignment  (a, b) -> assign (variable_name    a) (typed_expression b)
     | Do_declaration t -> 
       spr "%sDeclare %s of type: %s;\n" cur_indent
@@ -434,14 +434,14 @@ module To_format = struct
                      statement compiler a);
               Label ((kwd compiler "Else", compiler.label_alternative),
                      statement compiler b);])
-    | Do_while_loop    (e, a)    -> 
+    | Do_while_loop    (s, e, a)    -> 
       Label (
         (List (compiler.list_sentence,
-               [ kwd compiler "While";
+               [ kwd compiler (sprintf "While:\"%s\"" s);
                  bool_expression compiler e;
                  kwd compiler "Do" ]), compiler.label_alternative),
         statement compiler a)
-    | Do_exit_while -> stmt [kwd compiler "Exit While"]
+    | Do_exit_while s -> stmt [kwd compiler (sprintf "Exit While \"%s\"" s)]
     | Do_assignment  (a, b) -> 
       labeled_stmt (variable_name compiler a) [
         Atom (":=", compiler.atom_operator);
@@ -702,8 +702,9 @@ module Statement = struct
       condition =
     Do_if (Expression.bool condition, statement_then, statement_else)
       
-  let while_loop c s = Do_while_loop (Expression.bool c, s)
-  let exit_while = Do_exit_while
+  let while_loop ?(name="") c s = Do_while_loop (name, Expression.bool c, s)
+  let exit_while = Do_exit_while ""
+  let exit_named_while s = Do_exit_while s
 
   let cmt s = Do_annotated_statement (Annot_comment s, Do_nothing)
 
@@ -789,9 +790,10 @@ module To_C = struct
 
   type compiler = {
     platform: Promiwag_platform.platform;
+    while_stack: string Stack.t;
   }
   let compiler ~platform =
-    { platform = platform; }
+    { platform = platform; while_stack = Stack.create () }
       
   module Platform = Promiwag_platform
   module P = Promiwag_platform.C
@@ -1005,10 +1007,25 @@ module To_C = struct
     | Do_if            (e, a, b) ->
       `conditional (bool_expression compiler e,
                     statement compiler a, statement compiler b)
-    | Do_while_loop    (e, a)    -> 
-      `while_loop (bool_expression compiler e, statement compiler a)
-    | Do_exit_while ->
-      `break
+    | Do_while_loop    (s, e, a)    ->
+      Stack.push s compiler.while_stack;
+      let wl =
+        `while_loop (bool_expression compiler e, statement compiler a)
+      in
+      ignore (Stack.pop compiler.while_stack);
+      wl
+    | Do_exit_while s ->
+      begin try 
+              let while_s = Stack.top compiler.while_stack in
+              if while_s = s then
+                `break
+              else
+                fail compiler (sprintf "Cannot compile 'Exit_while \"%s\";' \
+                                     while in 'While:\"%s\"'" s while_s)
+        with Stack.Empty ->
+          fail compiler (sprintf "Cannot compile 'Exit_while \"%s\";' \
+                                 while not in a 'While'" s)
+      end
     | Do_assignment (a, b) ->
       assign (variable_name a) (typed_expression compiler b)
     | Do_declaration _ -> 
@@ -1379,9 +1396,9 @@ module Visit = struct
     | Do_if            (e, a, b) ->
       ignore (bool_expression compiler e,
               statement compiler a, statement compiler b)
-    | Do_while_loop    (e, a)    -> 
+    | Do_while_loop    (s, e, a)    -> 
       ignore (bool_expression compiler e, statement compiler a)
-    | Do_exit_while -> ()
+    | Do_exit_while s -> ()
     | Do_assignment  (a, b) -> 
       ignore (variable_name compiler a, typed_expression compiler b)
     | Do_declaration t -> 
@@ -1450,6 +1467,8 @@ module To_why_string = struct
     label_statement: label_param;
     label_logic: label_param;
     label_alternative: label_param;
+
+    mutable while_list: string list;
   }
   let default_compiler () =
     let list_for_statements = 
@@ -1490,7 +1509,8 @@ module To_why_string = struct
       list_specification =  ("{", "", "}", list);
       label_statement =               label;    
       label_logic =               label;    
-      label_alternative =         label;          
+      label_alternative =         label;  
+      while_list = [];        
     }
 
   module Simple_to_string = struct
@@ -1684,15 +1704,19 @@ module To_why_string = struct
                      statement compiler a);
               Label ((kwd compiler "else", compiler.label_alternative),
                      statement compiler b);])
-    | Do_while_loop    (e, a)    -> 
+    | Do_while_loop    (s, e, a)    -> 
+      let exception_name = sprintf "Exit_while_%d" (Hash.string s) in
+      compiler.while_list <- exception_name :: compiler.while_list;
       Label (
         (kwd compiler "try while", compiler.label_alternative),
         (List (compiler.list_sentence,
                [ bool_expression compiler e;
                  kwd compiler "do" ] 
                @ [statement compiler a]
-               @ [kwd compiler "done with Exit_while -> void end"])))
-    | Do_exit_while -> stmt [kwd compiler "raise Exit_while"]
+               @ [kwd compiler 
+                     (sprintf "done with %s -> void end" exception_name)])))
+    | Do_exit_while s ->
+      stmt [kwd compiler (sprintf "raise Exit_while_%d" (Hash.string s))]
     | Do_assignment  (a, b) -> 
       begin match b with 
       | Typed_int (_, e) ->
@@ -1744,7 +1768,7 @@ module To_why_string = struct
         (kwd compiler "let statement () =") [
           kwd compiler (sprintf "{ %s >= 0 }" packet_length_parameter);
           statement compiler s] in
-    (sprintf "exception Exit_while\n\
+    (sprintf "%s\n\
               parameter bin_mod : a:int -> b:int -> {} int { 0 <= result <= b }\n\
               parameter bin_land: a:int -> b:int -> {} int { 0 <= result }\n\
               parameter bin_lor : a:int -> b:int -> {} int { 0 <= result }\n\
@@ -1756,6 +1780,7 @@ module To_why_string = struct
               \   index:int ->\n\
               \   { 0 <= index < %s } int reads %s { result >= 0 }\n\
               %s {true}"
+       (Str.concat "\n" (Ls.map compiler.while_list ~f:(sprintf "exception %s")))
        packet_length_parameter
        packet_length_parameter
        packet_length_parameter
