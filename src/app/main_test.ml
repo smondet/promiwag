@@ -235,7 +235,9 @@ module Test_protocol_stacks = struct
     let handlers =
       Ls.map l
         ~f:(fun (n,f,t,c) -> (n, req_max_field f, 
-                            fun l -> Promiwag.Stiel.Statement.nop)) in
+                            fun l -> 
+                              (Promiwag.Stiel.Statement.nop, 
+                               Promiwag.Stiel.Expression.t))) in
     (stack, (let (a, _, _, _) = Ls.hd l in a), handlers)
 
   let right_1 () =
@@ -519,16 +521,16 @@ let make_clean_protocol_stack to_open =
             [ `pointer "dest_addr"; `pointer "src_addr"; ],
             function
               | [ pointer_dest; pointer_src ] ->
-                Do.block [
+                (Do.block [
                   my_log "Ethernet: @ethaddr -> @ethaddr.\n" 
                     [pointer_src; pointer_dest;];
-                ]
+                ], Expr.t)
               | _ -> failwith "should have two typed expressions");
           ( Standard_protocols.arp,
             [ `value "htype"; `value "ptype"; `value "op"],
             function
               | [ htype; ptype; op ] ->
-                Do.block $ Ls.flatten [
+                (Do.block $ Ls.flatten [
                   [my_log "  ARP: htype = '" [] ];
                   Do.switch_int htype 
                     (Ls.map Standard_protocols.string_arp_htype
@@ -538,53 +540,54 @@ let make_clean_protocol_stack to_open =
                     (Ls.map Standard_protocols.string_arp_op
                        ~f:(fun (i, s) -> (i, my_log s [])));
                   [my_log "' (@int).\n" [op]];
-                ]
+                ], Expr.t)
               | _ -> failwith "should have three typed expressions");
           ( Standard_protocols.gre,
             [ `value "checksum_present"; `value "version"; `value "protocol"; ],
             fun te_list ->
-              my_log "  GRE: checksum_present: @int, \
-                     \  version: @int, protocol: @hex.\n" te_list);
+              (my_log "  GRE: checksum_present: @int, \
+                     \  version: @int, protocol: @hex.\n" te_list, Expr.t));
           ( Promiwag_standard_protocols.ipv4,
             [ `value "src"; `value "dest"; `value "protocol";`value "ttl";
               `value "can_fragment"; `value "frag_offset"; 
               `size "options"; `value "length";],
             fun te_list ->
-              my_log "  IPv4: @ipv4addr -> @ipv4addr\n\
+              (my_log "  IPv4: @ipv4addr -> @ipv4addr\n\
                      \  protocol: @hex, TTL: @int, \
                      fragment: (can: @int, offset: @int)\n\
                      \  size of options: @int, length: @int.\n"
-                te_list);
+                te_list, Expr.t));
           ( Promiwag_standard_protocols.udp,
             [ `value "src_port"; `value "dst_port"; `size "udp_payload"; ],
             fun te_list ->
-              my_log "    UDP: @int -> @int\n\
-                     \    payload size: @int.\n" te_list);
+              (my_log "    UDP: @int -> @int\n\
+                     \    payload size: @int.\n" te_list, Expr.t));
           ( Promiwag_standard_protocols.tcp,
             [ `value "src_port"; `value "dst_port"; 
               `value "seq_number"; `value "ack_number";
               `value "data_offset"; `value "window"; `size "options"; ],
             fun te_list ->
-              my_log "    TCP: @int -> @int\n\
+              (my_log "    TCP: @int -> @int\n\
                      \    seq: @int, ack: @int, \n\
                      \    data_offset: @int, window: @int, \
-                     size of options: @int.\n" te_list);
+                     size of options: @int.\n" te_list, Expr.t));
           ( Promiwag_standard_protocols.dhcp,
             [ `value "op"; `value "xid"; `value "yiaddr"; `value "siaddr" ],
             fun te_list ->
-              my_log "      DHCP: op: @int, xid: @hex,\n\
-                     \      You: @ipv4addr, Server: @ipv4addr.\n" te_list);
+              (my_log "      DHCP: op: @int, xid: @hex,\n\
+                     \      You: @ipv4addr, Server: @ipv4addr.\n" te_list,
+               Expr.t));
           ( Promiwag_standard_protocols.dns,
             [ `value "id"; `value "opcode"; ],
             fun te_list ->
-              my_log "      DNS: id: @hex, opcode: @int.\n" te_list);
+              (my_log "      DNS: id: @hex, opcode: @int.\n" te_list, Expr.t));
           (* Example adding one "Empty protcol": *)
           ( let dccp = Promiwag_standard_protocols.dccp in
             Promiwag_protocol_stack.add_protocol the_internet dccp;
             dccp,
             [],
             fun te_list ->
-              my_log "      DCCP not handled.\n" te_list);
+              (my_log "      DCCP not handled.\n" te_list, Expr.f));
               (* Do.exit_named_while "brout"); *)
         ] in
 
@@ -737,12 +740,12 @@ let test_minimal_parsing_code  () =
             [ ],
             function
               | [ ] ->
-                Do.log "Ethernet\n" []
+                (Do.log "Ethernet\n" [], Expr.t)
               | _ -> failwith "should have two typed expressions");
           ( Promiwag_standard_protocols.ipv4,
             [ `value "length" ],
             fun te_list ->
-              Do.log "IPv4\n" []);
+              (Do.log "IPv4\n" [], Expr.t));
         ] in
 
     let packet = Generator.packet ~size:packet_size packet_pointer in

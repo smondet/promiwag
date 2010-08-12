@@ -122,7 +122,8 @@ module Automata_generator = struct
   type protocol_handler = {
     handled_format: string;
     user_request: packet_value list;
-    make_handler:  STIEL.typed_expression list -> STIEL.statement;
+    make_handler:  STIEL.typed_expression list ->
+                   (STIEL.statement * STIEL.typed_expression);
   }
 
   type error =
@@ -303,7 +304,7 @@ module Automata_generator = struct
           let block = [
             Do.cmt (sprintf "Protocol %s is not handled by user" format);
           ] in
-          (Do.block block); } in
+          (Do.block block, Expr.t); } in
     let handlers = compiler.handler.protocol_handlers in
     match 
       Ls.find_opt handlers ~f:(fun h -> h.handled_format = name)
@@ -372,9 +373,23 @@ module Automata_generator = struct
           Ls.split_nth (Ls.length transition_offset_request)  the_rest in
         let from_the_transition_conditions, from_the_user_request =
           Ls.split_nth (Ls.length transition_conditions_request)  the_rest in
+        let user_block =
+          let hstatement, hret =
+            protocol_handler.make_handler from_the_user_request in
+          Annot.cmt "Parsing User Block:" 
+            (Do.block [
+              hstatement;
+              if hret = Expr.t then
+                (Do.cmt "Statically, the User revoked his right to stop.")
+              else
+                (Do.conditional (Expr.bnot hret)
+                   ~statement_then:
+                   (Annot.cmt "User wants to stop"
+                      (get_out_statement compiler)));
+            ])
+      in
         (compile_runtime_checks compiler runtime_checks from_runtime_checks)
-        @ [ Annot.cmt "Parsing User Block:"
-            (protocol_handler.make_handler from_the_user_request) ]
+        @ [ user_block ]
         @ [ Annot.cmt "Default behaviour is to stop and get out of the While:"
               (assign_next_to_out compiler); ]
         @ (Ls.map transitions 
