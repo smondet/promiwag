@@ -15,10 +15,7 @@ FEATURES:
   - separate protocol description from compilation (e.g. atomic_transition)
     => module Meta_protocol and Protocol_automaton_generator
     or Meta_packet + Meta_protocol  Packet_parsing Protocol_automaton (?)
-  - the generator should generate code to check that the packet size decreases
-    (no "zero-offset" payload)
-    -> this should be checked by Why
-    => to test once it is done
+
 
 * Promiwag_meta_packet, Promiwag_protocol_stack:
   - like DHCP options (like a null-terminated list) and like DNS arrays
@@ -36,6 +33,7 @@ FEATURES:
   - retrive checks to do on buffer accesses, and divisions by zero
   - typing of variable assignments (follow types of declared
     variables, and check assignments)
+  - look for potential proving errors before sending to the prover
 
 * Promiwag_stiel: Integer management
   - module SafeInt64, with all bounds checkings
