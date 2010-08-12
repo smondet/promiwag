@@ -31,8 +31,8 @@
 (setq compilation-read-command nil)
 
 ;; Remove usual call to eshell:
-(seb-skey "mk" 'compile)
-
+(seb-funkey "mk" save-all-and-mk
+            (progn (save-some-buffers) (compile omake-command)))
 
 (defun files-in-below-directory (directory)
   "List the .ml files in DIRECTORY and in its sub-directories."
