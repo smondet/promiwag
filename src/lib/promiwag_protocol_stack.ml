@@ -180,6 +180,7 @@ module Automata_generator = struct
     var_next_format        : STIEL.typed_variable;
     format_values_ht: (string, STIEL.typed_expression) Ht.t;
     compiled_handlers: (string, STIEL.statement) Ht.t;
+    while_name: string;
   }
 
   let int_expression_for_format compiler format =
@@ -199,10 +200,10 @@ module Automata_generator = struct
       Annot.why 
         (Do.block [
           Var.assign vps (Expr.sub (Var.expression vps) (Expr.unat 1));
-          Do.exit_while ])
-        Do.exit_while
+          (Do.exit_named_while compiler.while_name) ])
+        (Do.exit_named_while compiler.while_name)
     | None ->
-      Do.exit_while
+      (Do.exit_named_while compiler.while_name)
 
   let assign_next_to_out compiler =
     Var.assign compiler.var_next_format (get_out_value compiler)
@@ -420,6 +421,7 @@ module Automata_generator = struct
        var_next_format =    Var.unat "next_packet_format";
        format_values_ht = Ht.create 42;
        compiled_handlers = Ht.create 42;
+       while_name = Unique.name "protocol_stack_while";
       } in
 
     FIFO.consume compiler.todo_queue ~f:(try_compile_handler compiler);
@@ -484,7 +486,7 @@ module Automata_generator = struct
                 ]))
            in
     before_the_while
-    @ [Do.while_loop while_condition while_block]
+    @ [Do.while_loop ~name:compiler.while_name while_condition while_block]
       
 
 end

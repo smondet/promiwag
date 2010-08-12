@@ -645,7 +645,7 @@ let test_clean_protocol_stack dev () =
   );
   printf "Or you can prove: \n\
          \  why -fast-wp -alt-ergo %s.mlw\n\
-         \  why-dp -prover Alt-Ergo %s_why.why" mlw_prefix mlw_prefix;
+         \  why-dp -prover Alt-Ergo -timeout 42 %s_why.why" mlw_prefix mlw_prefix;
   ()
 
 let test_proving () =
