@@ -11,6 +11,9 @@ module Standard_protocols = Promiwag_standard_protocols
 
 module Platform = Promiwag_platform
 
-module Stiel = Promiwag_stiel
+module Stiel = struct
+  include Promiwag_stiel
+  include Promiwag_stiel_backends
+end
 
 module Protocol_stack = Promiwag_protocol_stack

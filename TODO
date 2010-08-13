@@ -55,9 +55,7 @@ FEATURES:
 
 * Promiwag_stiel: Future
   - full interpreter
-  - export to Coq or ?
   - float expressions
-  - to ocaml
 
 * use Format, or EasyFormat for printing C and Stiel
 

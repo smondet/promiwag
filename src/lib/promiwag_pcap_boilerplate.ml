@@ -130,7 +130,7 @@ module C = struct
       -> STIEL.statement
       
   let make_capture_of_stiel
-      ~(c_compiler:Stiel_to_C.compiler)
+      ~(c_compiler:Promiwag_stiel_backends.To_C.compiler)
       ~to_open
       ~(on_error:(string -> STIEL.typed_expression (* pointer: error_buffer *) ->
                   STIEL.statement))
@@ -141,6 +141,7 @@ module C = struct
       | `variable v -> v
       | other -> failwith "make_capture_of_stiel: stiel_var_of_c_var \
                              does not receive a variable" in
+    let module Stiel_to_C = Promiwag_stiel_backends.To_C in
     let c_passed_expression = 
       Stiel_to_C.typed_expression c_compiler passed_pointer in
     let c_on_error s e =

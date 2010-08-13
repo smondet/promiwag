@@ -446,7 +446,8 @@ module Automata_generator = struct
          (typed_pointer packet_expression))
       @ (Opt.map_default
            (fun v ->
-             Ls.map (Annot.why (Promiwag_stiel.To_why_string.mark_packet_length))
+             Ls.map (Annot.why
+                       (Promiwag_stiel_backends.To_why_string.mark_packet_length))
                (Var.declare_and_assign
                   (Opt.get compiler.var_current_packet_size) v))
            [] (typed_size packet_expression))
