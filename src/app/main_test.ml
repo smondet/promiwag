@@ -627,11 +627,17 @@ let make_clean_protocol_stack to_open =
       (automata_treatment
          (Var.expression (Var.pointer ~unique:false "packet_buffer_expression"))
          (Var.expression (Var.pointer ~unique:false "packet_buffer_length"))) in
-
-  (full_test_c_file, why_checkable_program)
+  let ocaml_function =
+    Promiwag.Stiel.To_ocaml_string.statement_to_string 
+      ~function_name:"promiwag_clean_parsing"
+      (automata_treatment
+         (Var.expression (Var.pointer ~unique:false "packet_buffer_expression"))
+         (Var.expression (Var.pointer ~unique:false "packet_buffer_length")))
+  in
+  (full_test_c_file, why_checkable_program, ocaml_function)
 
 let test_clean_protocol_stack dev () =
-  let (full_test_c_file, why_checkable_program) =
+  let (full_test_c_file, why_checkable_program, ocaml_function) =
     make_clean_protocol_stack dev in
 
   let pcap_prefix = System.tmp "pcap_procotol_parser" in
@@ -648,7 +654,13 @@ let test_clean_protocol_stack dev () =
   );
   printf "Or you can prove: \n\
          \  why -fast-wp -alt-ergo %s.mlw\n\
-         \  why-dp -prover Alt-Ergo -timeout 42 %s_why.why" mlw_prefix mlw_prefix;
+         \  why-dp -prover Alt-Ergo -timeout 42 %s_why.why\n"
+    mlw_prefix mlw_prefix;
+  let ml_prefix = System.tmp "ocaml_procotol_parser" in
+  Io.with_file_out (sprintf "%s.ml" ml_prefix) (fun o ->
+    Io.nwrite o ocaml_function;
+  );
+  printf "Or play with OCaml: %s.ml\n" ml_prefix;
   ()
 
 let test_proving () =
@@ -693,8 +705,9 @@ let test_proving () =
     (fun () -> printf "=== Test '%s':\n%s\n" name str_result;)
   in
   let recap =
+    let (_, why_cps, _) =  make_clean_protocol_stack "dummy" in
     Ls.map do_bench [
-      ("clean_ps", fun () ->  snd $ make_clean_protocol_stack "dummy");
+      ("clean_ps", fun () ->  why_cps);
       ("right_1",  fun () ->  Stacks.make_why (Stacks.right_1 ()));
       ("wrong_1",  fun () ->  Stacks.make_why (Stacks.wrong_1 ()));
       ("wrong_2",  fun () ->  Stacks.make_why (Stacks.wrong_2 ()));

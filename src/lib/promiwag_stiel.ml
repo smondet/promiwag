@@ -1303,9 +1303,13 @@ module Visit = struct
 
   type compiler = {
     on_variables: string -> unit;
+    on_variable_declarations: string -> unit;
   }
-  let compiler ?(on_variables=fun _ -> ()) () =
-    { on_variables = on_variables }
+  let nop = fun (s:string) -> ()
+
+  let compiler ?(on_variables=nop) ?(on_variable_declarations=nop) () =
+    { on_variables = on_variables;
+      on_variable_declarations = on_variable_declarations }
 
   let  integer_type compiler = function
     | Type_uint8       -> ()
@@ -1402,6 +1406,7 @@ module Visit = struct
     | Do_assignment  (a, b) -> 
       ignore (variable_name compiler a, typed_expression compiler b)
     | Do_declaration t -> 
+      compiler.on_variable_declarations t.name;
       ignore (variable_name compiler t.name,
               typed_variable_kind compiler t.kind)
     | Do_log (f, l) ->
@@ -1786,6 +1791,340 @@ module To_why_string = struct
        packet_length_parameter
        (Easy_format.Pretty.to_string  why))
       
+
+end
+
+
+module To_ocaml_string = struct
+
+
+  open Easy_format
+
+  type compiler = {
+    atom_type: atom_param;
+    atom_keyword: atom_param;
+    atom_operator: atom_param;
+    atom_funciton: atom_param;
+    atom_literal: atom_param;
+    atom_comment: atom_param;
+    list_expression:  string * string * string * list_param;
+    list_statement:  string * string * string * list_param;
+    list_sentence:  string * string * string * list_param;
+    list_coma:  string * string * string * list_param;
+    list_typed_expression: string * string * string * list_param;
+    list_block: string * string * string * list_param;
+    list_statements: string * string * string * list_param;
+    list_variability: string * string * string * list_param;
+    list_comment: string * string * string * list_param;
+    list_specification: string * string * string * list_param;
+    label_statement: label_param;
+    label_logic: label_param;
+    label_alternative: label_param;
+
+    mutable while_list: string list;
+  }
+  let default_compiler () =
+    let list_for_statements = 
+      { list with
+        stick_to_label = true;
+        align_closing = true;
+        wrap_body = `Force_breaks;
+        separators_stick_left = true;
+        space_before_separator = false;
+        indent_body = 0;
+      } in
+    let list_for_sentence =
+      { list with
+        stick_to_label = true;
+        align_closing = false;
+        space_after_opening = false;
+        space_before_closing = false;
+        wrap_body = `Always_wrap;
+        indent_body = 0;
+      } in
+    let label = {label with indent_after_label = 4 } in
+    {
+      atom_type =                 atom ;  
+      atom_keyword =              atom ;     
+      atom_operator =             atom ;      
+      atom_funciton =             atom ;      
+      atom_literal =              atom ;     
+      atom_comment =              atom ;     
+      list_expression = ("(", "", ")", list_for_sentence);
+      list_statement = ("", "", "", list_for_sentence);
+      list_sentence = ("", "", "", list_for_sentence);
+      list_coma = ("(", ",", ")", list_for_sentence);
+      list_typed_expression = ("[", ":", "]", list_for_sentence);              
+      list_block =  ("begin", ";", "end", {list_for_statements with indent_body = 2;} );
+      list_statements =  ("", "", "", list_for_statements);
+      list_variability =  ("", "", "", list);
+      list_comment =  ("(*", "", "*)", list);
+      list_specification =  ("{", "", "}", list);
+      label_statement =               label;    
+      label_logic =               label;    
+      label_alternative =         label;  
+      while_list = [];        
+    }
+  let fail compiler s =
+    failwith (sprintf "Promiwag_stiel.To_Ocaml: ERROR: %s" s)
+
+  module Simple_to_string = struct
+    let spr = Printf.sprintf
+
+    let  integer_type = function
+      | Type_uint8       -> "uint8"      
+      | Type_uint16      -> "uint16"     
+      | Type_uint32      -> "uint32"     
+      | Type_uint64      -> "uint64"     
+      | Type_uint_native -> "uint_native"
+
+    let int_unary_operator = function
+      | Int_unary_minus             -> "Integer.minus"
+      | Int_unary_plus              -> "Integer.plus"
+
+    let int_binary_operator = function
+      | Int_binop_add     ->   "Integer.add" 
+      | Int_binop_sub     ->   "Integer.sub" 
+      | Int_binop_mul     ->   "Integer.mul" 
+      | Int_binop_div     ->   "Integer.div" 
+      | Int_binop_mod     ->   "Integer.rem" 
+      | Int_binop_bin_and -> "Integer.bin_and"
+      | Int_binop_bin_or  -> "Integer.bin_or" 
+      | Int_binop_bin_xor -> "Integer.bin_xor" 
+      | Int_binop_bin_shl -> "Integer.bin_lsr" 
+      | Int_binop_bin_shr -> "Integer.bin_lsl" 
+
+    let bool_binary_operator = function
+      | Bool_binop_equals            -> "Integer.eq"   
+      | Bool_binop_notequals         -> "Integer.ne"      
+      | Bool_binop_strictly_greater  -> "Integer.gt"             
+      | Bool_binop_strictly_lower    -> "Integer.lt"           
+      | Bool_binop_equal_or_greater  -> "Integer.ge"             
+      | Bool_binop_equal_or_lower    -> "Integer.le"           
+
+    let get_int_at_buffer = function
+      | Get_native         it -> spr "Unsafe_buffer.get_native_%s" (integer_type it)
+      | Get_big_endian     it -> spr "Unsafe_buffer.get_bigend_%s" (integer_type it)
+      | Get_little_endian  it -> spr "Unsafe_buffer.get_ltlend_%s" (integer_type it)
+
+
+  end
+
+  let integer_type compiler t =
+    Atom (Simple_to_string.integer_type t, compiler.atom_type)
+
+  let int_unary_operator compiler o =
+    Atom (Simple_to_string.int_unary_operator o, compiler.atom_operator)
+
+  let int_binary_operator compiler o =
+    Atom (Simple_to_string.int_binary_operator o, compiler.atom_operator)
+
+  let bool_binary_operator compiler o =
+    Atom (Simple_to_string.bool_binary_operator o, compiler.atom_operator)
+
+  let get_int_at_buffer compiler o =
+    Atom (Simple_to_string.get_int_at_buffer o, compiler.atom_funciton)
+
+  let variable_name ~ref compiler o =
+    let name s = if ref then sprintf "!%s" s else s in
+    Atom (name o, compiler.atom_literal)
+
+  let rec  int_expression  compiler = function
+    | Int_expr_unary  (op, ex)        ->
+      List (compiler.list_expression,
+            [ int_unary_operator compiler op; int_expression compiler ex])
+    | Int_expr_binary (op, ea, eb) -> 
+      List (compiler.list_expression,
+        [(int_binary_operator compiler op);
+         (int_expression compiler ea);
+         (int_expression compiler eb)])
+    | Int_expr_variable  v            -> variable_name ~ref:true compiler v
+    | Int_expr_buffer_content (get, buffer) ->
+      List (compiler.list_expression,
+        [(get_int_at_buffer compiler get);
+         (buffer_expression  compiler buffer);])
+    | Int_expr_literal        i64     ->
+      List (compiler.list_expression,
+            [ Atom ("Integer.of_int64", compiler.atom_literal);
+              Atom ((Int64.to_string i64) ^ "L", compiler.atom_literal)])
+
+  and buffer_expression compiler = function
+    | Buffer_expr_variable v         -> variable_name ~ref:true compiler v
+    | Buffer_expr_offset (bex, iex)  -> 
+      List (compiler.list_expression,
+            [ Atom ("Unsafe_buffer.offset", compiler.atom_operator);
+              buffer_expression compiler bex;
+              int_expression compiler iex])
+
+  and bool_expression compiler = function
+    | Bool_expr_true   -> Atom ("true", compiler.atom_literal)
+    | Bool_expr_false  -> Atom ("false", compiler.atom_literal)
+    | Bool_expr_variable v -> variable_name ~ref:true compiler v
+    | Bool_expr_and        (a, b)     ->
+      List (compiler.list_expression,
+            [bool_expression compiler a;
+             Atom ("&&", compiler.atom_operator);
+             bool_expression compiler b])
+    | Bool_expr_or         (a, b)     ->
+      List (compiler.list_expression,
+            [bool_expression compiler a;
+             Atom ("||", compiler.atom_operator);
+             bool_expression compiler b])
+    | Bool_expr_not        ex         ->
+      List (compiler.list_expression,
+            [Atom ("not", compiler.atom_operator);
+             bool_expression compiler ex])
+    | Bool_expr_binary_int (op, a, b) ->
+      List (compiler.list_expression,
+            [ (bool_binary_operator compiler op);
+              (int_expression compiler a);
+              (int_expression compiler b)])
+
+  let typed_expression compiler = function
+    | Typed_int    (t, e) -> int_expression compiler e
+    | Typed_bool       e  -> bool_expression compiler e
+    | Typed_buffer (t, e) -> buffer_expression compiler e
+
+  let typed_variable_kind compiler = function
+    | Kind_int     t -> Atom ("ref (-42L)", compiler.atom_type)
+    | Kind_bool      -> Atom ("ref false", compiler.atom_type)
+    | Kind_buffer (Type_sized_buffer   i) ->
+      Atom (sprintf "ref (Unsafe_buffer.create_sized %d)" i, compiler.atom_type)
+    | Kind_buffer (Type_pointer         ) ->
+      Atom ("ref (Unsafe_buffer.create_pointer ())", compiler.atom_type)
+    | Kind_buffer (Type_sizable_buffer _) -> failwith "ERROR"
+
+  let kwd compiler s = Atom (s, compiler.atom_keyword)
+
+  let _make_stmt compiler l = List (compiler.list_statement, l)
+  let _make_labeled_stmt compiler lb l =
+    Label ((lb, compiler.label_statement), _make_stmt compiler l)
+
+
+  let printf_of_log compiler format te_list =
+    let escape = "AROBASEESCAPE4732992387737238292933" in
+    let fmt = ref (Str.multi_replace ~str:format ~sub:"@@" ~by:escape) in
+    let arg_list =
+      Ls.map te_list ~f:(fun te ->
+        let type_fmt lfmt =
+          let ux =
+            match te with
+            | Typed_int (Type_uint8      , _) -> ("%Lu", "%02Lx")
+            | Typed_int (Type_uint16     , _) -> ("%Lu" , "%04Lx")
+            | Typed_int (Type_uint32     , _) -> ("%Lu"  , "%08Lx")
+            | Typed_int (Type_uint64     , _) -> ("%Lu", "%16Lx")
+            | Typed_int (Type_uint_native, _) -> ("%Lu" , "%16Lx")
+            | Typed_bool       _  -> ("%B", "%B")
+            | Typed_buffer (t, _) ->  ("%a", "%a") in
+          match lfmt with
+          | "@int" -> fst ux
+          | "@hex" -> snd ux 
+          | "@expr" -> "%s"
+          | _ -> fail compiler "Do_log: should not be here (type_fmt)" in
+        let try_the_patterns =
+          Ls.map  ["@int"; "@hex"; "@expr" ]  ~f:(fun pat ->
+            let index = try Str.find !fmt pat with e -> max_int in
+            (index, pat)) in
+        let _, the_first =
+          Ls.fold_left ~f:(fun (cur_index, cur_pat) (index, pat) ->
+            if cur_index > index then (index, pat)
+            else (cur_index, cur_pat))
+            ~init:(max_int, "none") try_the_patterns in
+        let sub, by = the_first, (type_fmt the_first) in
+        match the_first with
+        | "none" -> fail compiler "Do_log: format does not match arg list"
+        | "@int" | "@hex" -> 
+          fmt := snd (Str.replace ~str:!fmt ~sub ~by);
+          typed_expression compiler te
+        | "@expr" ->
+          fmt := snd (Str.replace ~str:!fmt ~sub ~by);
+          (kwd compiler (sprintf "%S" (To_string.typed_expression te)))
+        |  s -> 
+          fail compiler (sprintf "Do_log: should not be here (arg_list): %s" s)
+      ) in
+    fmt := (Str.multi_replace ~str:!fmt ~sub:escape ~by:"@");
+    _make_labeled_stmt compiler 
+      (kwd compiler "Log.printf")
+      ((kwd compiler (sprintf "%S" !fmt)) :: arg_list)
+
+  let rec statement_annotation compiler = function
+    | Annot_comment s ->
+      List (compiler.list_comment, 
+            [Atom (sprintf "(* %s *)" s, compiler.atom_comment)])
+    | Annot_specify _ 
+    | Annot_alternative _ -> 
+      List (compiler.list_comment, 
+            [Atom ("(* *)", compiler.atom_comment)])
+
+  and statement compiler = 
+    let stmt = _make_stmt compiler in
+    let labeled_stmt = _make_labeled_stmt compiler in
+    function 
+    | Do_nothing                 -> kwd compiler "(* NOP *) ()"
+    | Do_block          e        -> 
+      List (compiler.list_block, Ls.map (statement compiler) e)
+    | Do_if            (e, a, b) ->
+      List (compiler.list_statements,
+            [ Label ((kwd compiler "if", compiler.label_alternative),
+                     bool_expression compiler e);
+              Label ((kwd compiler "then", compiler.label_alternative),
+                     statement compiler a);
+              Label ((kwd compiler "else", compiler.label_alternative),
+                     statement compiler b);])
+    | Do_while_loop    (s, e, a)    -> 
+      let exception_name = sprintf "Exit_while_%d" (Hash.string s) in
+      compiler.while_list <- exception_name :: compiler.while_list;
+      Label (
+        (kwd compiler "begin try while", compiler.label_alternative),
+        (List (compiler.list_sentence,
+               [ bool_expression compiler e;
+                 kwd compiler "do" ] 
+               @ [statement compiler a]
+               @ [kwd compiler 
+                     (sprintf "done with %s -> () end" exception_name)])))
+    | Do_exit_while s ->
+      stmt [kwd compiler (sprintf "raise Exit_while_%d" (Hash.string s))]
+    | Do_assignment  (a, b) -> 
+      labeled_stmt (kwd compiler a) [
+        Atom (":=", compiler.atom_operator);
+        typed_expression compiler b;
+      ]
+    | Do_declaration t -> 
+      labeled_stmt (kwd compiler "let ") [
+        kwd compiler t.name;
+        kwd compiler "=";
+        typed_variable_kind compiler t.kind;
+        kwd compiler "in ()"
+      ]
+    | Do_log (f, l) -> printf_of_log compiler f l
+    | Do_annotated_statement (annot, st) ->
+      List (compiler.list_statements,
+            [ statement_annotation compiler annot;
+              statement compiler st ])
+
+  let statement_to_string ?(function_name="stiel_code") s =
+    let compiler = (default_compiler ()) in
+
+    let undefined =
+      let names = ref [] in
+      let decls = ref [] in
+      Visit.statement
+        (Visit.compiler ()
+           ~on_variables:(fun s -> names := s :: !names)
+           ~on_variable_declarations:(fun s -> decls := s :: !decls)) s;
+      Ls.filter !names ~f:(fun s -> not (Ls.mem s !decls))
+    in
+
+    let code =
+      _make_labeled_stmt compiler 
+        (kwd compiler (sprintf "let %s %s =" function_name 
+                         (Str.concat " " undefined)))
+        [ statement compiler s]
+    in
+    (sprintf "%s\n%s\n"
+       (Str.concat "\n" (Ls.map compiler.while_list ~f:(sprintf "exception %s")))
+       (Easy_format.Pretty.to_string  code))
+
 
 end
 
