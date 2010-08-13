@@ -955,8 +955,8 @@ module To_ocaml_string = struct
       | Int_binop_bin_and -> "Integer.bin_and"
       | Int_binop_bin_or  -> "Integer.bin_or" 
       | Int_binop_bin_xor -> "Integer.bin_xor" 
-      | Int_binop_bin_shl -> "Integer.bin_lsr" 
-      | Int_binop_bin_shr -> "Integer.bin_lsl" 
+      | Int_binop_bin_shl -> "Integer.bin_lsl" 
+      | Int_binop_bin_shr -> "Integer.bin_lsr" 
 
     let bool_binary_operator = function
       | Bool_binop_equals            -> "Integer.eq"   
@@ -1109,7 +1109,7 @@ module To_ocaml_string = struct
     fmt := (Str.multi_replace ~str:!fmt ~sub:escape ~by:"@");
     _make_labeled_stmt compiler 
       (kwd compiler "Log.printf")
-      ((kwd compiler (sprintf "%S" !fmt)) :: arg_list)
+      ((kwd compiler (sprintf "%S" (!fmt ^ "%!"))) :: arg_list)
 
   let rec statement_annotation compiler = function
     | Annot_comment s ->
@@ -1253,9 +1253,13 @@ end
     in
 
     let code =
+      let args =
+        match undefined with
+        | [] -> "()"
+        | l -> sprintf "~%s" (Str.concat " ~" l)
+      in
       _make_labeled_stmt compiler 
-        (kwd compiler (sprintf "let %s %s =" function_name 
-                         (Str.concat " " undefined)))
+        (kwd compiler (sprintf "let %s %s =" function_name args))
         [ statement compiler s]
     in
     (sprintf "%s\n%s\n%s\n"
