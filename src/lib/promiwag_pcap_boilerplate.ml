@@ -184,3 +184,34 @@ module C = struct
     
 
 end
+
+module OCaml = struct
+
+  let compilation_string =
+    "ocamlfind ocamlopt -package pcap -linkpkg pcap.cmxa"
+
+  let basic_loop ~call =
+sprintf
+"
+open Pcap
+let () =
+  let callbkfun (s:string) (h:pcap_pkthdr) (t:string) =
+    %s
+  in
+  if Array.length Sys.argv <> 3 then
+    failwith \"usage: ./a.out [file|device] <name>\";
+  let opened =
+    match Sys.argv.(1) with
+    | \"file\" ->  pcap_open_offline Sys.argv.(2)
+    | \"device\" | \"dev\" ->
+      pcap_open_live Sys.argv.(2) 65535 0 0
+    | _ ->
+      failwith \"usage: ./a.out [file|device] <name>\";
+  in
+  ignore (pcap_loop opened (-1) callbkfun \"\")
+"
+(call "t" "h.caplen")
+
+end
+
+

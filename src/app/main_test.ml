@@ -419,7 +419,7 @@ let test_c_ast () =
 
 let test_pcap_basic () =
   let module C = Promiwag.C_backend in
-  let module Pcap = Promiwag.Pcap_C in
+  let module Pcap = Promiwag.Pcap.C in
   printf "Start test_pcap_basic\n";
   let passed_structure =
     C.Variable.create ~name:"passed_structure"
@@ -616,12 +616,12 @@ let make_clean_protocol_stack to_open =
     in
     let on_error a e = Do.log (sprintf "libPCAP ERROR: %s\n" a) [] in
     let passed_pointer = Var.expression (Var.pointer ~unique:false "NULL") in
-    Promiwag.Pcap_C.make_capture_of_stiel
+    Promiwag.Pcap.C.make_capture_of_stiel
       ~to_open ~on_error ~passed_pointer ~c_compiler
       (fun ~passed_argument ~packet_length ~packet_buffer -> 
         automata_treatment packet_buffer packet_length) in
 
-  let full_test_c_file = Promiwag.Pcap_C.to_full_file pcap_capture in
+  let full_test_c_file = Promiwag.Pcap.C.to_full_file pcap_capture in
   let why_checkable_program = 
     Promiwag.Stiel.To_why_string.statement_to_string 
       (automata_treatment
@@ -635,7 +635,14 @@ let make_clean_protocol_stack to_open =
          (Var.expression (Var.pointer ~unique:false "packet_buffer_expression"))
          (Var.expression (Var.pointer ~unique:false "packet_buffer_length")))
   in
-  (full_test_c_file, why_checkable_program, ocaml_function)
+  let ocaml_pcap_capture = 
+    Promiwag.Pcap.OCaml.basic_loop
+      ~call:(fun pckt lgth ->
+        sprintf "promiwag_clean_parsing\n\
+                \   ~packet_buffer_expression:(ref (Unsafe_buffer.create %s))\n\
+                \   ~packet_buffer_length:(ref (Integer.of_int %s))" pckt lgth) in
+  (full_test_c_file, why_checkable_program, 
+   ocaml_function ^ ocaml_pcap_capture)
 
 let test_clean_protocol_stack dev () =
   let (full_test_c_file, why_checkable_program, ocaml_function) =
@@ -661,7 +668,9 @@ let test_clean_protocol_stack dev () =
   Io.with_file_out (sprintf "%s.ml" ml_prefix) (fun o ->
     Io.nwrite o ocaml_function;
   );
-  printf "Or play with OCaml: %s.ml\n" ml_prefix;
+  printf "Or play with OCaml:\n\
+          \  %s %s.ml -o %s\n" 
+    Promiwag.Pcap.OCaml.compilation_string ml_prefix ml_prefix;
   ()
 
 let test_proving () =

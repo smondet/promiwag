@@ -5,7 +5,7 @@ module C_backend = Promiwag_c_backend
 
 module Meta_packet = Promiwag_meta_packet
 
-module Pcap_C = Promiwag_pcap_boilerplate.C
+module Pcap = Promiwag_pcap_boilerplate
 
 module Standard_protocols = Promiwag_standard_protocols
 
