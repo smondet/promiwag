@@ -629,6 +629,7 @@ let make_clean_protocol_stack to_open =
          (Var.expression (Var.pointer ~unique:false "packet_buffer_length"))) in
   let ocaml_function =
     Promiwag.Stiel.To_ocaml_string.statement_to_string 
+      ~with_default_prelude:true
       ~function_name:"promiwag_clean_parsing"
       (automata_treatment
          (Var.expression (Var.pointer ~unique:false "packet_buffer_expression"))

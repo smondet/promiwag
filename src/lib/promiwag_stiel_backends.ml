@@ -1166,7 +1166,80 @@ module To_ocaml_string = struct
             [ statement_annotation compiler annot;
               statement compiler st ])
 
-  let statement_to_string ?(function_name="stiel_code") s =
+  let default_prelude = 
+begin
+"
+
+module Integer = struct
+
+
+  include Int64
+
+  let of_int64 x = x
+
+  let eq a b = (compare a b)  = 0
+  let ne a b = (compare a b) <> 0    
+  let gt a b = (compare a b) >  0           
+  let lt a b = (compare a b) <  0         
+  let ge a b = (compare a b) >= 0           
+  let le a b = (compare a b) <= 0         
+
+  let minus x = failwith \"Not unsigned operation\"
+  let plus x = x
+  let sub a b = 
+    let r = Int64.sub a b in
+    if lt r 0L then 0L else r
+  let bin_and = logand
+  let bin_or  = logor
+  let bin_xor = logxor
+  let bin_lsl a b = shift_left a (to_int b)
+  let bin_lsr a b = shift_right_logical a (to_int b)
+
+end
+
+module Unsafe_buffer = struct
+
+  type t = {
+    underlying: string;
+    beginning: int;
+  }
+  let create s = { underlying = s; beginning = 0}
+  let create_pointer () = create \"\"
+
+  let offset s o =
+    let ofs = Integer.to_int o in
+    { s with beginning = ofs + s.beginning}
+
+  let get_native_uint8       b =  failwith \"get native not implemented\"
+  let get_native_uint16      b =  failwith \"get native not implemented\"
+  let get_native_uint32      b =  failwith \"get native not implemented\"
+  let get_native_uint64      b =  failwith \"get native not implemented\"
+  let get_native_uint_native b =  failwith \"get native not implemented\"
+
+  let get b i = Integer.of_int (int_of_char (String.unsafe_get b.underlying (i + b.beginning)))
+  open Integer
+  let get_bigend_uint8       b = let g = get b in  (g 0)
+  let get_bigend_uint16      b = let g = get b in  add (bin_lsl (g 0) 8L) (g 1)
+  let get_bigend_uint32      b = let g = get_bigend_uint16 in  add (bin_lsl (g b) 16L) (g (offset b 2L))
+  let get_bigend_uint64      b = let g = get_bigend_uint32 in  add (bin_lsl (g b) 32L) (g (offset b 4L))
+  let get_bigend_uint_native = if Sys.word_size = 32 then  get_bigend_uint32 else  get_bigend_uint64
+  let get_ltlend_uint8       b = let g = get b in  (g 0)
+  let get_ltlend_uint16      b = let g = get b in  add (bin_lsl (g 1) 8L) (g 0)
+  let get_ltlend_uint32      b = let g = get_bigend_uint16 in  add (bin_lsl (g (offset b 2L)) 16L) (g b)
+  let get_ltlend_uint64      b = let g = get_bigend_uint32 in  add (bin_lsl (g (offset b 4L)) 32L) (g b)
+  let get_ltlend_uint_native b =  if Sys.word_size = 32 then  get_ltlend_uint32 else  get_ltlend_uint64
+
+end
+
+module Log = Printf
+
+"
+end
+
+
+  let statement_to_string 
+      ?(function_name="stiel_code") 
+      ?(with_default_prelude=false) s =
     let compiler = (default_compiler ()) in
 
     let undefined =
@@ -1185,7 +1258,8 @@ module To_ocaml_string = struct
                          (Str.concat " " undefined)))
         [ statement compiler s]
     in
-    (sprintf "%s\n%s\n"
+    (sprintf "%s\n%s\n%s\n"
+       (if with_default_prelude then default_prelude else "")
        (Str.concat "\n" (Ls.map compiler.while_list ~f:(sprintf "exception %s")))
        (Easy_format.Pretty.to_string  code))
 
