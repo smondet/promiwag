@@ -419,7 +419,7 @@ let test_c_ast () =
 
 let test_pcap_basic () =
   let module C = Promiwag.C_backend in
-  let module Pcap = Promiwag.Pcap.C in
+  let module Pcap = Promiwag.Pcap.C_legacy in
   printf "Start test_pcap_basic\n";
   let passed_structure =
     C.Variable.create ~name:"passed_structure"
@@ -603,45 +603,40 @@ let make_clean_protocol_stack to_open =
     automata_block
   in
 
-  let pcap_capture =
+  let stiel_parsing_block =
+    (automata_treatment
+       (Var.expression (Var.pointer ~unique:false "packet_buffer_expression"))
+       (Var.expression (Var.unat ~unique:false "packet_buffer_length"))) in
+
+  let c_parsing_block =
     let c_compiler =
       Promiwag.Stiel.To_C.compiler ~platform:Promiwag.Platform.default in
-    let to_open =
-      if Str.starts_with to_open "file:" then 
-        `file (`literal_string (Str.slice ~first:5 to_open))
-      else if Str.starts_with to_open "dev:" then
-        `device (`literal_string (Str.slice ~first:4 to_open))
-      else
-        `file (`array_index (`variable "argv", `literal_int 1))
-    in
-    let on_error a e = Do.log (sprintf "libPCAP ERROR: %s\n" a) [] in
-    let passed_pointer = Var.expression (Var.pointer ~unique:false "NULL") in
-    Promiwag.Pcap.C.make_capture_of_stiel
-      ~to_open ~on_error ~passed_pointer ~c_compiler
-      (fun ~passed_argument ~packet_length ~packet_buffer -> 
-        automata_treatment packet_buffer packet_length) in
+    let c_statement =
+      Promiwag.Stiel.To_C.statement c_compiler stiel_parsing_block in
+    Promiwag.C_backend.C_to_str.statement c_statement
+  in
+  let c_pcap_capture_app =
+    Promiwag.Pcap.C.basic_loop
+      ~call:(fun pckt lgth ->
+        sprintf "  const unsigned char *packet_buffer_expression = %s;\n\
+                \  unsigned int packet_buffer_length = %s;\n\
+                %s" pckt lgth c_parsing_block) in
 
-  let full_test_c_file = Promiwag.Pcap.C.to_full_file pcap_capture in
   let why_checkable_program = 
-    Promiwag.Stiel.To_why_string.statement_to_string 
-      (automata_treatment
-         (Var.expression (Var.pointer ~unique:false "packet_buffer_expression"))
-         (Var.expression (Var.pointer ~unique:false "packet_buffer_length"))) in
+    Promiwag.Stiel.To_why_string.statement_to_string stiel_parsing_block in
+
   let ocaml_function =
     Promiwag.Stiel.To_ocaml_string.statement_to_string 
       ~with_default_prelude:true
-      ~function_name:"promiwag_clean_parsing"
-      (automata_treatment
-         (Var.expression (Var.pointer ~unique:false "packet_buffer_expression"))
-         (Var.expression (Var.pointer ~unique:false "packet_buffer_length")))
-  in
+      ~function_name:"promiwag_clean_parsing" stiel_parsing_block in
   let ocaml_pcap_capture = 
     Promiwag.Pcap.OCaml.basic_loop
       ~call:(fun pckt lgth ->
         sprintf "promiwag_clean_parsing\n\
                 \   ~packet_buffer_expression:(ref (Unsafe_buffer.create %s))\n\
                 \   ~packet_buffer_length:(ref (Integer.of_int %s))" pckt lgth) in
-  (full_test_c_file, why_checkable_program, 
+
+  (c_pcap_capture_app, why_checkable_program, 
    ocaml_function ^ ocaml_pcap_capture)
 
 let test_clean_protocol_stack dev () =
@@ -651,7 +646,7 @@ let test_clean_protocol_stack dev () =
   let pcap_prefix = System.tmp "pcap_procotol_parser" in
   let c_file = sprintf "%s.c" pcap_prefix in
   Io.with_file_out c_file (fun out ->
-    String_tree.print ~out (C2StrTree.file full_test_c_file);
+    Io.nwrite out full_test_c_file;
   );
   printf "Now you can compile and run (as root?):\n\
          \  gcc -lpcap %s -o %s \n\
