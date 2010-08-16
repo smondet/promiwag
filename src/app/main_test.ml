@@ -417,49 +417,6 @@ let test_c_ast () =
   );
   ()
 
-let test_pcap_basic () =
-  let module C = Promiwag.C_backend in
-  let module Pcap = Promiwag.Pcap.C_legacy in
-  printf "Start test_pcap_basic\n";
-  let passed_structure =
-    C.Variable.create ~name:"passed_structure"
-      ~c_type:(`unsigned_long) ~initialisation:(`literal_int 1) () in
-  let toplevels, (block_vars, block_sts) =
-    let passed_expression =
-      C.Variable.address_typed_expression passed_structure in
-    let to_open = `device (`literal_string "eth0") in
-    let on_error s e = 
-      `block (C.Construct.block () ~statements:[
-        call_printf "PCAP ERROR: %s: %s\n" [`literal_string s; e];
-        `return (`literal_int 2);
-      ]) in
-    let packet_treatment ~passed_argument ~packet_length ~packet_buffer =
-      let counter_mem_contents =
-        `unary (`unary_memof, C.Variable.expression passed_argument) in
-      C.Construct.block () ~statements:[
-        call_printf "packet_treatment: arg:%d lgth: %d buf: %x\n"
-          [counter_mem_contents;
-           C.Variable.expression packet_length;
-           C.Variable.expression packet_buffer;
-          ];
-        `assignment (counter_mem_contents,
-                     `binary (`bin_add, `literal_int 1, counter_mem_contents));
-      ]
-    in
-    Pcap.make_capture ~to_open ~on_error ~passed_expression ~packet_treatment in
-  let main_pcap, _, _ = 
-    C.Construct.standard_main 
-      ((C.Variable.declaration passed_structure) :: block_vars, 
-       block_sts @ [`return (`literal_int 0)]) in
-  let test_pcap = 
-    toplevels @ [ C.Function.definition main_pcap ] in
-  String_tree.print (C2StrTree.file test_pcap);
-
-  Io.with_file_out "pcaptest.c" (fun out ->
-    String_tree.print ~out (C2StrTree.file test_pcap);
-  );
-  ()
-
 let print_the_internet () =
   let the_internet =
     Promiwag.Standard_protocols.internet_stack_from_ethernet () in
@@ -800,7 +757,6 @@ let () =
     (* Printexc.record_backtrace true; *)
     let test =
       match Sys.argv.(1) with
-      | "pcap" ->  test_pcap_basic
       | "base" -> test_c_ast
       | "cps" -> test_clean_protocol_stack (try Sys.argv.(2) with _ -> "")
       | "minpars" -> test_minimal_parsing_code
