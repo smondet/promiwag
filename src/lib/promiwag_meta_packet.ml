@@ -698,7 +698,7 @@ module Parser_generator = struct
           match Expr.int (fst e.buffer_access), snd e.buffer_access with
           | (Stiel_types.Int_expr_literal i64, s) ->
             let i = Int64.to_int i64 in
-            let this_access = if s = 0 then i - 1 else i + ((s - 1) / 8) in
+            let this_access = if s = 0 then i else i + ((s - 1) / 8) in
             max m this_access
           | _ -> m) in
       (* debug$ sprintf "Maximal: %d" maximal_constant_access; *)
@@ -737,7 +737,7 @@ module Parser_generator = struct
         (*   (Stiel_to_str.typed_expression (fst entity.buffer_access)); *)
         let bufacc_expr = 
           if type_bits = 0 then
-            Expr.sub (Expr.to_unat (fst entity.buffer_access)) (Expr.unat 1)
+            (Expr.to_unat (fst entity.buffer_access))
           else
             Expr.add (Expr.to_unat (fst entity.buffer_access))
               (Expr.unat ((type_bits - 1) / 8)) in
