@@ -630,6 +630,8 @@ module Parser_generator = struct
           error compiler (sprintf 
                             "Requesting an offset or a pointer to a \
                              not byte-aligned field (by %d bits)" fsz)
+        (* We consider that either the user or the system, should not use
+           or request offsets or pointers to not-aligned things. *) 
         | _ -> ()
         end;
       
@@ -696,7 +698,8 @@ module Parser_generator = struct
           match Expr.int (fst e.buffer_access), snd e.buffer_access with
           | (Stiel_types.Int_expr_literal i64, s) ->
             let i = Int64.to_int i64 in
-            max m (i + (s / 8))
+            let this_access = if s = 0 then i - 1 else i + ((s - 1) / 8) in
+            max m this_access
           | _ -> m) in
       (* debug$ sprintf "Maximal: %d" maximal_constant_access; *)
       let stop_now, size_is_literal =
@@ -733,8 +736,11 @@ module Parser_generator = struct
         (* debug$ sprintf " (fst entity.buffer_access): %s" *)
         (*   (Stiel_to_str.typed_expression (fst entity.buffer_access)); *)
         let bufacc_expr = 
-          Expr.add (Expr.to_unat (fst entity.buffer_access))
-            (Expr.unat (type_bits / 8)) in
+          if type_bits = 0 then
+            Expr.sub (Expr.to_unat (fst entity.buffer_access)) (Expr.unat 1)
+          else
+            Expr.add (Expr.to_unat (fst entity.buffer_access))
+              (Expr.unat ((type_bits - 1) / 8)) in
         let statements = 
           [Do.cmt (sprintf 
                         "Checking buffer-access of field %s against packet size."
