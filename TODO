@@ -3,8 +3,10 @@ To do:
 
 BUGS:
 
-- check '<=' Vs '<' (bug with TCP only-ack packets "20 < 20")
-(seems there with tmp_data/pcap_files/fuzz-2010-08-10-14745.pcap )
+
+TEST:
+
+- check '<=' Vs '<' (former bug with TCP only-ack packets "20 < 20")
 
 FEATURES:
 
@@ -25,7 +27,9 @@ FEATURES:
     -> when the state related part will be implemented
        an API sould be defined for packet + transitions + state dependency
   - GRE's checksum sounds a bit hackish...
- 
+  - check sizes of strings when they are there
+  and/or
+  - request: `remaining_packet_length
 
 * Promiwag_stiel.Verify:
   - recursivity for variables (that's an environment check)
