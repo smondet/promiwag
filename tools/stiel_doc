@@ -2,9 +2,19 @@
 
 omake reinstall_library
 
-echo '
-include Promiwag_stiel.Standard_renaming;;
-' | ocamlrun ocaml -init tools/initocaml.ml > /tmp/stiel_lang.ml
+if [ "$1" = "all" ]; then
+    ocamlcode='include Promiwag_stiel.Standard_renaming;;'
+else
+    ocamlcode='
+  module Expr = Promiwag_stiel.Expression
+  module Var = Promiwag_stiel.Variable
+  module Do = Promiwag_stiel.Statement
+  module Annot = Promiwag_stiel.Annotated_statement
+;;
+' 
+fi
+
+echo $ocamlcode | ocamlrun ocaml -init tools/initocaml.ml > /tmp/stiel_lang.ml
 
 tail -n +13 /tmp/stiel_lang.ml | sed 's/Promiwag_stiel.Definition.//g' > /tmp/tt.ml
 
