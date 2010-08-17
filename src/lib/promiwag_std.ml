@@ -1,28 +1,50 @@
+(** Standard Prelude for the project. *)
 
+
+(** c.f.
+    {{:http://caml.inria.fr/pub/docs/manual-ocaml/libref/Printf.html}
+    Printf} *)
 include Printf
 
 include Promiwag_Yaboon_PolyComp.CompAndNoPolyPhy
 
-
-
+(** List module *)
 module Ls = struct
-
-    include ExtList.List
-    include ListLabels
-
-    let find_opt ~f l =
-        try Some (List.find f l) with Not_found -> None
+    
+  (** c.f.
+      {{:http://ocaml-extlib.googlecode.com/svn/doc/apiref/ExtList.List.html}
+      ExtList.List} *)
+  include ExtList.List
+    
+  (** c.f.
+      {{:http://caml.inria.fr/pub/docs/manual-ocaml/libref/ListLabels.html}
+      ListLabels} *)
+  include ListLabels
+    
+  let find_opt ~f l =
+    try Some (List.find f l) with Not_found -> None
 
 end
 let (@) = ExtList.List.append
 
 
+(** c.f.
+    {{:http://ocaml-extlib.googlecode.com/svn/doc/apiref/Option.html}
+    Option} *)
 module Opt = Option
 
+(** This module name voluntarily forbids the Str module of the str
+    library *)
 module Str = struct
-  (* This module name voluntarily forbids the Str module of the str
-     library *)
+
+  (** c.f.
+      {{:http://ocaml-extlib.googlecode.com/svn/doc/apiref/ExtString.html}
+      ExtString} *)
   include ExtString
+
+  (** c.f.
+      {{:http://ocaml-extlib.googlecode.com/svn/doc/apiref/ExtString.String.html}
+      ExtString.String} *)
   include ExtString.String
   (* include StringLabels *)
 
@@ -40,15 +62,28 @@ module Str = struct
 
 end
 
+(** Hash tables. *)
 module Ht = struct
+
+  (** c.f.
+      {{:http://ocaml-extlib.googlecode.com/svn/doc/apiref/ExtHashtbl.Hashtbl.html}
+      ExtHashtbl.Hashtbl} *)
   include ExtHashtbl.Hashtbl
+
   let find_opt ht key =
     try Some (find ht key) with Not_found -> None
+
   let value_list ht = Ls.of_enum (values ht)
 end
 
+(** Input/Output. *)
 module Io = struct
+
+    (** c.f.
+        {{:http://ocaml-extlib.googlecode.com/svn/doc/apiref/IO.html}
+        IO} *)
     include IO
+
     let open_in f =
         let i = Pervasives.open_in f in
         IO.input_channel i
@@ -175,6 +210,12 @@ module Hash = struct
 
 
 end
+
+(** c.f.
+    {{:http://martin.jambon.free.fr/easy-format-doc/Easy_format.html}
+    Easy_format} *)
+module Easy_format = Easy_format
+
 
 let ($) f x = f x
 
