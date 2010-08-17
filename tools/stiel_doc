@@ -1,0 +1,44 @@
+#! /bin/sh
+
+omake reinstall_library
+
+echo '
+include Promiwag_stiel.Standard_renaming;;
+' | ocamlrun ocaml -init tools/initocaml.ml > /tmp/stiel_lang.ml
+
+tail -n +13 /tmp/stiel_lang.ml | sed 's/Promiwag_stiel.Definition.//g' > /tmp/tt.ml
+
+echo "{begin t}" > /tmp/tt.brtx
+cat /tmp/tt.ml \
+  | sed 's/sig//g' \
+  | sed 's/end//g' \
+  | sed 's/#//g' \
+  | sed 's/\([{}]\)/{\1}/g' \
+  | sed 's/\(| [^`]\)/{br}\1/g' \
+  | sed 's/ type /{br}{b|type} /g' \
+  | sed 's/ and /{br}{b|and} /g' \
+  | sed 's/ val /{br}{b|val} /g' \
+  | sed 's/\(module[a-zA-Z_ ]\+\):/{section|\1}/g' \
+  >> /tmp/tt.brtx
+echo "{end}" >> /tmp/tt.brtx
+
+brtx -html -doc -title "STIEL" -i /tmp/tt.brtx -o stiel_doc.html
+
+
+
+## 
+## #echo '
+## #open Promiwag_stiel;;
+## #open Promiwag_stiel.Definition;;
+## echo '
+## #use "src/lib/promiwag_stiel.ml";;
+##   module Expr  = Expression;;
+##   module Var   = Variable;;
+##   module Do    = Statement;;
+## ' | ocamlrun ocaml -init tools/initocaml.ml > /tmp/stiel_cons.ml
+## 
+## a2ps -o /tmp/out.ps /tmp/stiel_lang.ml /tmp/stiel_cons.ml
+## ps2pdf /tmp/out.ps stiel.pdf
+## 
+## rm -f  /tmp/out.ps /tmp/stiel_lang.ml /tmp/stiel_cons.ml
+
