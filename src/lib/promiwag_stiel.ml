@@ -102,6 +102,7 @@ module Definition = struct
     | Do_while_loop of string * bool_expression * statement
     | Do_exit_while of string
     | Do_assignment  of variable_name * typed_expression
+    | Do_external_assignment of variable_name * string * typed_expression list
     | Do_declaration of typed_variable
     | Do_log of string * typed_expression list
     | Do_annotated_statement of statement_annotation * statement
@@ -232,6 +233,10 @@ module To_string = struct
         cur_indent s (bool_expression e) (statement ~indent a)
     | Do_exit_while s -> spr "%sExit While %s;\n" cur_indent s
     | Do_assignment  (a, b) -> assign (variable_name    a) (typed_expression b)
+    | Do_external_assignment  (a, f, args) ->
+      assign (variable_name a) 
+        (sprintf "external:%s(%s)" f
+           (Str.concat ", " (Ls.map typed_expression args)))
     | Do_declaration t -> 
       spr "%sDeclare %s of type: %s;\n" cur_indent
         (variable_name t.name) (typed_variable_kind t.kind)
@@ -449,6 +454,8 @@ module Variable = struct
     | Typed_buffer (t, _) -> Kind_buffer t
 
   let assign v te = Do_assignment (v.name, te)
+
+  let ext_assign v f tel = Do_external_assignment (v.name, f, tel)
 
   let declare v = Do_declaration v
 
@@ -896,6 +903,9 @@ module Visit = struct
     | Do_exit_while s -> ()
     | Do_assignment  (a, b) -> 
       ignore (variable_name compiler a, typed_expression compiler b)
+    | Do_external_assignment  (a, f, args) -> 
+      ignore (variable_name compiler a,
+              Ls.map (typed_expression compiler) args)
     | Do_declaration t -> 
       compiler.on_variable_declarations t.name;
       ignore (variable_name compiler t.name,

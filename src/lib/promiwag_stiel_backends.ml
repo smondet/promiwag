@@ -203,6 +203,12 @@ module To_format = struct
         Atom (":=", compiler.atom_operator);
         typed_expression compiler b;
       ]
+    | Do_external_assignment  (a, f, args) -> 
+      labeled_stmt (variable_name compiler a) [
+        Atom (":= external:", compiler.atom_operator);
+        Atom (f, compiler.atom_operator);
+        List (compiler.list_coma, Ls.map (typed_expression compiler) args);
+      ]
     | Do_declaration t -> 
       labeled_stmt (kwd compiler "Declare") [
         variable_name compiler t.name;
@@ -473,6 +479,9 @@ module To_C = struct
       end
     | Do_assignment (a, b) ->
       assign (variable_name a) (typed_expression compiler b)
+    | Do_external_assignment (a, f, args) ->
+      assign (variable_name a) 
+        (`call (`variable f, Ls.map (typed_expression compiler) args))
     | Do_declaration _ -> 
       fail compiler "Calling 'statement' on a declaration"
     | Do_log (f, l) -> printf_of_log compiler f l
@@ -796,6 +805,8 @@ module To_why_string = struct
       | _ ->
         kwd compiler (sprintf "(* Removed assignement (%s) *) void" a)
       end
+    | Do_external_assignment  (a, f, args) -> 
+      failwith "Do_external_assignment -> Why: not implment{ed,able}"
     | Do_declaration t -> 
       begin match t.kind with
       | Kind_int _ ->
@@ -1153,6 +1164,11 @@ module To_ocaml_string = struct
         Atom (":=", compiler.atom_operator);
         typed_expression compiler b;
       ]
+    | Do_external_assignment  (a, f, args) -> 
+      labeled_stmt (kwd compiler a) (
+        [Atom (":=", compiler.atom_operator);
+         Atom (f, compiler.atom_operator);] @
+          (Ls.map (typed_expression compiler) args))
     | Do_declaration t -> 
       labeled_stmt (kwd compiler "let ") [
         kwd compiler t.name;

@@ -429,6 +429,7 @@ let make_clean_protocol_stack to_open =
   let module Expr = Stiel.Expression in
   let module Var = Stiel.Variable in
   let module Do = Stiel.Statement in
+  let module Annot = Stiel.Annotated_statement in
   let module Meta_stack = Promiwag.Protocol_stack in
   let module Standard_protocols = Promiwag.Standard_protocols in
   let module Generator = Meta_stack.Automata_generator in
@@ -544,7 +545,15 @@ let make_clean_protocol_stack to_open =
             dccp,
             [],
             fun te_list ->
-              (my_log "      DCCP not handled.\n" te_list, Expr.f));
+              (my_log "      DCCP not handled.\n" te_list, 
+(*              (let tmp = Var.bool "tmp" in
+               Annot.why
+                 Do.nop
+                 (Do.block [
+                   Var.declare tmp;
+                   Var.ext_assign tmp "exit" [Expr.unat 2];
+                 ]),*)
+               Expr.f));
               (* Do.exit_named_while "brout"); *)
         ] in
 
