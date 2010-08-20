@@ -61,7 +61,7 @@
     (goto-char (point-min))
     (while (search-forward ".ml" nil t) (replace-match ""))
     (goto-char (point-min))
-    (while (search-forward project-directory nil t) (replace-match ""))
+    (while (search-forward-regexp ".*/promiwag/" nil t) (replace-match ""))
     (buffer-string) ; get result
     ))
 
@@ -90,6 +90,8 @@
   (split-window-vertically 20)
   (find-file "TODO")
   (windmove-down)
-  (eshell))
+  (eshell)
+  (windmove-left)
+)
 
 
