@@ -506,7 +506,7 @@ let make_clean_protocol_stack to_open =
               (my_log "  GRE: checksum_present: @int, \
                      \  version: @int, protocol: @hex.\n" te_list, Expr.t));
           ( Promiwag_standard_protocols.ipv4,
-            [ `value "src"; `value "dest"; `value "protocol";`value "ttl";
+            [ `value "src"; `value "dest"; `value "version";`value "ttl";
               `value "can_fragment"; `value "frag_offset"; 
               `size "options"; `value "length";],
             fun te_list ->
@@ -516,10 +516,13 @@ let make_clean_protocol_stack to_open =
                      \  size of options: @int, length: @int.\n"
                 te_list, Expr.t));
           ( Promiwag_standard_protocols.udp,
-            [ `value "src_port"; `value "dst_port"; `size "udp_payload"; ],
+            [ `value "src_port"; `value "dst_port";
+              `value "length"; `size "udp_payload"; ],
             fun te_list ->
               (my_log "    UDP: @int -> @int\n\
-                     \    payload size: @int.\n" te_list, Expr.t));
+                      \    length: @int bytes, payload size: @int bits.\n"
+                 te_list,
+               Expr.t));
           ( Promiwag_standard_protocols.tcp,
             [ `value "src_port"; `value "dst_port"; 
               `value "seq_number"; `value "ack_number";
@@ -545,16 +548,16 @@ let make_clean_protocol_stack to_open =
             dccp,
             [],
             fun te_list ->
-              (my_log "      DCCP not handled.\n" te_list, 
-(*              (let tmp = Var.bool "tmp" in
-               Annot.why
-                 Do.nop
-                 (Do.block [
-                   Var.declare tmp;
-                   Var.ext_assign tmp "exit" [Expr.unat 2];
-                 ]),*)
-               Expr.f));
-              (* Do.exit_named_while "brout"); *)
+              (my_log "      DCCP not handled.\n" te_list, Expr.f));
+              (* let tmp = Var.bool "tmp" in *)
+              (* (Annot.why *)
+              (*    Do.nop *)
+              (*    (Do.block [ *)
+              (*      Var.declare tmp; *)
+              (*      Var.ext_assign tmp "exit" [Expr.unat 2]; *)
+              (*    ]), Var.expression tmp)) *)
+               (* ); *)
+               (* Do.exit_named_while "brout");  *)
         ] in
 
     let packet = Generator.packet ~size:packet_size packet_pointer in
