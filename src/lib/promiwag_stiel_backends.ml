@@ -668,6 +668,17 @@ module To_why_string = struct
     | Int_binop_bin_shl -> false
     | Int_binop_bin_shr -> false
 
+  let get_in_at_buffer_size = function
+    | Get_native        o
+    | Get_big_endian    o
+    | Get_little_endian o ->
+      begin match o with
+      | Type_uint8       ->  1 
+      | Type_uint16      ->  2
+      | Type_uint32      ->  4
+      | Type_uint64      ->  8 
+      | Type_uint_native ->  8
+      end
 
   let rec buffer_type compiler o =
     Atom (Simple_to_string.buffer_type o, compiler.atom_type)
@@ -688,10 +699,17 @@ module To_why_string = struct
              (int_expression ~logical compiler eb)])
     | Int_expr_variable  v            -> variable_name ~logical compiler v
     | Int_expr_buffer_content
-        (_, Buffer_expr_offset (Buffer_expr_variable v, int_expr)) ->
+        (get_int_at_buffer,
+         Buffer_expr_offset (Buffer_expr_variable v, int_expr)) ->
+      let access =
+        let size = get_in_at_buffer_size get_int_at_buffer in
+        Int_expr_binary (Int_binop_add, 
+                         Int_expr_literal (Int64.of_int (size - 1)),
+                         int_expr) in
+      (* size - 1 -> because "int_expr" is already the index of the 1st byte *)
       List (compiler.list_expression,
             [ Atom ("buffer_access ", compiler.atom_operator);
-             int_expression ~logical compiler int_expr])
+             int_expression ~logical compiler access])
     | Int_expr_buffer_content _ as s->
       failwith 
         (sprintf "Forbiden buffer access expression: %s" 
@@ -857,8 +875,8 @@ module To_why_string = struct
               parameter bin_lsl : a:int -> b:int -> {} int { 0 <= result }\n\
               parameter %s: int ref\n\
               parameter buffer_access:\n\
-              \   index:int ->\n\
-              \   { 0 <= index < %s } int reads %s { result >= 0 }\n\
+              \   last_index:int ->\n\
+              \   { 0 <= last_index < %s } int reads %s { result >= 0 }\n\
               %s {true}"
        (Str.concat "\n" (Ls.map compiler.while_list ~f:(sprintf "exception %s")))
        packet_length_parameter
