@@ -581,7 +581,7 @@ let make_clean_protocol_stack to_open =
     let stack_handler =
       Generator.handler
         ~error_handler
-        ~initial_protocol:Standard_protocols.ethernet light_handler_list in
+        ~initial_protocol:Standard_protocols.ethernet handler_list in
 
     let packet = Generator.packet ~size:packet_size packet_pointer in
     
