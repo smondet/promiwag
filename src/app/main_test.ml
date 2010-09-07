@@ -424,7 +424,7 @@ let print_the_internet () =
     (Promiwag.Protocol_stack.To_string.protocol_stack the_internet);
   ()
 
-let make_clean_protocol_stack to_open =
+let make_clean_protocol_stack handling_style to_open =
   let module Stiel = Promiwag.Stiel in
   let module Expr = Stiel.Expression in
   let module Var = Stiel.Variable in
@@ -471,7 +471,7 @@ let make_clean_protocol_stack to_open =
         Do.log message [te]
       | `unknown s -> Do.log (sprintf "UNKNOWN ERROR:: %s\n" s) []
     in
-    let handler_list = [
+    let full_handler_list = [
       ( Standard_protocols.ethernet,
         [ `pointer "dest_addr"; `pointer "src_addr"; ],
         function
@@ -576,7 +576,14 @@ let make_clean_protocol_stack to_open =
           (my_log "    TCP.\n" [], Expr.t)
           | _ -> failwith "wrong number of args");
     ] in
-    ignore light_handler_list;
+    let muted_handler_list =
+      Ls.map (fun (a, b, c) -> (a, b, fun _ -> (Do.nop, Expr.t)))
+        full_handler_list in
+    let handler_list =
+      match handling_style with
+      | `full -> full_handler_list
+      | `light -> light_handler_list
+      | `muted -> muted_handler_list in
 
     let stack_handler =
       Generator.handler
@@ -587,7 +594,10 @@ let make_clean_protocol_stack to_open =
     
     let automata_block =
       Do.block 
-        ( (Do.log "===== New Packet =====\n" [])
+        ( (if handling_style <> `muted then 
+            Do.log "===== New Packet =====\n" []
+           else 
+            Do.nop)
           :: (Generator.automata_block the_internet stack_handler packet)) in
 
     (* printf "Automata Block:\n%s\n" (Stiel_to_str.statement automata_block); *)
@@ -631,9 +641,9 @@ let make_clean_protocol_stack to_open =
   (c_pcap_capture_app, why_checkable_program, 
    ocaml_function ^ ocaml_pcap_capture)
 
-let test_clean_protocol_stack dev () =
+let test_clean_protocol_stack handling dev () =
   let (full_test_c_file, why_checkable_program, ocaml_function) =
-    make_clean_protocol_stack dev in
+    make_clean_protocol_stack handling dev in
 
   let pcap_prefix = System.tmp "pcap_procotol_parser" in
   let c_file = sprintf "%s.c" pcap_prefix in
@@ -658,6 +668,70 @@ let test_clean_protocol_stack dev () =
   printf "Or play with OCaml:\n\
           \  %s %s.ml -o %s\n" 
     Promiwag.Pcap.OCaml.compilation_string ml_prefix ml_prefix;
+  ()
+
+let test_clean_protocol_stack_c_bench pcap_dir times () =
+  let chronometer ?(times=1) ~f () =
+    (* let time = Sys.time in *)
+    let time = Unix.gettimeofday in
+    let b = time () in
+    for i = 1 to times do
+      f ()
+    done;
+    (time () -. b)
+  in
+  let pcap_files =
+    let raw = Array.to_list $ Sys.readdir pcap_dir in
+    Ls.filter raw ~f:(fun f -> Filename.check_suffix f ".pcap") in
+  let empty_c_pcap_capture_app =
+    Promiwag.Pcap.C.basic_loop ~call:(fun pckt lgth -> "  /* nothing */") in
+
+  let do_c_file c_content str_style =
+    let pcap_prefix = System.tmp ("pcap_procotol_parser_" ^ str_style) in
+    let c_file = sprintf "%s.c" pcap_prefix in
+    Io.with_file_out c_file (fun out ->
+      Io.nwrite out c_content;
+    );
+    let compilation = sprintf "gcc -lpcap %s -o %s" c_file pcap_prefix in
+    System.run_command compilation;
+    let run_command pcap_input () =
+      System.run_command $ 
+        sprintf "%s file %s/%s > /dev/null" pcap_prefix pcap_dir pcap_input in
+    Ls.map pcap_files
+      ~f:(fun f ->
+        let time = chronometer ~times () ~f:(run_command f) in
+        (str_style, f, time))
+      
+  in
+  let do_parsing style str_style =
+    let c_content, _, _ = make_clean_protocol_stack style "" in
+    do_c_file c_content str_style in
+
+  let resempty = do_c_file empty_c_pcap_capture_app "empty" in
+  let resfull  = do_parsing `full  "full"  in
+  let reslight = do_parsing `light "light" in
+  let resmuted = do_parsing `muted "muted" in
+  let brtx_table =
+    let rec map4 = function
+      | [], [], [], [] -> []
+      | ((_, file1, time1) :: q1), 
+        ((_, file2, time2) :: q2),
+        ((_, file3, time3) :: q3),
+        ((_, file4, time4) :: q4) ->
+        assert ((file1 = file2) && (file2 = file3));
+        (sprintf "{c|{t|%s}} {c|%f} {c|%f} {c|%f} {c|%f}"
+          file1 time1 time2 time3 time4) :: (map4 (q1, q2, q3, q4))
+      | _ -> failwith "list size mismatch" in
+
+    sprintf "{begin table 5}\n\
+             {c h|File} {c h|Empty}{c h|Full}{c h|Light}{c h|Full Muted}\n\
+             %s
+             Results for %d runs.\n\
+             {end}"
+      (Str.concat "\n" (map4 (resempty, resfull, reslight, resmuted)))
+      times
+  in
+  printf "\n\n%s\n\n" brtx_table;
   ()
 
 let test_proving () =
@@ -702,7 +776,7 @@ let test_proving () =
     (fun () -> printf "=== Test '%s':\n%s\n" name str_result;)
   in
   let recap =
-    let (_, why_cps, _) =  make_clean_protocol_stack "dummy" in
+    let (_, why_cps, _) =  make_clean_protocol_stack `full "dummy" in
     Ls.map do_bench [
       ("clean_ps", fun () ->  why_cps);
       ("right_1",  fun () ->  Stacks.make_why (Stacks.right_1 ()));
@@ -793,7 +867,10 @@ let () =
     let test =
       match Sys.argv.(1) with
       | "base" -> test_c_ast
-      | "cps" -> test_clean_protocol_stack (try Sys.argv.(2) with _ -> "")
+      | "cps" -> test_clean_protocol_stack `full (try Sys.argv.(2) with _ -> "")
+      | "cbench" -> 
+        test_clean_protocol_stack_c_bench
+          Sys.argv.(2) (int_of_string Sys.argv.(3))
       | "minpars" -> test_minimal_parsing_code
       | "pi" -> print_the_internet
       | "why" -> test_why_output
