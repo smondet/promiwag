@@ -4,3 +4,4 @@
 _build/*
 promiwag_test
 tmp_*
+datatmp/*
