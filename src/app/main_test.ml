@@ -503,7 +503,7 @@ let make_clean_protocol_stack handling_style to_open =
           (my_log "  GRE: checksum_present: @int, \
                      \  version: @int, protocol: @hex.\n" te_list, Expr.t));
       ( Promiwag_standard_protocols.ipv4,
-        [ `value "src"; `value "dest"; `value "version";`value "ttl";
+        [ `value "src"; `value "dest"; `value "protocol"; `value "ttl";
           `value "can_fragment"; `value "frag_offset"; 
           `size "options"; `value "length";],
         fun te_list ->
