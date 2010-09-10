@@ -731,30 +731,18 @@ let test_clean_protocol_stack_c_bench
   let restcpdumpv   = do_external (sprintf "tcpdump -v   -Knr %s") "T -v" in
   let restcpdumpvv  = do_external (sprintf "tcpdump -vv  -Knr %s") "T -vv" in
   let restcpdumpvvv = do_external (sprintf "tcpdump -vvv -Knr %s") "T -vvv" in
-  printf "\n\n";
+
   let cell_of_file file =
     match (Filename.chop_extension file) with
-    | "fuzz-2010-08-10-14745" ->
-(*      printf "{mi}\n\
-              let stats_%s_fuzz =\n\
-              \  let e = %.2f and f = %.2f and m = %.2f in\n\
-              \  stats 10000 e f m\n\
-              {me}\n" testname time1 time2 time3;*)
-      (Some "Fuzz-10K")
-    | "multigre_24_afew" ->
-(*      printf "{mi}\n\
-              let stats_%s_24gre =\n\
-              \  let e = %.2f and f = %.2f and m = %.2f in\n\
-              \  stats 132 e f m\n\
-              {me}\n" testname time1 time2 time3;*)
-      (Some "24GRE-132")
+    | "fuzz-2010-08-10-14745" -> (Some "Fuzz-10K")
+    | "multigre_24_afew" -> (Some "24GRE-132")
     | s -> None in
 
   let brtx_table =
 
     let do_row l =
       let name, _, _ = Ls.hd l in
-      sprintf "{c h|%s} %s" name 
+      sprintf "{c lh|%s} %s" name 
         (Str.concat " " 
            (Ls.map l ~f:(fun (name, file, time) -> sprintf "{c|%.2f}" time))) in
     let do_file_row l =
@@ -764,29 +752,24 @@ let test_clean_protocol_stack_c_bench
            | None -> sprintf "{c h|{t|%s}}" file
            | Some s -> sprintf "{c h|{t|%s}}" s))) in
 
-    sprintf  "{begin table %d tab:heavybench%s}\n\
-              {c h|File} %s\n\
-              %s\n\
-              %s\n\
-              %s\n\
-              %s\n\
-              %s\n\
-              %s\n\
-              %s\n\
+    sprintf  "{begin table %d tab:heavybench%s r}\n\
+              {c lh|File} %s\n\
               %s\n\
               Results for %d runs on the %s\n\
               {end}"
       (1 + (Ls.length resempty))
       testname
       (do_file_row resempty)
-      (do_row resempty     ) 
-      (do_row resfull      ) 
-      (do_row resmuted     ) 
-      (do_row reslight     ) 
-      (do_row restcpdumpnr ) 
-      (do_row restcpdumpv  ) 
-      (do_row restcpdumpvv ) 
-      (do_row restcpdumpvvv) 
+      (Str.concat "\n"
+         (Ls.map ~f:do_row [
+           resempty     ;
+           resfull      ;
+           resmuted     ;
+           reslight     ;
+           restcpdumpnr ;
+           restcpdumpv  ;
+           restcpdumpvv ;
+           restcpdumpvvv; ]))
       times testname
   in
   let mixstats =
@@ -798,23 +781,23 @@ let test_clean_protocol_stack_c_bench
         assert ((file1 = file2) && (file2 = file3));
           begin match (Filename.chop_extension file1) with
           | "fuzz-2010-08-10-14745" ->
-            sprintf   "{mi}\n\
-                       let stats_%s_fuzz =\n\
-                       \  let e = %.2f and f = %.2f and m = %.2f in\n\
-                       \  stats 10000 e f m\n\
-                       {me}\n" testname time1 time2 time3
+            sprintf "{mi}\n\
+                     let stats_%s_fuzz =\n\
+                     \  let e = %.2f and f = %.2f and m = %.2f in\n\
+                     \  stats 10000 e f m\n\
+                     {me}\n" testname time1 time2 time3
           | "multigre_24_afew" ->
-            sprintf    "{mi}\n\
-                        let stats_%s_24gre =\n\
-                        \  let e = %.2f and f = %.2f and m = %.2f in\n\
-                        \  stats 132 e f m\n\
-                        {me}\n" testname time1 time2 time3
+            sprintf  "{mi}\n\
+                      let stats_%s_24gre =\n\
+                      \  let e = %.2f and f = %.2f and m = %.2f in\n\
+                      \  stats 132 e f m\n\
+                      {me}\n" testname time1 time2 time3
           | s -> ""
           end  :: (map_tuples (q1, q2, q3))
       | _ -> failwith "list size mismatch" in
-    Str.concat "\n" (map_tuples (resempty, resfull, resmuted))
+    Str.concat "" (map_tuples (resempty, resfull, resmuted))
   in
-  printf "\n%s\n%s\n" brtx_table mixstats;
+  printf "\n\n%s\n%s\n" brtx_table mixstats;
   ()
 
 let test_proving () =
