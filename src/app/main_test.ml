@@ -738,11 +738,11 @@ let test_clean_protocol_stack_c_bench pcap_dir times () =
             (map_tuples (q1, q2, q3, q4, q5))
       | _ -> failwith "list size mismatch" in
 
-    sprintf "{begin table 6}\n\
-             {c h|File} {c h|Empty}{c h|Full}{c h|Full Muted}\
-                {c h|Light}{c h|tcpdump -nr}\n\
+    sprintf "{begin table 6 tab:heavybenches}\n\
+             {c h|File} {c h|Empty}{c h|Full}{c h|Muted}\
+                {c h|Light}{c h|Tcpdump}\n\
              %s
-             Results for %d runs.\n\
+             Results for %d Runs\n\
              {end}"
       (Str.concat "\n" 
          (map_tuples (resempty, resfull, resmuted, reslight, restcpdumpnr)))
