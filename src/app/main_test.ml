@@ -670,7 +670,8 @@ let test_clean_protocol_stack handling dev () =
     Promiwag.Pcap.OCaml.compilation_string ml_prefix ml_prefix;
   ()
 
-let test_clean_protocol_stack_c_bench pcap_dir times testname () =
+let test_clean_protocol_stack_c_bench
+    ?(allfiles=false) pcap_dir times testname () =
   let chronometer ?(times=1) ~f () =
     (* let time = Sys.time in *)
     let time = Unix.gettimeofday in
@@ -681,10 +682,14 @@ let test_clean_protocol_stack_c_bench pcap_dir times testname () =
     (time () -. b)
   in
   let pcap_files =
-    let in_dir = Sys.readdir pcap_dir in
-    Array.sort Str.compare in_dir;
-    let raw = Array.to_list in_dir in
-    Ls.filter raw ~f:(fun f -> Filename.check_suffix f ".pcap") in
+    if allfiles then  (
+      let in_dir = Sys.readdir pcap_dir in
+      Array.sort Str.compare in_dir;
+      let raw = Array.to_list in_dir in
+      Ls.filter raw ~f:(fun f -> Filename.check_suffix f ".pcap") 
+    ) else (
+      [ "fuzz-2010-08-10-14745.pcap"; "multigre_24_afew.pcap" ]
+    ) in
   let empty_c_pcap_capture_app =
     Promiwag.Pcap.C.basic_loop ~call:(fun pckt lgth -> "  /* nothing */") in
 
@@ -718,66 +723,98 @@ let test_clean_protocol_stack_c_bench pcap_dir times testname () =
     let c_content, _, _ = make_clean_protocol_stack style "" in
     do_c_file c_content str_style in
 
-  let resempty = do_c_file empty_c_pcap_capture_app "empty" in
-  let resfull  = do_parsing `full  "full"  in
-  let reslight = do_parsing `light "light" in
-  let resmuted = do_parsing `muted "muted" in
-  let restcpdumpnr  = do_external (sprintf "tcpdump      -Knr %s") "tcpdumpnr" in
-  let restcpdumpv   = do_external (sprintf "tcpdump -v   -Knr %s") "tcpdumpnrv" in
-  let restcpdumpvv  = do_external (sprintf "tcpdump -vv  -Knr %s") "tcpdumpnrvv" in
-  let restcpdumpvvv = do_external (sprintf "tcpdump -vvv -Knr %s") "tcpdumpnrvvv" in
+  let resempty = do_c_file empty_c_pcap_capture_app "Empty" in
+  let resfull  = do_parsing `full  "Full"  in
+  let reslight = do_parsing `light "Light" in
+  let resmuted = do_parsing `muted "Muted" in
+  let restcpdumpnr  = do_external (sprintf "tcpdump      -Knr %s") "T" in
+  let restcpdumpv   = do_external (sprintf "tcpdump -v   -Knr %s") "T -v" in
+  let restcpdumpvv  = do_external (sprintf "tcpdump -vv  -Knr %s") "T -vv" in
+  let restcpdumpvvv = do_external (sprintf "tcpdump -vvv -Knr %s") "T -vvv" in
   printf "\n\n";
-  let brtx_table =
-    let rec map_tuples = function
-      | [], [], [], [], [], [], [], [] -> []
-      | ((_, file1, time1) :: q1), 
-        ((_, file2, time2) :: q2),
-        ((_, file3, time3) :: q3),
-        ((_, file4, time4) :: q4),
-        ((_, file5, time5) :: q5),
-        ((_, file6, time6) :: q6),
-        ((_, file7, time7) :: q7),
-        ((_, file8, time8) :: q8) ->
-        assert ((file1 = file2) && (file2 = file3));
-          let filename =
-            match (Filename.chop_extension file1) with
-            | "fuzz-2010-08-10-14745" ->
-              printf " {mi}\n\
-                        let stats_%s_fuzz =\n\
-                        \  let e = %.2f and f = %.2f and m = %.2f in\n\
-                        \  stats 10000 e f m\n\
-                        {me}\n" testname time1 time2 time3;
-              "Fuzz-10K"
-            | "multigre_24_afew" ->
-              printf " {mi}\n\
-                        let stats_%s_fuzz =\n\
-                        \  let e = %.2f and f = %.2f and m = %.2f in\n\
-                        \  stats 132 e f m\n\
-                        {me}\n" testname time1 time2 time3;
-              "24GRE-132"
-            | s -> s
-          in 
-          (sprintf "{c|{t|%s}} {c|%.2f} {c|%.2f} {c|%.2f} {c|%.2f} \
-                  {c|%.2f} {c|%.2f} {c|%.2f} {c|%.2f}"
-             filename
-             time1 time2 time3 time4 time5 time6 time7 time8) :: 
-            (map_tuples (q1, q2, q3, q4, q5, q6, q7, q8))
-      | _ -> failwith "list size mismatch" in
+  let cell_of_file file =
+    match (Filename.chop_extension file) with
+    | "fuzz-2010-08-10-14745" ->
+(*      printf "{mi}\n\
+              let stats_%s_fuzz =\n\
+              \  let e = %.2f and f = %.2f and m = %.2f in\n\
+              \  stats 10000 e f m\n\
+              {me}\n" testname time1 time2 time3;*)
+      (Some "Fuzz-10K")
+    | "multigre_24_afew" ->
+(*      printf "{mi}\n\
+              let stats_%s_24gre =\n\
+              \  let e = %.2f and f = %.2f and m = %.2f in\n\
+              \  stats 132 e f m\n\
+              {me}\n" testname time1 time2 time3;*)
+      (Some "24GRE-132")
+    | s -> None in
 
-    sprintf "{begin table 9 tab:heavybenches%s}\n\
-             {c h|File} {c h|Empty}{c h|Full}{c h|Muted}\
-                {c h|Light}{c h|T}{c h|T -v}{c h|T -vv}{c h|T -vvv}\n\
-             %s
-             Results for %d runs on the %s\n\
-             {end}"
+  let brtx_table =
+
+    let do_row l =
+      let name, _, _ = Ls.hd l in
+      sprintf "{c h|%s} %s" name 
+        (Str.concat " " 
+           (Ls.map l ~f:(fun (name, file, time) -> sprintf "{c|%.2f}" time))) in
+    let do_file_row l =
+      (Str.concat " " 
+         (Ls.map l ~f:(fun (name, file, time) -> 
+           match cell_of_file file with
+           | None -> sprintf "{c h|{t|%s}}" file
+           | Some s -> sprintf "{c h|{t|%s}}" s))) in
+
+    sprintf  "{begin table %d tab:heavybench%s}\n\
+              {c h|File} %s\n\
+              %s\n\
+              %s\n\
+              %s\n\
+              %s\n\
+              %s\n\
+              %s\n\
+              %s\n\
+              %s\n\
+              Results for %d runs on the %s\n\
+              {end}"
+      (1 + (Ls.length resempty))
       testname
-      (Str.concat "\n" 
-         (map_tuples (resempty, resfull, resmuted, 
-                      reslight, 
-                      restcpdumpnr, restcpdumpv, restcpdumpvv, restcpdumpvvv)))
+      (do_file_row resempty)
+      (do_row resempty     ) 
+      (do_row resfull      ) 
+      (do_row resmuted     ) 
+      (do_row reslight     ) 
+      (do_row restcpdumpnr ) 
+      (do_row restcpdumpv  ) 
+      (do_row restcpdumpvv ) 
+      (do_row restcpdumpvvv) 
       times testname
   in
-  printf "\n%s\n\n" brtx_table;
+  let mixstats =
+    let rec map_tuples = function
+      | [], [], [] -> []
+      | ((_, file1, time1) :: q1), 
+        ((_, file2, time2) :: q2),
+        ((_, file3, time3) :: q3) ->
+        assert ((file1 = file2) && (file2 = file3));
+          begin match (Filename.chop_extension file1) with
+          | "fuzz-2010-08-10-14745" ->
+            sprintf   "{mi}\n\
+                       let stats_%s_fuzz =\n\
+                       \  let e = %.2f and f = %.2f and m = %.2f in\n\
+                       \  stats 10000 e f m\n\
+                       {me}\n" testname time1 time2 time3
+          | "multigre_24_afew" ->
+            sprintf    "{mi}\n\
+                        let stats_%s_24gre =\n\
+                        \  let e = %.2f and f = %.2f and m = %.2f in\n\
+                        \  stats 132 e f m\n\
+                        {me}\n" testname time1 time2 time3
+          | s -> ""
+          end  :: (map_tuples (q1, q2, q3))
+      | _ -> failwith "list size mismatch" in
+    Str.concat "\n" (map_tuples (resempty, resfull, resmuted))
+  in
+  printf "\n%s\n%s\n" brtx_table mixstats;
   ()
 
 let test_proving () =
