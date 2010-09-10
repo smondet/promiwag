@@ -681,7 +681,9 @@ let test_clean_protocol_stack_c_bench pcap_dir times () =
     (time () -. b)
   in
   let pcap_files =
-    let raw = Array.to_list $ Sys.readdir pcap_dir in
+    let in_dir = Sys.readdir pcap_dir in
+    Array.sort Str.compare in_dir;
+    let raw = Array.to_list in_dir in
     Ls.filter raw ~f:(fun f -> Filename.check_suffix f ".pcap") in
   let empty_c_pcap_capture_app =
     Promiwag.Pcap.C.basic_loop ~call:(fun pckt lgth -> "  /* nothing */") in
@@ -703,6 +705,15 @@ let test_clean_protocol_stack_c_bench pcap_dir times () =
         (str_style, f, time))
       
   in
+  let do_external cmd_of_file name =
+    let run_command pcap_input () =
+      System.run_command $ 
+        sprintf "%s > /dev/null 2>&1" (cmd_of_file (pcap_dir ^ pcap_input)) in 
+    Ls.map pcap_files
+      ~f:(fun f ->
+        let time = chronometer ~times () ~f:(run_command f) in
+        (name, f, time))
+  in
   let do_parsing style str_style =
     let c_content, _, _ = make_clean_protocol_stack style "" in
     do_c_file c_content str_style in
@@ -711,24 +722,30 @@ let test_clean_protocol_stack_c_bench pcap_dir times () =
   let resfull  = do_parsing `full  "full"  in
   let reslight = do_parsing `light "light" in
   let resmuted = do_parsing `muted "muted" in
+  let restcpdumpnr = do_external (sprintf "tcpdump -nr %s") "tcpdumpnr" in
   let brtx_table =
-    let rec map4 = function
-      | [], [], [], [] -> []
+    let rec map_tuples = function
+      | [], [], [], [], [] -> []
       | ((_, file1, time1) :: q1), 
         ((_, file2, time2) :: q2),
         ((_, file3, time3) :: q3),
-        ((_, file4, time4) :: q4) ->
+        ((_, file4, time4) :: q4),
+        ((_, file5, time5) :: q5) ->
         assert ((file1 = file2) && (file2 = file3));
-        (sprintf "{c|{t|%s}} {c|%f} {c|%f} {c|%f} {c|%f}"
-          file1 time1 time2 time3 time4) :: (map4 (q1, q2, q3, q4))
+          (sprintf "{c|{t|%s}} {c|%.2f} {c|%.2f} {c|%.2f} {c|%.2f} {c|%.2f}"
+             (Filename.chop_extension file1)
+             time1 time2 time3 time4 time5) :: 
+            (map_tuples (q1, q2, q3, q4, q5))
       | _ -> failwith "list size mismatch" in
 
-    sprintf "{begin table 5}\n\
-             {c h|File} {c h|Empty}{c h|Full}{c h|Light}{c h|Full Muted}\n\
+    sprintf "{begin table 6}\n\
+             {c h|File} {c h|Empty}{c h|Full}{c h|Full Muted}\
+                {c h|Light}{c h|tcpdump -nr}\n\
              %s
              Results for %d runs.\n\
              {end}"
-      (Str.concat "\n" (map4 (resempty, resfull, reslight, resmuted)))
+      (Str.concat "\n" 
+         (map_tuples (resempty, resfull, resmuted, reslight, restcpdumpnr)))
       times
   in
   printf "\n\n%s\n\n" brtx_table;
