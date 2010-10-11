@@ -28,8 +28,8 @@ do
     ifconfig $tun $LOCAL_IP_TUNNEL pointopoint $REMOTE_IP_TUNNEL
 done
 GATEWAY=$REMOTE_IP_TUNNEL
-#route add $REMOTE_NET netmask $REMOTE_NETMASK gw $GATEWAY
-route add $REMOTE_NET gw $GATEWAY
+route add -net $REMOTE_NET netmask $REMOTE_NETMASK gw $GATEWAY
+#route add $REMOTE_NET gw $GATEWAY
 
 
 ## Make an capture traffic: 
@@ -41,3 +41,7 @@ route add $REMOTE_NET gw $GATEWAY
 ##  for i in `seq 1 24`; do  route del 10.10.$i.10 ; done
 ##  route del 192.168.10.0
 ##  for i in `seq 1 24`; do ip tunnel del tun${i}9 ; done
+
+## Trigger kernel panic:
+## sh gre_tunnels.sh 37
+## ping 192.168.10.1
