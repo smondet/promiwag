@@ -5,12 +5,14 @@
 *)
 
 (*b 
+{quote|
 {link http://caml.inria.fr/pub/docs/manual-ocaml/libref/Printf.html
 |Printf} from the standard library.
+}
 *)
 include module type of Printf
 
-(*b PolyComp is from
+(*bq PolyComp is from
 {link http://code.google.com/p/yaboon/
 |YaBoon}
 (c.f.
@@ -19,15 +21,15 @@ include module type of Printf
 *)
 include module type of Promiwag_Yaboon_PolyComp.CompAndNoPolyPhy
 
-(*b Common {q|List} module. *)
+(*bq Common {q|List} module. *)
 module Ls: sig
 
-  (*b C.f.
+  (*bq C.f.
     {link http://ocaml-extlib.googlecode.com/svn/doc/apiref/ExtList.List.html
     |ExtList.List} *)
   include module type of ExtList.List
     
-  (*b C.f.
+  (*bq C.f.
       {link http://caml.inria.fr/pub/docs/manual-ocaml/libref/ListLabels.html
       |ListLabels} *)
   include module type of ListLabels
@@ -38,21 +40,21 @@ end
 val (@): 'a list -> 'a list -> 'a list
 
 
-(*b The 
+(*bq The 
     {link http://ocaml-extlib.googlecode.com/svn/doc/apiref/Option.html
     |Option} module from Extlib. *)
 module Opt: module type of Option
 
-(*b This module name voluntarily forbids the Str module of the str
+(*bq This module name voluntarily forbids the Str module of the str
     library. *)
 module Str: sig
 
-  (*b C.f.
+  (*bq C.f.
       {link http://ocaml-extlib.googlecode.com/svn/doc/apiref/ExtString.html
       |ExtString} *)
   include module type of ExtString
 
-  (*b C.f.
+  (*bq C.f.
       {link http://ocaml-extlib.googlecode.com/svn/doc/apiref/ExtString.String.html
       |ExtString.String} *)
   include module type of ExtString.String
@@ -62,10 +64,10 @@ module Str: sig
 
 end
 
-(*b Hash tables. *)
+(*bq Hash tables. *)
 module Ht: sig
 
-  (*b C.f.
+  (*bq C.f.
       {link http://ocaml-extlib.googlecode.com/svn/doc/apiref/ExtHashtbl.Hashtbl.html
       |ExtHashtbl.Hashtbl} *)
   include module type of ExtHashtbl.Hashtbl
@@ -73,10 +75,10 @@ module Ht: sig
   val value_list : ('a, 'b) t -> 'b list
 end
 
-(*b Input/Output. *)
+(*bq Input/Output. *)
 module Io: sig
 
-  (*b C.f.
+  (*bq C.f.
       {link http://ocaml-extlib.googlecode.com/svn/doc/apiref/IO.html
       |IO} *)
   include module type of IO
@@ -93,7 +95,7 @@ module Io: sig
 end
 
 
-(*b The 
+(*bq The 
     {link http://martin.jambon.free.fr/easy-format-doc/Easy_format.html
     |Easy_format} library. *)
 module Easy_format: module type of Easy_format
@@ -148,13 +150,17 @@ caml2html -nf  -ext "b: brtx" -ext "i: echo ''" promiwag_std.mli
 {end}
 Or
 {code}
+mk() {
 echo "{bypass endofbigbypass}" > /tmp/caml2html.brtx
 sed '/^$/d' promiwag_std.mli | \
- caml2html -nf -inline -body -ext "b: brtx" -ext "i: echo ''" | \
+ caml2html -nf -inline -body -ext "b: brtx" -ext "i: echo ''" \
+  -ext "bq: cat > /tmp/ttt; echo '{quote|' > /tmp/uuu ; cat /tmp/ttt >> /tmp/uuu ; echo '}' >> /tmp/uuu ; brtx -i /tmp/uuu" | \
  sed -n '1h;1!H;${;g;s/<pre>[\n ]*<\/pre>//g;p;}' \
  >> /tmp/caml2html.brtx
 echo "{endofbi""gbypass}" >> /tmp/caml2html.brtx
 mv /tmp/caml2html.brtx module_std.brtx
+  echo Done
+}
 {end}
 (for the super-multi-line sed see 
 {link http://austinmatzko.com/2008/04/26/sed-multi-line-search-and-replace/
