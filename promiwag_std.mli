@@ -4,11 +4,9 @@
 {section 1|From The Libraries}
 *)
 
-(*b 
-{quote|
+(*bq
 {link http://caml.inria.fr/pub/docs/manual-ocaml/libref/Printf.html
 |Printf} from the standard library.
-}
 *)
 include module type of Printf
 
@@ -21,21 +19,18 @@ include module type of Printf
 *)
 include module type of Promiwag_Yaboon_PolyComp.CompAndNoPolyPhy
 
-(*bq Common {q|List} module. *)
+(*bq Common {q|List} module.
+It uses
+{link http://ocaml-extlib.googlecode.com/svn/doc/apiref/ExtList.List.html
+|ExtList.List}
+and
+{link http://caml.inria.fr/pub/docs/manual-ocaml/libref/ListLabels.html
+|ListLabels}.
+ *)
 module Ls: sig
-
-  (*bq C.f.
-    {link http://ocaml-extlib.googlecode.com/svn/doc/apiref/ExtList.List.html
-    |ExtList.List} *)
   include module type of ExtList.List
-    
-  (*bq C.f.
-      {link http://caml.inria.fr/pub/docs/manual-ocaml/libref/ListLabels.html
-      |ListLabels} *)
   include module type of ListLabels
-  
   val find_opt : f:('a -> bool) -> 'a list -> 'a option
-
 end
 val (@): 'a list -> 'a list -> 'a list
 
@@ -46,43 +41,34 @@ val (@): 'a list -> 'a list -> 'a list
 module Opt: module type of Option
 
 (*bq This module name voluntarily forbids the Str module of the str
-    library. *)
+    library.
+It uses
+{link http://ocaml-extlib.googlecode.com/svn/doc/apiref/ExtString.html
+|ExtString}
+and
+{link http://ocaml-extlib.googlecode.com/svn/doc/apiref/ExtString.String.html
+|ExtString.String}.
+ *)
 module Str: sig
-
-  (*bq C.f.
-      {link http://ocaml-extlib.googlecode.com/svn/doc/apiref/ExtString.html
-      |ExtString} *)
   include module type of ExtString
-
-  (*bq C.f.
-      {link http://ocaml-extlib.googlecode.com/svn/doc/apiref/ExtString.String.html
-      |ExtString.String} *)
   include module type of ExtString.String
   (* include module type of StringLabels *)
-    
   val multi_replace : str:string -> sub:string -> by:string -> string
-
 end
 
-(*bq Hash tables. *)
+(*bq Hash tables, from
+{link http://ocaml-extlib.googlecode.com/svn/doc/apiref/ExtHashtbl.Hashtbl.html
+|ExtHashtbl.Hashtbl}. *)
 module Ht: sig
-
-  (*bq C.f.
-      {link http://ocaml-extlib.googlecode.com/svn/doc/apiref/ExtHashtbl.Hashtbl.html
-      |ExtHashtbl.Hashtbl} *)
   include module type of ExtHashtbl.Hashtbl
   val find_opt : ('a, 'b) t -> 'a -> 'b option
   val value_list : ('a, 'b) t -> 'b list
 end
 
-(*bq Input/Output. *)
+(*bq Input/Output, also from Extlib:
+{link http://ocaml-extlib.googlecode.com/svn/doc/apiref/IO.html |IO}. *)
 module Io: sig
-
-  (*bq C.f.
-      {link http://ocaml-extlib.googlecode.com/svn/doc/apiref/IO.html
-      |IO} *)
   include module type of IO
-
   val open_in : string -> IO.input
   val open_out : string -> unit IO.output
   val stdout : unit output
@@ -91,7 +77,6 @@ module Io: sig
   val with_new_tmp :
     ?suffix:string ->
     ?prefix:string -> (unit output -> string -> 'a) -> 'a
-
 end
 
 
@@ -154,7 +139,7 @@ mk() {
 echo "{bypass endofbigbypass}" > /tmp/caml2html.brtx
 sed '/^$/d' promiwag_std.mli | \
  caml2html -nf -inline -body -ext "b: brtx" -ext "i: echo ''" \
-  -ext "bq: cat > /tmp/ttt; echo '{quote|' > /tmp/uuu ; cat /tmp/ttt >> /tmp/uuu ; echo '}' >> /tmp/uuu ; brtx -i /tmp/uuu" | \
+  -ext "bq: cat > /tmp/ttt; echo '{~}{b|•} ' > /tmp/uuu ; cat /tmp/ttt >> /tmp/uuu ; echo '' >> /tmp/uuu ; brtx -i /tmp/uuu" | \
  sed -n '1h;1!H;${;g;s/<pre>[\n ]*<\/pre>//g;p;}' \
  >> /tmp/caml2html.brtx
 echo "{endofbi""gbypass}" >> /tmp/caml2html.brtx
