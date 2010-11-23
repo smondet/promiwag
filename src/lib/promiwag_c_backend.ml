@@ -459,7 +459,7 @@ module Variable = struct
 end
 
 module Normal_string = struct
-  include String
+  include Str
   let str s = s
   let cat = concat ""
   let new_line () = "\n"

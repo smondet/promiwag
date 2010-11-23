@@ -2,6 +2,11 @@
 {header|{title|{t|Module Promiwag_std}}{subtitle|The Pervasived Module}}
 
 {section 1|From The Libraries}
+
+Instead of using directly modules from the standard library, extlib,
+or others. {i|Promiwag} tries to use renamed modules, enhanced and
+chosen in the right library.
+  
 *)
 
 (*bq
@@ -25,7 +30,8 @@ It uses
 |ExtList.List}
 and
 {link http://caml.inria.fr/pub/docs/manual-ocaml/libref/ListLabels.html
-|ListLabels}.
+|ListLabels}.{br}
+The {t|List} module is then forbidden.
  *)
 module Ls: sig
   include module type of ExtList.List
@@ -33,12 +39,13 @@ module Ls: sig
   val find_opt : f:('a -> bool) -> 'a list -> 'a option
 end
 val (@): 'a list -> 'a list -> 'a list
-
+module List: sig end
 
 (*bq The 
     {link http://ocaml-extlib.googlecode.com/svn/doc/apiref/Option.html
     |Option} module from Extlib. *)
 module Opt: module type of Option
+module Option: sig end
 
 (*bq This module name voluntarily forbids the Str module of the str
     library.
@@ -55,6 +62,7 @@ module Str: sig
   (* include module type of StringLabels *)
   val multi_replace : str:string -> sub:string -> by:string -> string
 end
+module String: sig end
 
 (*bq Hash tables, from
 {link http://ocaml-extlib.googlecode.com/svn/doc/apiref/ExtHashtbl.Hashtbl.html
@@ -64,6 +72,7 @@ module Ht: sig
   val find_opt : ('a, 'b) t -> 'a -> 'b option
   val value_list : ('a, 'b) t -> 'b list
 end
+module Hashtbl: sig end
 
 (*bq Input/Output, also from Extlib:
 {link http://ocaml-extlib.googlecode.com/svn/doc/apiref/IO.html |IO}. *)
@@ -78,7 +87,7 @@ module Io: sig
     ?suffix:string ->
     ?prefix:string -> (unit output -> string -> 'a) -> 'a
 end
-
+module IO: sig end
 
 (*bq The 
     {link http://martin.jambon.free.fr/easy-format-doc/Easy_format.html

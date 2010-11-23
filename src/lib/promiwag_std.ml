@@ -26,12 +26,13 @@ module Ls = struct
 
 end
 let (@) = ExtList.List.append
-
+module List = struct end
 
 (** c.f.
     {{:http://ocaml-extlib.googlecode.com/svn/doc/apiref/Option.html}
     Option} *)
 module Opt = Option
+module Option = struct end
 
 (** This module name voluntarily forbids the Str module of the str
     library *)
@@ -61,6 +62,7 @@ module Str = struct
     !s
 
 end
+module String = struct end
 
 (** Hash tables. *)
 module Ht = struct
@@ -75,6 +77,7 @@ module Ht = struct
 
   let value_list ht = Ls.of_enum (values ht)
 end
+module Hashtbl = struct end
 
 (** Input/Output. *)
 module Io = struct
@@ -107,7 +110,7 @@ module Io = struct
 
 
 end
-
+module IO = struct end
 
 module Environment = struct
 
@@ -224,7 +227,7 @@ let debug_mode: [`stdout | `silent ] ref = ref `stdout
 let debug s = 
   match !debug_mode with
   | `stdout -> 
-    (if s.[0] <> ' ' then printf "------\n%!"); printf "DEBUG| %s\n%!" s
+    (if Str.get s 0 <> ' ' then printf "------\n%!"); printf "DEBUG| %s\n%!" s
   | `silent -> ()
 
 let code s = sprintf "[[%s]]" s

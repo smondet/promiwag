@@ -213,9 +213,9 @@ module To_string = struct
     | Annot_alternative (`Why, s) -> 
       spr "%sWhy: %s" before (statement s)
   and statement ?(indent=0) =
-    let cur_indent = String.make indent ' ' in
-    let cat = String.concat "" in
-    let catmap f l = cat (List.map f l) in
+    let cur_indent = Str.make indent ' ' in
+    let cat = Str.concat "" in
+    let catmap f l = cat (Ls.map f l) in
     let assign a b = spr "%s%s := %s;\n" cur_indent a b in
     let prev_indent = indent in
     let indent = indent + 2 in

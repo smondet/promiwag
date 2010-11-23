@@ -3,7 +3,7 @@ open Promiwag_std
 
 
 module Normal_string = struct
-  include String
+  include Str
   let str s = s
   let cat = concat ""
   let new_line () = "\n"
@@ -117,7 +117,7 @@ module System = struct
     let bfeed buf command data = kfeed (Buffer.add_char buf) command data
       
     let str command data = 
-      let buf = Buffer.create (2 * String.length data) in
+      let buf = Buffer.create (2 * Str.length data) in
       bfeed buf command data;
       Buffer.contents buf
   end
