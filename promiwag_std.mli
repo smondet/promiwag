@@ -78,11 +78,11 @@ module Hashtbl: sig end
 {link http://ocaml-extlib.googlecode.com/svn/doc/apiref/IO.html |IO}. *)
 module Io: sig
   include module type of IO
-  val open_in : string -> IO.input
-  val open_out : string -> unit IO.output
+  val open_in : string -> input
+  val open_out : string -> unit output
   val stdout : unit output
-  val with_file_out : string -> (unit IO.output -> 'a) -> 'a
-  val with_file_in : string -> (IO.input -> 'a) -> 'a
+  val with_file_out : string -> (unit output -> 'a) -> 'a
+  val with_file_in : string -> (input -> 'a) -> 'a
   val with_new_tmp :
     ?suffix:string ->
     ?prefix:string -> (unit output -> string -> 'a) -> 'a
