@@ -29,8 +29,9 @@ reinstall_library:  $(LIB_TO_INSTALL) META
     ocamlfind remove $(LIB_NAME)
     ocamlfind install $(LIB_NAME) META *.cm[iox] $(LIB_TO_INSTALL)
 
-index.html: $(LIB_NAME).cma 
+$(LIBREF_DIR)/index.html: $(LIB_NAME).cma 
     ocamlfind ocamldoc -package extlib,easy-format \
-      -d . -t "Promiwag Library"   -html -colorize-code *.ml -sort -I .
+      -d $(LIBREF_DIR) -t "Promiwag Library"   -html -colorize-code *.ml -sort -I .
 
-doc_library: index.html
+doc_library: $(LIBREF_DIR)/index.html
+
