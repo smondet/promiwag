@@ -3,7 +3,7 @@
 
 .PHONY: clean update_externals \
  install_library reinstall_library uninstall_library \
- doc doc_site doc_library web_site
+ doc whole_doc doc_library web_site
 
 USE_OCAMLFIND = true
 
@@ -45,7 +45,12 @@ vmount(-l, src/lib, _build/lib)
 vmount(-l, src/app, _build/app)
 
 LIBREF_DIR=$(dir _build/doc/libref/)
-doc: doc_library
+whole_doc: doc_library doc_site
+
+doc:
+  dbw  -persist-with _build/dbw_persistance \
+      -named-template right_pane_redish-linked \
+      doc _build/doc
 
 .SUBDIRS: _build/lib _build/app # _build/doc/
 
