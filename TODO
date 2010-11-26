@@ -5,7 +5,10 @@ BUGS:
 
 TEST:
 
-- check '<=' Vs '<' (former bug with TCP only-ack packets "20 < 20")
+Should forge a full test to check everything.
+- check limits of buffer sizes (false alarms? c.f. wiki page:Main)
+- easy checks of a values (one packet is 00110011..., the next
+  000111000111, ...)
 
 FEATURES:
 
