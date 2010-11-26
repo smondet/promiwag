@@ -559,12 +559,6 @@ let make_clean_protocol_stack handling_style to_open =
 
     (* Testing code: *)
     let light_handler_list = [
-      ( Standard_protocols.ethernet, [], fun _ -> (Do.nop, Expr.t));
-      ( Standard_protocols.arp, [], fun _ -> (Do.nop, Expr.t));
-      ( Standard_protocols.gre, [], fun _ -> (Do.nop, Expr.t));
-      ( Promiwag_standard_protocols.ipv4,[], fun _ -> (Do.nop, Expr.t));
-      ( Promiwag_standard_protocols.dhcp,[], fun _ -> (Do.nop, Expr.t));
-      ( Promiwag_standard_protocols.dns,[], fun _ -> (Do.nop, Expr.t));
       ( Promiwag_standard_protocols.udp,
         [ `pointer "udp_payload"; `size "udp_payload"; ],
         function [b; s] ->
