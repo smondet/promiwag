@@ -47,10 +47,24 @@ vmount(-l, src/app, _build/app)
 LIBREF_DIR=$(dir _build/doc/libref/)
 whole_doc: doc_library doc_site
 
-doc:
+doc: doc/module_std.brtx
   dbw  -persist-with _build/dbw_persistance \
       -named-template right_pane_redish-linked \
       doc _build/doc
+
+# The only difference with the `shell' version is the double dollars: $$
+# in sed expressions.
+doc/module_std.brtx: promiwag_std.mli
+  echo "{bypass endofbigbypass}" > /tmp/caml2html.brtx
+  sed '/^$$/d' promiwag_std.mli | \
+   caml2html -nf -inline -body -ext "b: brtx" -ext "i: echo ''" \
+    -ext "bq: cat > /tmp/ttt; echo '{~}{b|•} ' > /tmp/uuu ; cat /tmp/ttt >> /tmp/uuu ; echo '' >> /tmp/uuu ; brtx -i /tmp/uuu" | \
+   sed -n '1h;1!H;$${;g;s/<pre>[\n ]*<\/pre>//g;p;}' \
+   >> /tmp/caml2html.brtx
+  echo "{endofbi""gbypass}" >> /tmp/caml2html.brtx
+  mv /tmp/caml2html.brtx doc/module_std.brtx
+
+
 
 .SUBDIRS: _build/lib _build/app # _build/doc/
 
