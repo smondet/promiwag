@@ -425,7 +425,7 @@ module Automata_generator = struct
   let automata_block protocol_stack handler packet_expression =
 
     let compiler = 
-      {todo_queue = FIFO.of_list handler.protocol_handlers;
+      {todo_queue = FIFO.empty ();
        protocol_stack = protocol_stack;
        handler = handler;
        var_current_packet = Var.pointer "current_packet_pointer";
@@ -439,6 +439,10 @@ module Automata_generator = struct
        while_name = Unique.name "protocol_stack_while";
       } in
 
+    (* We start by trying the "entrance" protocol, then the user's ones. *)
+    FIFO.push_list compiler.todo_queue
+      ((find_handler compiler handler.initial_protocol)
+       :: handler.protocol_handlers);
     FIFO.consume compiler.todo_queue ~f:(try_compile_handler compiler);
 
     let before_the_while =
@@ -500,7 +504,7 @@ module Automata_generator = struct
                        ~statement_then:(get_out_statement compiler))
                     Do.nop
                 ]))
-           in
+    in
     before_the_while
     @ [Do.while_loop ~name:compiler.while_name while_condition while_block]
       
