@@ -1,0 +1,71 @@
+{header|{title|Promiwag}{subtitle|Build & Install}}
+
+{section 1|With GODI}
+
+{section 2|Standard GODI Bootstrap}
+
+Get GODI's RocketBoost from
+{link http://godi.camlcity.org/godi/index.html
+|the official site}, unpack it somewhere, and go to that directory.
+Just pick an empty directory like {t|$HOME/usr/godi312}.
+It should
+work with OCaml 3.11, or 3.10 too (but not tested recently).
+{code}
+./bootstrap --prefix $HOME/usr/godi312 --section 3.12
+{end}
+Add {t|$HOME/usr/godi312/bin} and {t|$HOME/usr/godi312/sbin} to
+the {t|$PATH}. Then do the stage 2:
+{code}
+./bootstrap_stage2 
+{end}
+
+{section 2|Install Promiwag's Dependencies}
+
+To compile the Promiwag library, you need:
+{code}
+godi_console perform \
+    -build godi-extlib \
+    -build godi-easy-format \
+    -build godi-omake
+{end}
+{p}
+
+The minimal stuff to prove the theorems on Promiwag's output is:
+{code}
+godi_console perform \
+    -option godi-ocamlgraph:GODI_OCAMLGRAPH_VIEkkWER=no \
+    -build apps-alt-ergo \
+    -option apps-why:CONF_WHY_USE_COQ=no \
+    -option apps-why:CONF_WHY_ENABLE_GUI=no \
+    -option apps-why:CONF_WHY_FRAMAC_PLUGIN=no \
+    -option apps-why:CONF_WHY_USE_ZENON=no \
+    -build apps-why
+{end}
+{p}
+
+But if we don't care about the compilation time:
+{code}
+godi_console perform \
+    -option apps-coq:CONF_COQ_DOCUMENTATION=no \
+    -option apps-why:CONF_WHY_FRAMAC_PLUGIN=no \
+    -build apps-alt-ergo \
+    -build apps-why
+{end}
+{i|Achtung!} This will track quite a lot of dependencies (LablGTK
+stuff, and the whole Coq framework which takes long to compile).
+
+{section 2|Get MLpcap for Testing}
+
+To test the OCaml output, we need
+{link http://www.drugphish.ch/~jonny/mlpcap.html |MLpcap} which is not in GODI.
+I got
+{link https://launchpad.net/ubuntu/+source/mlpcap |mlpcap Ubuntu's package},
+and:
+{code}
+dpkg -X libmlpcap-ocaml-dev_0.9-14build1_amd64.deb libmlpcap
+cd ./libmlpcap/usr/lib/ocaml/pcap
+ocamlfind install pcap *
+ocamlfind ocamlopt -package pcap -linkpkg pcap.cmxa pcap_loop.ml
+{end}
+(don't know why {t|pcap.cmxa} is needed).
+
