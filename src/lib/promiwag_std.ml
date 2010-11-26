@@ -164,6 +164,7 @@ end
 module FIFO = struct
   type 'a t = 'a Queue.t
 
+  let empty () = Queue.create ()
   let of_list l =
     let t = Queue.create () in
     Ls.iter l ~f:(fun e ->
@@ -173,6 +174,10 @@ module FIFO = struct
 
   let push t e = Queue.add e t
   let pop t = try Some (Queue.take t) with Queue.Empty -> None
+  let push_list t l =
+    Ls.iter l ~f:(fun e ->
+      Queue.add e t;
+    )
 
   let rec consume ~f t =
     match pop t with
