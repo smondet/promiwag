@@ -2,8 +2,6 @@
 To do:
 
 BUGS:
-- ( Standard_protocols.ethernet, [], fun _ -> (Do.nop, Expr.t));
-  are still needed
 
 TEST:
 
