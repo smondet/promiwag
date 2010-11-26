@@ -97,6 +97,7 @@ module Easy_format: module type of Easy_format
 
 (*b {section 1|New modules} *)
 
+(*bq A Stack of Maps. *)
 module Environment : sig
   type ('a, 'b) environment
   type ('a, 'b) t = ('a, 'b) environment
@@ -113,24 +114,30 @@ module Environment : sig
     reduce:('c list -> 'd) -> ('a, 'b) environment -> 'd list
 end
 
+(*bq This is actually a wrapper around the {t|Queue} module of the stdlib. *)
 module FIFO : sig
   type 'a t
+  val empty: unit -> 'a t
   val of_list : 'a list -> 'a t
   val push : 'a t -> 'a -> unit
   val pop : 'a t -> 'a option
+  val push_list : 'a t -> 'a list -> unit
   val consume : f:('a -> 'b) -> 'a t -> unit
 end
 
+(*bq Imperatively returns unique identifiers. *)
 module Unique : sig
   val name : string -> string
   val int : unit -> int
 end
 
+(*bq Associate integers to strings (for now it is not a hash; it is
+     kind of {q|bijective}). *)
 module Hash : sig
   val string : string -> int 
 end
 
-
+(*bq Debug printf-ing. *)
 val ( $ ) : ('a -> 'b) -> 'a -> 'b
 val debug_mode : [ `silent | `stdout ] ref
 val debug : string -> unit
