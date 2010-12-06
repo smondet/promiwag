@@ -3,7 +3,7 @@
 
 .PHONY: clean update_externals \
  install_library reinstall_library uninstall_library \
- doc whole_doc doc_library web_site
+ doc whole_doc doc_library doc_site
 
 USE_OCAMLFIND = true
 
@@ -47,6 +47,7 @@ vmount(-l, doc/, _build/doc/)
 
 LIBREF_DIR=$(dir _build/doc/libref/)
 whole_doc: doc_library doc_site
+doc: doc_site # Just for convenience
 
 .SUBDIRS: _build/lib _build/app _build/doc/
 
