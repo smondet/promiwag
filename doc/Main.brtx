@@ -2,6 +2,18 @@
 
 {section|Links}
 
-{link ./libref/index.html |OCamldoc-Generated documentation}.
+From here:
+{begin list}
+{*} The
+{link ./libref/index.html |OCamldoc-Generated documentation} of the library.
+{*} Some {link page:Build |building instructions}.
+{*} Specially generated documentations:
+  {begin list}
+  {*} The {link page:module_std |documentation of the
+  {t|Promiwag_std}} module.
+  {*} The {link page:stiel_interface |quick reference/cheat-sheet}
+  about the interface of {b|STIEL}.
+  {end}
+{end}
 
 
