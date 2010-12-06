@@ -47,7 +47,7 @@ vmount(-l, src/app, _build/app)
 LIBREF_DIR=$(dir _build/doc/libref/)
 whole_doc: doc_library doc_site
 
-doc: doc/module_std.brtx
+doc: doc/module_std.brtx doc/stiel_interface.brtx
   dbw  -persist-with _build/dbw_persistance \
       -named-template right_pane_redish-linked \
       doc _build/doc
@@ -64,7 +64,23 @@ doc/module_std.brtx: promiwag_std.mli
   echo "{endofbi""gbypass}" >> /tmp/caml2html.brtx
   mv /tmp/caml2html.brtx doc/module_std.brtx
 
-
+doc/stiel_interface.brtx: reinstall_library
+  echo "include Promiwag_stiel.Standard_renaming;;" | \
+    ocamlrun ocaml -init tools/initocaml.ml > /tmp/stiel_lang.ml
+  tail -n +13 /tmp/stiel_lang.ml | sed 's/Promiwag_stiel.Definition.//g' > /tmp/tt.ml
+  echo "{begin t}" > doc/stiel_interface.brtx
+  cat /tmp/tt.ml \
+    | sed 's/sig//g' \
+    | sed 's/end//g' \
+    | sed 's/#//g' \
+    | sed 's/\([{}]\)/{\1}/g' \
+    | sed 's/\(| [^`]\)/{br}\1/g' \
+    | sed 's/ type /{br}{b|type} /g' \
+    | sed 's/ and /{br}{b|and} /g' \
+    | sed 's/ val /{br}{b|val} /g' \
+    | sed 's/\(module[a-zA-Z_ ]\+\):/{section|\1}/g' \
+    >> doc/stiel_interface.brtx
+  echo "{end}" >> doc/stiel_interface.brtx
 
 .SUBDIRS: _build/lib _build/app # _build/doc/
 
