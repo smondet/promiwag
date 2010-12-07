@@ -424,7 +424,9 @@ let print_the_internet () =
     (Promiwag.Protocol_stack.To_string.protocol_stack the_internet);
   ()
 
-let make_clean_protocol_stack handling_style =
+let make_clean_protocol_stack
+    ~create_access_checks_for_pointers
+    ~handling_style =
   let module Stiel = Promiwag.Stiel in
   let module Expr = Stiel.Expression in
   let module Var = Stiel.Variable in
@@ -592,7 +594,9 @@ let make_clean_protocol_stack handling_style =
             Do.log "===== New Packet =====\n" []
            else 
             Do.nop)
-          :: (Generator.automata_block the_internet stack_handler packet)) in
+          :: (Generator.automata_block
+                ~create_access_checks_for_pointers
+                the_internet stack_handler packet)) in
 
     (* printf "Automata Block:\n%s\n" (Stiel_to_str.statement automata_block); *)
     
@@ -635,9 +639,11 @@ let make_clean_protocol_stack handling_style =
   (c_pcap_capture_app, why_checkable_program, 
    ocaml_function ^ ocaml_pcap_capture)
 
-let test_clean_protocol_stack handling () =
+let test_clean_protocol_stack
+    ~create_access_checks_for_pointers ~handling_style () =
   let (full_test_c_file, why_checkable_program, ocaml_function) =
-    make_clean_protocol_stack handling in
+    make_clean_protocol_stack 
+      ~create_access_checks_for_pointers ~handling_style in
 
   let pcap_prefix = System.tmp "pcap_procotol_parser" in
   let c_file = sprintf "%s.c" pcap_prefix in
@@ -665,6 +671,8 @@ let test_clean_protocol_stack handling () =
   ()
 
 let test_clean_protocol_stack_c_bench
+    ~create_access_checks_for_pointers
+    ~handling_style
     ?(allfiles=false) pcap_dir times testname () =
   let chronometer ?(times=1) ~f () =
     (* let time = Sys.time in *)
@@ -714,7 +722,9 @@ let test_clean_protocol_stack_c_bench
         (name, f, time))
   in
   let do_parsing style str_style =
-    let c_content, _, _ = make_clean_protocol_stack style in
+    let c_content, _, _ =
+      make_clean_protocol_stack 
+        ~create_access_checks_for_pointers ~handling_style:style in
     do_c_file c_content str_style in
 
   let resempty = do_c_file empty_c_pcap_capture_app "Empty" in
@@ -794,7 +804,9 @@ let test_clean_protocol_stack_c_bench
   printf "\n\n%s\n%s\n" brtx_table mixstats;
   ()
 
-let test_proving () =
+let test_proving 
+    ~create_access_checks_for_pointers
+    ~handling_style () =
   let module Stacks = Test_protocol_stacks in
   let dir_prefix = 
     let dir = 
@@ -836,7 +848,10 @@ let test_proving () =
     (fun () -> printf "=== Test '%s':\n%s\n" name str_result;)
   in
   let recap =
-    let (_, why_cps, _) =  make_clean_protocol_stack `full in
+    let (_, why_cps, _) = 
+      make_clean_protocol_stack
+        ~create_access_checks_for_pointers
+        ~handling_style in
     Ls.map do_bench [
       ("clean_ps", fun () ->  why_cps);
       ("right_1",  fun () ->  Stacks.make_why (Stacks.right_1 ()));
@@ -931,6 +946,7 @@ let () =
   let opt_pcap_dir = ref "./datatmp/pcap/" in
   let opt_test_name = ref "Test" in
   let opt_handling_style = ref "full" in
+  let opt_create_access_checks_for_pointers = ref false in
   let options = [
     arg_command "-iterations"
       ~doc:(sprintf
@@ -953,31 +969,45 @@ let () =
               (default: %s)."
               !opt_handling_style)
       (Arg.Set_string opt_handling_style);
+    arg_command "-create-access-checks-for-pointers"
+      ~doc:"\n\tCreate buffer accessing checks even \
+            when only a pointer is requested."
+      (Arg.Set opt_create_access_checks_for_pointers);
 
   ] in
-  let usage = sprintf "%s [options] [testnames]" Sys.argv.(0) in
+  let usage = sprintf "%s [-help | OPTIONS] test1 test2" Sys.argv.(0) in
 
   if Array.length Sys.argv <= 1 then
-    printf "Nothing to do\n"
+    printf "Nothing to do?\nUsage: %s\n" usage
   else (
+    let tests_to_do = annonymous options usage in
+    let create_access_checks_for_pointers =
+      !opt_create_access_checks_for_pointers in
+    let handling_style =
+      match !opt_handling_style with
+      | "full"  -> `full 
+      | "light" -> `light
+      | "muted" -> `muted
+      | s -> failwith (sprintf "Unknown handling style: %s" s) in
+    
     (* Printexc.record_backtrace true; *)
-    Ls.iter (annonymous options usage) 
+    Ls.iter tests_to_do
       ~f:(function
-        | "base" -> test_c_ast ()
-        | "cps" ->
+        | "C-AST" -> test_c_ast ()
+        | "CPS" ->
           test_clean_protocol_stack
-            (match !opt_handling_style with
-            | "full"  -> `full 
-            | "light" -> `light
-            | "muted" -> `muted
-            | s -> failwith (sprintf "Unknown handling style: %s" s)) () 
+            ~create_access_checks_for_pointers
+            ~handling_style ()
         | "cbench" -> 
           test_clean_protocol_stack_c_bench
+            ~create_access_checks_for_pointers
+            ~handling_style
             !opt_pcap_dir !opt_iterations !opt_test_name ()
         | "minpars" -> test_minimal_parsing_code ()
         | "pi" -> print_the_internet ()
         | "why" -> test_why_output ()
-        | "prove" -> test_proving ()
+        | "prove" -> 
+          test_proving () ~create_access_checks_for_pointers ~handling_style
         | s -> failwith (sprintf "Unknown test: %s\n" s))
     (* Printexc.print test ();  *)
   );
