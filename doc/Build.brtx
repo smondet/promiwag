@@ -8,8 +8,10 @@ Get GODI's RocketBoost from
 {link http://godi.camlcity.org/godi/index.html
 |the official site}, unpack it somewhere, and go to that directory.
 Just pick an empty directory like {t|$HOME/usr/godi312}.
-It should
-work with OCaml 3.11, or 3.10 too (but not tested recently).
+Promiwag itself should
+work with OCaml 3.11, or 3.10 too (not tested recently) but
+these old GODI sections do not provide the right versions of the
+proving tools (e.g. we need Why >= 2.27).
 {code}
 ./bootstrap --prefix $HOME/usr/godi312 --section 3.12
 {end}
