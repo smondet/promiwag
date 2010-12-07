@@ -609,8 +609,8 @@ module To_why_string = struct
       | Int_binop_add     ->   "+" 
       | Int_binop_sub     ->   "-" 
       | Int_binop_mul     ->   "*" 
-      | Int_binop_div     ->   "/" 
-      | Int_binop_mod     ->   "%" 
+      | Int_binop_div     ->   "computer_div_" 
+      | Int_binop_mod     ->   "computer_mod_" 
       | Int_binop_bin_and -> "bin_land"
       | Int_binop_bin_or  -> "bin_lor" 
       | Int_binop_bin_xor -> "bin_xor" 
@@ -660,8 +660,8 @@ module To_why_string = struct
     | Int_binop_add     -> true 
     | Int_binop_sub     -> true 
     | Int_binop_mul     -> true 
-    | Int_binop_div     -> true 
-    | Int_binop_mod     -> true 
+    | Int_binop_div     -> false
+    | Int_binop_mod     -> false
     | Int_binop_bin_and -> false
     | Int_binop_bin_or  -> false
     | Int_binop_bin_xor -> false
@@ -866,7 +866,8 @@ module To_why_string = struct
         (kwd compiler "let statement () =") [
           kwd compiler (sprintf "{ %s >= 0 }" packet_length_parameter);
           statement compiler s] in
-    (sprintf "%s\n\
+    (sprintf "include \"divisions.why\"\n\
+              %s\n\
               parameter bin_mod : a:int -> b:int -> {} int { 0 <= result <= b }\n\
               parameter bin_land: a:int -> b:int -> {} int { 0 <= result }\n\
               parameter bin_lor : a:int -> b:int -> {} int { 0 <= result }\n\
