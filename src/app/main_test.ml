@@ -947,6 +947,7 @@ let () =
   let opt_test_name = ref "Test" in
   let opt_handling_style = ref "full" in
   let opt_create_access_checks_for_pointers = ref false in
+  let opt_list_tests = ref false in
   let options = [
     arg_command "-iterations"
       ~doc:(sprintf
@@ -973,6 +974,9 @@ let () =
       ~doc:"\n\tCreate buffer accessing checks even \
             when only a pointer is requested."
       (Arg.Set opt_create_access_checks_for_pointers);
+    arg_command "-list-tests"
+      ~doc:"\n\tList available tests to call."
+      (Arg.Set opt_list_tests);
 
   ] in
   let usage = sprintf "%s [-help | OPTIONS] test1 test2" Sys.argv.(0) in
@@ -990,25 +994,32 @@ let () =
       | "muted" -> `muted
       | s -> failwith (sprintf "Unknown handling style: %s" s) in
     
-    (* Printexc.record_backtrace true; *)
+    let tests_doable = [
+      ("C-AST", "Some old stuff about generating C code", test_c_ast);
+      ("CPS", "Generate a Clean Protocol Stack",
+       test_clean_protocol_stack
+         ~create_access_checks_for_pointers
+         ~handling_style);
+      ("C-bench", "Do a benchmark of generated C code", 
+       test_clean_protocol_stack_c_bench
+         ~create_access_checks_for_pointers
+         ~handling_style
+         !opt_pcap_dir !opt_iterations !opt_test_name);
+      ("MinPars", "Generate some minimal parsing code (prints Stiel code)",
+       test_minimal_parsing_code);
+      ("PI", "Print the Internet ...", print_the_internet);
+      ("why","Some old why output", test_why_output);
+      ("Prove", "Launch the proving on a few `borderline' tests", 
+       test_proving ~create_access_checks_for_pointers ~handling_style);
+    ] in
+    if !opt_list_tests then
+      Ls.iter tests_doable ~f:(fun (n, d, _) -> printf "  * %s: %s\n" n d);
     Ls.iter tests_to_do
-      ~f:(function
-        | "C-AST" -> test_c_ast ()
-        | "CPS" ->
-          test_clean_protocol_stack
-            ~create_access_checks_for_pointers
-            ~handling_style ()
-        | "cbench" -> 
-          test_clean_protocol_stack_c_bench
-            ~create_access_checks_for_pointers
-            ~handling_style
-            !opt_pcap_dir !opt_iterations !opt_test_name ()
-        | "minpars" -> test_minimal_parsing_code ()
-        | "pi" -> print_the_internet ()
-        | "why" -> test_why_output ()
-        | "prove" -> 
-          test_proving () ~create_access_checks_for_pointers ~handling_style
-        | s -> failwith (sprintf "Unknown test: %s\n" s))
-    (* Printexc.print test ();  *)
+      ~f:(fun name ->
+        let f (n, _, _) = Str.lowercase n = Str.lowercase name in
+        match Ls.find_opt tests_doable ~f with
+        | Some (_, _, f) -> f ()
+        | None ->
+          printf "Unknown test: %s\n" name)
   );
   ()
