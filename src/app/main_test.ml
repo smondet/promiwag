@@ -424,7 +424,7 @@ let print_the_internet () =
     (Promiwag.Protocol_stack.To_string.protocol_stack the_internet);
   ()
 
-let make_clean_protocol_stack handling_style to_open =
+let make_clean_protocol_stack handling_style =
   let module Stiel = Promiwag.Stiel in
   let module Expr = Stiel.Expression in
   let module Var = Stiel.Variable in
@@ -635,9 +635,9 @@ let make_clean_protocol_stack handling_style to_open =
   (c_pcap_capture_app, why_checkable_program, 
    ocaml_function ^ ocaml_pcap_capture)
 
-let test_clean_protocol_stack handling dev () =
+let test_clean_protocol_stack handling () =
   let (full_test_c_file, why_checkable_program, ocaml_function) =
-    make_clean_protocol_stack handling dev in
+    make_clean_protocol_stack handling in
 
   let pcap_prefix = System.tmp "pcap_procotol_parser" in
   let c_file = sprintf "%s.c" pcap_prefix in
@@ -714,7 +714,7 @@ let test_clean_protocol_stack_c_bench
         (name, f, time))
   in
   let do_parsing style str_style =
-    let c_content, _, _ = make_clean_protocol_stack style "" in
+    let c_content, _, _ = make_clean_protocol_stack style in
     do_c_file c_content str_style in
 
   let resempty = do_c_file empty_c_pcap_capture_app "Empty" in
@@ -836,7 +836,7 @@ let test_proving () =
     (fun () -> printf "=== Test '%s':\n%s\n" name str_result;)
   in
   let recap =
-    let (_, why_cps, _) =  make_clean_protocol_stack `full "dummy" in
+    let (_, why_cps, _) =  make_clean_protocol_stack `full in
     Ls.map do_bench [
       ("clean_ps", fun () ->  why_cps);
       ("right_1",  fun () ->  Stacks.make_why (Stacks.right_1 ()));
@@ -919,25 +919,66 @@ let test_why_output () =
 
 
 let () =
-  printf "Promiwag's main test.\n";
+  let arg_command ~doc key spec = (key, spec, doc) in
+
+  let annonymous commands usage =
+    let anons = ref [] in
+    let anon_fun s = anons := s :: !anons in
+    Arg.parse commands anon_fun usage;
+    Ls.rev !anons   in
+
+  let opt_iterations = ref 1 in
+  let opt_pcap_dir = ref "./datatmp/pcap/" in
+  let opt_test_name = ref "Test" in
+  let opt_handling_style = ref "full" in
+  let options = [
+    arg_command "-iterations"
+      ~doc:(sprintf
+              "<number>\n\tNumber of iterations for benchmarks (default: %d)."
+              !opt_iterations)
+      (Arg.Set_int opt_iterations);
+    arg_command "-pcap-dir"
+      ~doc:(sprintf 
+              "<path>\n\tDirectory contain PCap files to process (default: %s)."
+              !opt_pcap_dir)
+      (Arg.Set_string opt_pcap_dir);
+    arg_command "-test-name"
+      ~doc:(sprintf 
+              "<name>\n\tName to give to the test (default: %s)."
+              !opt_test_name)
+      (Arg.Set_string opt_test_name);
+    arg_command "-handling-style"
+      ~doc:(sprintf 
+              "<name>\n\tSpecify user request: full, muted, or light \
+              (default: %s)."
+              !opt_handling_style)
+      (Arg.Set_string opt_handling_style);
+
+  ] in
+  let usage = sprintf "%s [options] [testnames]" Sys.argv.(0) in
+
   if Array.length Sys.argv <= 1 then
     printf "Nothing to do\n"
   else (
     (* Printexc.record_backtrace true; *)
-    let test =
-      match Sys.argv.(1) with
-      | "base" -> test_c_ast
-      | "cps" -> test_clean_protocol_stack `full (try Sys.argv.(2) with _ -> "")
-      | "cbench" -> 
-        test_clean_protocol_stack_c_bench
-          Sys.argv.(2) (int_of_string Sys.argv.(3)) Sys.argv.(4)
-      | "minpars" -> test_minimal_parsing_code
-      | "pi" -> print_the_internet
-      | "why" -> test_why_output
-      | "prove" -> test_proving
-      | s -> failwith (sprintf "Unknown test: %s\n" s)
-    in
-    Printexc.print test (); 
+    Ls.iter (annonymous options usage) 
+      ~f:(function
+        | "base" -> test_c_ast ()
+        | "cps" ->
+          test_clean_protocol_stack
+            (match !opt_handling_style with
+            | "full"  -> `full 
+            | "light" -> `light
+            | "muted" -> `muted
+            | s -> failwith (sprintf "Unknown handling style: %s" s)) () 
+        | "cbench" -> 
+          test_clean_protocol_stack_c_bench
+            !opt_pcap_dir !opt_iterations !opt_test_name ()
+        | "minpars" -> test_minimal_parsing_code ()
+        | "pi" -> print_the_internet ()
+        | "why" -> test_why_output ()
+        | "prove" -> test_proving ()
+        | s -> failwith (sprintf "Unknown test: %s\n" s))
+    (* Printexc.print test ();  *)
   );
-  printf "\nDone.\n";
   ()
