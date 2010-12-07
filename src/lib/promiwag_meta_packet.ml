@@ -467,6 +467,7 @@ module Parser_generator = struct
       stage_1: Stage_1.result;
       compiled_entities: (string, compiled_entity) Ht.t;
       variable_creation_preference: variable_creation_preference;
+      create_access_checks_for_pointers: bool;
       mutable location: string option;
     }
         
@@ -741,14 +742,17 @@ module Parser_generator = struct
           else
             Expr.add (Expr.to_unat (fst entity.buffer_access))
               (Expr.unat ((type_bits - 1) / 8)) in
-        let statements = 
+        let statements =
           [Do.cmt (sprintf 
-                        "Checking buffer-access of field %s against packet size."
-                        entity.stage_1_expression.Stage_1.s1_field);
+                     "Checking buffer-access of field %s against packet size."
+                     entity.stage_1_expression.Stage_1.s1_field);
            Do.conditional (Expr.le size_expr bufacc_expr)
-             ~statement_then:(escape_block size_expr bufacc_expr); ] in
-        statements
-        
+             ~statement_then:(escape_block size_expr bufacc_expr); ]
+        in
+        if compiler.create_access_checks_for_pointers then
+          statements
+        else
+          (if type_bits <> 0 then statements else [])
 
     let get_variables_and_size_checks
         compiler entities size_expression_option escape_block  = 
@@ -776,12 +780,14 @@ module Parser_generator = struct
         ~(packet:Stiel_types.typed_expression)
         ?(packet_size:Stiel_types.typed_expression option)
         ?(on_size_error:size_error_handler option)
+        ?(create_access_checks_for_pointers=false)
         ~(make_user_block: Stiel_types.typed_expression list -> 
           Stiel_types.statement list) () =
 
       let compiler = 
         {stage_1 = stage_1; variable_creation_preference = create_variables;
-         compiled_entities = Ht.create 42; location = None} in
+         compiled_entities = Ht.create 42; location = None;
+         create_access_checks_for_pointers } in
      
       let ordered_entities =
         Ls.map compiler.stage_1.Stage_1.compiled_expressions 

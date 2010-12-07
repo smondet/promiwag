@@ -182,6 +182,7 @@ module Automata_generator = struct
     format_values_ht: (string, STIEL.typed_expression) Ht.t;
     compiled_handlers: (string, STIEL.statement) Ht.t;
     while_name: string;
+    create_access_checks_for_pointers: bool;
   }
 
   let int_expression_for_format compiler format =
@@ -402,6 +403,8 @@ module Automata_generator = struct
       :: (Packet_parsing.Stage_2_stiel.informed_block
             ~on_size_error
             ~create_variables:`for_all
+            ~create_access_checks_for_pointers:
+              compiler.create_access_checks_for_pointers
             ~stage_1 ~packet ?packet_size ~make_user_block ())
     in
     Ht.add compiler.compiled_handlers format (Do.block statements);
@@ -422,7 +425,9 @@ module Automata_generator = struct
         end
       | Some _ -> ()
 
-  let automata_block protocol_stack handler packet_expression =
+  let automata_block
+      ?(create_access_checks_for_pointers=false)
+      protocol_stack handler packet_expression =
 
     let compiler = 
       {todo_queue = FIFO.empty ();
@@ -437,6 +442,7 @@ module Automata_generator = struct
        format_values_ht = Ht.create 42;
        compiled_handlers = Ht.create 42;
        while_name = Unique.name "protocol_stack_while";
+       create_access_checks_for_pointers;
       } in
 
     (* We start by trying the "entrance" protocol, then the user's ones. *)
