@@ -9,6 +9,7 @@ From here:
 {*} Some {link page:Build |building instructions}.
 {*} Specially generated documentations:
   {begin list}
+  {*} The {link page:main_test |command line arguments} of {t|promiwag_test}
   {*} The {link page:module_std |documentation of the
   {t|Promiwag_std}} module.
   {*} The {link page:stiel_interface |quick reference/cheat-sheet}
