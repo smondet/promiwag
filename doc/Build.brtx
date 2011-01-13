@@ -53,8 +53,13 @@ godi_console perform \
     -build apps-alt-ergo \
     -build apps-why
 {end}
-{i|Achtung!} This will track quite a lot of dependencies (LablGTK
-stuff, and the whole Coq framework which takes long to compile).
+{i|Achtung!} This will track quite a lot of
+dependencies {---} e.g. the LablGTK
+stuff, and the whole Coq framework which takes long to compile,
+on Ubuntu, I had to {i|apt-get} at least:
+{code}
+apt-get install libgtkgl2.0-dev glutg3-dev tk8.4-dev libxmu-dev
+{end}
 
 {section 2|Get MLpcap for Testing}
 
