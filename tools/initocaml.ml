@@ -1,10 +1,10 @@
 
 #use "topfind";;
 
-#require "promiwag"
+#require "promiwag";;
 
-open Promiwag_std;;
 open Promiwag;;
+open Promiwag_std;;
 
 module Ex = Stiel.Expression;;
 module Var = Stiel.Variable;;

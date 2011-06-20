@@ -1,6 +1,6 @@
 
 doc_site: Build.brtx  Main.brtx module_std.brtx stiel_interface.brtx main_test.brtx
-  dbw -exclude ".*libref.*" -persist-with dbw_persistance \
+  dbw wiki -exclude ".*libref.*" -persist-with dbw_persistance \
       -named-template right_pane_redish-linked \
       . .
 
@@ -34,17 +34,17 @@ stiel_interface.brtx: reinstall_library
     >> stiel_interface.brtx
   echo "{end}" >> stiel_interface.brtx
 
-main_test.brtx: ../../promiwag_test
+main_test.brtx: ../app/promiwag_test
   echo "{header|{title|Usage of {t|promiwag_test}}}" > main_test.brtx
   echo "{b|Usage:}{br}{t|" >> main_test.brtx
-  ../../promiwag_test -help | head -n 1 | \
+  ../app/promiwag_test -help | head -n 1 | \
     sed 's/.*\(promiwag_test\)/\1/' >> main_test.brtx
   echo "}{br}{b|Command Line Options:}{list|" >> main_test.brtx
-  ../../promiwag_test -help | tail -n +2 | grep -v '-help' | \
+  ../app/promiwag_test -help | tail -n +2 | grep -v '-help' | \
     sed 's/^  \(-.*\)/{*} {t|\1}{br}/' \
     >> main_test.brtx
   echo "}{b|Available Tests:}{list|" >> main_test.brtx
-  ../../promiwag_test -list-tests | \
+  ../app/promiwag_test -list-tests | \
     sed 's/^  . \([^:]*\):/{*} {b|\1:}/' \
     >> main_test.brtx
   echo "}" >> main_test.brtx
