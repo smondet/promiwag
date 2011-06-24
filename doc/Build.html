@@ -254,11 +254,11 @@ div.content {
     text-align: justify;
 }
 </style>
-<title>[DBW]/Build</title>
+<title>[Promiwag]/Build</title>
 </head>
 <body>
 <div class="sidepane">
-<b>Page:</b> [DBW]/Build <br/><hr/>
+<b>Page:</b> [Promiwag]/Build <br/><hr/>
 <div class="p"><a href="./Main.html">Main</a>&nbsp;<a href="#">Top</a>&nbsp;<a href="#pagefoot">Bottom</a><br/>
  <a href="http://bracetax.berlios.de/bracetax_syntax.html">Bracetax Syntax</a></div>
 <hr/>
@@ -274,13 +274,14 @@ div.content {
 <hr/>
 <b>Table of contents:</b><br/><div class="p dbwtocp">
 <ol class="dbwtocol">
-   <li class="dbwtocli">  <a href="#With_GODI" class="dbwtoca">With GODI</a>   
+   <li class="dbwtocli">  <a href="#Install_The_Dependencies_With_GODI" class="dbwtoca">Install The Dependencies With GODI</a>   
 <ol class="dbwtocol">
      <li class="dbwtocli">  <a href="#Standard_GODI_Bootstrap" class="dbwtoca">Standard GODI Bootstrap</a>     </li>
 <li class="dbwtocli">  <a href="#Install_Promiwag_s_Dependencies" class="dbwtoca">Install Promiwag's Dependencies</a>     </li>
-<li class="dbwtocli">  <a href="#Get_MLpcap_for_Testing" class="dbwtoca">Get MLpcap for Testing</a> </li>
+<li class="dbwtocli">  <a href="#Get_MLpcap_for_Testing" class="dbwtoca">Get MLpcap for Testing</a>   </li>
 </ol>
-</li>
+   </li>
+<li class="dbwtocli">  <a href="#Build_The_Library" class="dbwtoca">Build The Library</a> </li>
 </ol>
 </div>
 <br/>
@@ -293,8 +294,8 @@ div.content {
   <div class="subtitle">Build &amp; Install</div>
 </div> <!-- END HEADER -->
 <div class="p">
-  </div>
-<h2 id="With_GODI">With GODI</h2>
+   </div>
+<h2 id="Install_The_Dependencies_With_GODI">Install The Dependencies With GODI</h2>
 <div class="p">  </div>
 <h3 id="Standard_GODI_Bootstrap">Standard GODI Bootstrap</h3>
 <div class="p">  Get GODI's RocketBoost from <a href="http://godi.camlcity.org/godi/index.html">the official site</a>, unpack it somewhere, and go to that directory. Just pick an empty directory like <tt>$HOME/usr/godi312</tt>. Promiwag itself should work with OCaml 3.11, or 3.10 too (not tested recently) but these old GODI sections do not provide the right versions of the proving tools (e.g. we need Why &gt;= 2.27). <pre>
@@ -335,6 +336,12 @@ cd ./libmlpcap/usr/lib/ocaml/pcap
 ocamlfind install pcap *
 ocamlfind ocamlopt -package pcap -linkpkg pcap.cmxa pcap_loop.ml
 </pre> (don't know why <tt>pcap.cmxa</tt> is needed).  </div>
+<h2 id="Build_The_Library">Build The Library</h2>
+<div class="p">  Once you have all the dependencies, run: <pre>
+omake
+</pre> Then, to install the library with <tt>ocamlfind</tt>: <pre>
+omake install_library
+</pre> (there are also <tt>uninstall_library</tt> and <tt>reinstall_library</tt> targets if needed).    </div>
 
 <div id="pagefoot" />
 </div>
