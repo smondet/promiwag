@@ -1,0 +1,29 @@
+
+This is Promiwag (from Protection Middle-Ware Generator).
+
+It is research project which, for now, provides code generation for
+(stateless) packet parsing code.
+
+                                                        /-> C
+Protocols           +------------+                     /   
+Description  -----\ |            |                    /    
+                   \| Code       |--> Internal    --------> OCaml
+User's             /| Generator  |    Representation  \   
+Requests &   -----/ |            |                     \  
+Handlers            +------------+                      \-> Why
+
+
+The Why (http://why.lri.fr/) output is used together with Alt-Ergo
+(http://alt-ergo.lri.fr/) to prove that, for any input packet, the
+generated code: 
+- Cannot perform unsafe memory accesses;
+- Will always finish eventually (i.e. no infinite loops can be
+  triggered).
+
+The project was presented in a paper at IFIP Sec 2011:
+http://www.springerlink.com/content/53045v8440t4t734/
+(Slides: http://smondet.at.ifi.uio.no/resources/Promiwag_SMondet_IFIPSec11.pdf)
+
+
+Any comments, or questions → seb <AT> mondet.org
+
