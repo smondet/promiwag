@@ -1,6 +1,7 @@
 {header|{title|Promiwag}{subtitle|Build & Install}}
 
-{section 1|With GODI}
+
+{section 1|Install The Dependencies With GODI}
 
 {section 2|Standard GODI Bootstrap}
 
@@ -75,4 +76,18 @@ ocamlfind install pcap *
 ocamlfind ocamlopt -package pcap -linkpkg pcap.cmxa pcap_loop.ml
 {end}
 (don't know why {t|pcap.cmxa} is needed).
+
+{section 1|Build The Library}
+
+Once you have all the dependencies, run:
+{code}
+omake
+{end}
+Then, to install the library with {t|ocamlfind}:
+{code}
+omake install_library
+{end}
+(there are also {t|uninstall_library} and {t|reinstall_library} targets if needed).
+
+
 
