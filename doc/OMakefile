@@ -2,7 +2,7 @@
 doc_site: Build.brtx  Main.brtx module_std.brtx stiel_interface.brtx main_test.brtx
   dbw wiki -exclude ".*libref.*" -persist-with dbw_persistance \
       -named-template right_pane_redish-linked \
-      . .
+      -name Promiwag . .
 
 # The only difference with the `shell' version is the double dollars: $$
 # in sed expressions.
