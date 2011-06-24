@@ -1,0 +1,58 @@
+<html><head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Promiwag" rel="Chapter" href="Promiwag.html">
+<link title="Promiwag_Yaboon_PolyComp" rel="Chapter" href="Promiwag_Yaboon_PolyComp.html">
+<link title="Promiwag_c_backend" rel="Chapter" href="Promiwag_c_backend.html">
+<link title="Promiwag_meta_packet" rel="Chapter" href="Promiwag_meta_packet.html">
+<link title="Promiwag_pcap_boilerplate" rel="Chapter" href="Promiwag_pcap_boilerplate.html">
+<link title="Promiwag_platform" rel="Chapter" href="Promiwag_platform.html">
+<link title="Promiwag_protocol_stack" rel="Chapter" href="Promiwag_protocol_stack.html">
+<link title="Promiwag_standard_protocols" rel="Chapter" href="Promiwag_standard_protocols.html">
+<link title="Promiwag_std" rel="Chapter" href="Promiwag_std.html">
+<link title="Promiwag_stiel" rel="Chapter" href="Promiwag_stiel.html">
+<link title="Promiwag_stiel_backends" rel="Chapter" href="Promiwag_stiel_backends.html"><title>Promiwag Library : Promiwag_c_backend.To_big_string.type_to_str</title>
+</head>
+<body>
+<code class="code"><span class="keyword">let</span>&nbsp;<span class="keyword">rec</span>&nbsp;type_to_str&nbsp;=&nbsp;<span class="keyword">function</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span>void&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="string">"void"</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span>unsigned_char&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="string">"unsigned&nbsp;char"</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span>signed_char&nbsp;&nbsp;&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="string">"char"</span>&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span>unsigned_short<span class="keywordsign">-&gt;</span>&nbsp;<span class="string">"unsigned&nbsp;short"</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span>signed_short&nbsp;&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="string">"short"</span>&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span>unsigned_int&nbsp;&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="string">"unsigned&nbsp;int"</span>&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span>signed_int&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="string">"int"</span>&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span>unsigned_long&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="string">"unsigned&nbsp;long"</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span>signed_long&nbsp;&nbsp;&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="string">"long"</span>&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span>unsigned_long_long&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="string">"unsigned&nbsp;long&nbsp;long"</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span>signed_long_long&nbsp;&nbsp;&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="string">"long&nbsp;long"</span>&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span>float&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="string">"float"</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span>double&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="string">"double"</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span>long_double&nbsp;&nbsp;&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="string">"long&nbsp;double"</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span>named_type&nbsp;type_name&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;type_name<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span>array&nbsp;_&nbsp;<span class="keyword">as</span>&nbsp;t<span class="keywordsign">-&gt;</span>&nbsp;typed_var_str&nbsp;(<span class="string">""</span>,&nbsp;t)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span>structure&nbsp;items&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;spr&nbsp;<span class="string">"struct&nbsp;{%s;}"</span>&nbsp;(<span class="constructor">Str</span>.concat&nbsp;<span class="string">";&nbsp;"</span>&nbsp;(<span class="constructor">Ls</span>.map&nbsp;typed_var_str&nbsp;items))<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span>union&nbsp;types&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;spr&nbsp;<span class="string">"union&nbsp;{%s}"</span>&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="constructor">Str</span>.concat&nbsp;<span class="string">""</span>&nbsp;(<span class="constructor">Ls</span>.map&nbsp;(<span class="keyword">fun</span>&nbsp;t&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;type_to_str&nbsp;t)&nbsp;types))<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span>pointer&nbsp;t&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;spr&nbsp;<span class="string">"%s&nbsp;*"</span>&nbsp;&nbsp;(type_to_str&nbsp;t)<br>
+&nbsp;&nbsp;<span class="keyword">and</span>&nbsp;typed_var_str:&nbsp;<span class="constructor">C</span>.variable_name&nbsp;*&nbsp;<span class="constructor">C</span>.c_type&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string&nbsp;=&nbsp;<span class="keyword">fun</span>&nbsp;(name,&nbsp;typ)&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">match</span>&nbsp;typ&nbsp;<span class="keyword">with</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span>array&nbsp;([],&nbsp;t)&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(spr&nbsp;<span class="string">"%s&nbsp;%s[]"</span>&nbsp;(type_to_str&nbsp;t)&nbsp;name)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span>array&nbsp;(size_list,&nbsp;t)&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">let</span>&nbsp;sz&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Str</span>.concat&nbsp;<span class="string">""</span>&nbsp;(<span class="constructor">Ls</span>.map&nbsp;(<span class="keyword">function</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span>literal_int&nbsp;i&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;spr&nbsp;<span class="string">"[%d]"</span>&nbsp;i<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span>variable&nbsp;v&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;spr&nbsp;<span class="string">"[%s]"</span>&nbsp;v<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span>empty&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="string">"[]"</span>)&nbsp;size_list)&nbsp;<span class="keyword">in</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(spr&nbsp;<span class="string">"%s&nbsp;%s%s"</span>&nbsp;(type_to_str&nbsp;t)&nbsp;name&nbsp;sz)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;any_other&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(spr&nbsp;<span class="string">"%s&nbsp;%s"</span>&nbsp;(type_to_str&nbsp;any_other)&nbsp;name)</code></body></html>

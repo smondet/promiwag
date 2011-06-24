@@ -1,0 +1,125 @@
+<html><head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Promiwag" rel="Chapter" href="Promiwag.html">
+<link title="Promiwag_Yaboon_PolyComp" rel="Chapter" href="Promiwag_Yaboon_PolyComp.html">
+<link title="Promiwag_c_backend" rel="Chapter" href="Promiwag_c_backend.html">
+<link title="Promiwag_meta_packet" rel="Chapter" href="Promiwag_meta_packet.html">
+<link title="Promiwag_pcap_boilerplate" rel="Chapter" href="Promiwag_pcap_boilerplate.html">
+<link title="Promiwag_platform" rel="Chapter" href="Promiwag_platform.html">
+<link title="Promiwag_protocol_stack" rel="Chapter" href="Promiwag_protocol_stack.html">
+<link title="Promiwag_standard_protocols" rel="Chapter" href="Promiwag_standard_protocols.html">
+<link title="Promiwag_std" rel="Chapter" href="Promiwag_std.html">
+<link title="Promiwag_stiel" rel="Chapter" href="Promiwag_stiel.html">
+<link title="Promiwag_stiel_backends" rel="Chapter" href="Promiwag_stiel_backends.html"><title>Promiwag Library : Promiwag_meta_packet.Parser_generator.Stage_2_stiel.Stiel_types</title>
+</head>
+<body>
+<code class="code"><span class="keyword">sig</span><br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;integer_type&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.integer_type&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Type_uint8</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Type_uint16</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Type_uint32</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Type_uint64</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Type_uint_native</span><br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;int_unary_operator&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.int_unary_operator&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Int_unary_minus</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Int_unary_plus</span><br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;int_binary_operator&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.int_binary_operator&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Int_binop_add</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Int_binop_sub</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Int_binop_mul</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Int_binop_div</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Int_binop_mod</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Int_binop_bin_and</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Int_binop_bin_or</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Int_binop_bin_xor</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Int_binop_bin_shl</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Int_binop_bin_shr</span><br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;bool_binary_operator&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.bool_binary_operator&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Bool_binop_equals</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Bool_binop_notequals</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Bool_binop_strictly_greater</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Bool_binop_strictly_lower</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Bool_binop_equal_or_greater</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Bool_binop_equal_or_lower</span><br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;variable_name&nbsp;=&nbsp;string<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;get_int_at_buffer&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.get_int_at_buffer&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Get_native</span>&nbsp;<span class="keyword">of</span>&nbsp;integer_type<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Get_big_endian</span>&nbsp;<span class="keyword">of</span>&nbsp;integer_type<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Get_little_endian</span>&nbsp;<span class="keyword">of</span>&nbsp;integer_type<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;buffer_type&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.buffer_type&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Type_sized_buffer</span>&nbsp;<span class="keyword">of</span>&nbsp;int<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Type_pointer</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Type_sizable_buffer</span>&nbsp;<span class="keyword">of</span>&nbsp;int_expression<br>
+&nbsp;&nbsp;<span class="keyword">and</span>&nbsp;int_expression&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.int_expression&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Int_expr_unary</span>&nbsp;<span class="keyword">of</span>&nbsp;int_unary_operator&nbsp;*&nbsp;int_expression<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Int_expr_binary</span>&nbsp;<span class="keyword">of</span>&nbsp;int_binary_operator&nbsp;*&nbsp;int_expression&nbsp;*<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int_expression<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Int_expr_variable</span>&nbsp;<span class="keyword">of</span>&nbsp;variable_name<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Int_expr_buffer_content</span>&nbsp;<span class="keyword">of</span>&nbsp;get_int_at_buffer&nbsp;*&nbsp;buffer_expression<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Int_expr_literal</span>&nbsp;<span class="keyword">of</span>&nbsp;int64<br>
+&nbsp;&nbsp;<span class="keyword">and</span>&nbsp;buffer_expression&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.buffer_expression&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Buffer_expr_variable</span>&nbsp;<span class="keyword">of</span>&nbsp;variable_name<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Buffer_expr_offset</span>&nbsp;<span class="keyword">of</span>&nbsp;buffer_expression&nbsp;*&nbsp;int_expression<br>
+&nbsp;&nbsp;<span class="keyword">and</span>&nbsp;bool_expression&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.bool_expression&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Bool_expr_true</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Bool_expr_false</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Bool_expr_variable</span>&nbsp;<span class="keyword">of</span>&nbsp;variable_name<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Bool_expr_and</span>&nbsp;<span class="keyword">of</span>&nbsp;bool_expression&nbsp;*&nbsp;bool_expression<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Bool_expr_or</span>&nbsp;<span class="keyword">of</span>&nbsp;bool_expression&nbsp;*&nbsp;bool_expression<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Bool_expr_not</span>&nbsp;<span class="keyword">of</span>&nbsp;bool_expression<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Bool_expr_binary_int</span>&nbsp;<span class="keyword">of</span>&nbsp;bool_binary_operator&nbsp;*&nbsp;int_expression&nbsp;*<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int_expression<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;typed_expression&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.typed_expression&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Typed_int</span>&nbsp;<span class="keyword">of</span>&nbsp;integer_type&nbsp;*&nbsp;int_expression<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Typed_bool</span>&nbsp;<span class="keyword">of</span>&nbsp;bool_expression<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Typed_buffer</span>&nbsp;<span class="keyword">of</span>&nbsp;buffer_type&nbsp;*&nbsp;buffer_expression<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;typed_variable_kind&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.typed_variable_kind&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Kind_int</span>&nbsp;<span class="keyword">of</span>&nbsp;integer_type<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Kind_bool</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Kind_buffer</span>&nbsp;<span class="keyword">of</span>&nbsp;buffer_type<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;typed_variable&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.typed_variable&nbsp;=&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;name&nbsp;:&nbsp;variable_name;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;kind&nbsp;:&nbsp;typed_variable_kind;<br>
+&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;logic&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.logic&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Logic_bool_expr</span>&nbsp;<span class="keyword">of</span>&nbsp;bool_expression<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Logic_variability</span>&nbsp;<span class="keyword">of</span>&nbsp;bool_expression&nbsp;*&nbsp;int_expression<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;statement_annotation&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.statement_annotation&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Annot_comment</span>&nbsp;<span class="keyword">of</span>&nbsp;string<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Annot_specify</span>&nbsp;<span class="keyword">of</span>&nbsp;logic<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Annot_alternative</span>&nbsp;<span class="keyword">of</span>&nbsp;[&nbsp;<span class="keywordsign">`</span><span class="constructor">C</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Why</span>&nbsp;]&nbsp;*&nbsp;statement<br>
+&nbsp;&nbsp;<span class="keyword">and</span>&nbsp;statement&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.statement&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Do_nothing</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Do_block</span>&nbsp;<span class="keyword">of</span>&nbsp;statement&nbsp;list<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Do_if</span>&nbsp;<span class="keyword">of</span>&nbsp;bool_expression&nbsp;*&nbsp;statement&nbsp;*&nbsp;statement<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Do_while_loop</span>&nbsp;<span class="keyword">of</span>&nbsp;string&nbsp;*&nbsp;bool_expression&nbsp;*&nbsp;statement<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Do_exit_while</span>&nbsp;<span class="keyword">of</span>&nbsp;string<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Do_assignment</span>&nbsp;<span class="keyword">of</span>&nbsp;variable_name&nbsp;*&nbsp;typed_expression<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Do_external_assignment</span>&nbsp;<span class="keyword">of</span>&nbsp;variable_name&nbsp;*&nbsp;string&nbsp;*<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;typed_expression&nbsp;list<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Do_declaration</span>&nbsp;<span class="keyword">of</span>&nbsp;typed_variable<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Do_log</span>&nbsp;<span class="keyword">of</span>&nbsp;string&nbsp;*&nbsp;typed_expression&nbsp;list<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Do_annotated_statement</span>&nbsp;<span class="keyword">of</span>&nbsp;statement_annotation&nbsp;*&nbsp;statement<br>
+<span class="keyword">end</span></code></body></html>

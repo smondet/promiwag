@@ -1,0 +1,105 @@
+<html><head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Promiwag" rel="Chapter" href="Promiwag.html">
+<link title="Promiwag_Yaboon_PolyComp" rel="Chapter" href="Promiwag_Yaboon_PolyComp.html">
+<link title="Promiwag_c_backend" rel="Chapter" href="Promiwag_c_backend.html">
+<link title="Promiwag_meta_packet" rel="Chapter" href="Promiwag_meta_packet.html">
+<link title="Promiwag_pcap_boilerplate" rel="Chapter" href="Promiwag_pcap_boilerplate.html">
+<link title="Promiwag_platform" rel="Chapter" href="Promiwag_platform.html">
+<link title="Promiwag_protocol_stack" rel="Chapter" href="Promiwag_protocol_stack.html">
+<link title="Promiwag_standard_protocols" rel="Chapter" href="Promiwag_standard_protocols.html">
+<link title="Promiwag_std" rel="Chapter" href="Promiwag_std.html">
+<link title="Promiwag_stiel" rel="Chapter" href="Promiwag_stiel.html">
+<link title="Promiwag_stiel_backends" rel="Chapter" href="Promiwag_stiel_backends.html"><title>Promiwag Library : Promiwag_protocol_stack.Automata_generator.Partial_eval</title>
+</head>
+<body>
+<code class="code"><span class="keyword">sig</span><br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;environment&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Transform</span>.<span class="constructor">Partial_evaluation</span>.environment&nbsp;=&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;variables&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.variable_name,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.typed_expression)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_std</span>.<span class="constructor">Environment</span>.t;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;use_purity&nbsp;:&nbsp;bool;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;do_symbolic_equality&nbsp;:&nbsp;bool;<br>
+&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;<span class="keyword">module</span>&nbsp;<span class="constructor">Env</span>&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">sig</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;(<span class="keywordsign">'</span>a,&nbsp;<span class="keywordsign">'</span>b)&nbsp;environment&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="keywordsign">'</span>a,&nbsp;<span class="keywordsign">'</span>b)&nbsp;<span class="constructor">Promiwag_std</span>.<span class="constructor">Environment</span>.environment&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Base</span>&nbsp;<span class="keyword">of</span>&nbsp;(<span class="keywordsign">'</span>a&nbsp;*&nbsp;<span class="keywordsign">'</span>b)&nbsp;list<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Pushed</span>&nbsp;<span class="keyword">of</span>&nbsp;(<span class="keywordsign">'</span>a&nbsp;*&nbsp;<span class="keywordsign">'</span>b)&nbsp;list&nbsp;*&nbsp;(<span class="keywordsign">'</span>a,&nbsp;<span class="keywordsign">'</span>b)&nbsp;environment<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;(<span class="keywordsign">'</span>a,&nbsp;<span class="keywordsign">'</span>b)&nbsp;t&nbsp;=&nbsp;(<span class="keywordsign">'</span>a,&nbsp;<span class="keywordsign">'</span>b)&nbsp;environment<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;empty&nbsp;:&nbsp;(<span class="keywordsign">'</span>a,&nbsp;<span class="keywordsign">'</span>b)&nbsp;environment<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;of_list&nbsp;:&nbsp;(<span class="keywordsign">'</span>a&nbsp;*&nbsp;<span class="keywordsign">'</span>b)&nbsp;list&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;(<span class="keywordsign">'</span>a,&nbsp;<span class="keywordsign">'</span>b)&nbsp;environment<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;push&nbsp;:&nbsp;(<span class="keywordsign">'</span>a,&nbsp;<span class="keywordsign">'</span>b)&nbsp;environment&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;(<span class="keywordsign">'</span>a,&nbsp;<span class="keywordsign">'</span>b)&nbsp;environment<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;pop&nbsp;:&nbsp;(<span class="keywordsign">'</span>a,&nbsp;<span class="keywordsign">'</span>b)&nbsp;environment&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;(<span class="keywordsign">'</span>a,&nbsp;<span class="keywordsign">'</span>b)&nbsp;environment<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;add&nbsp;:&nbsp;(<span class="keywordsign">'</span>a,&nbsp;<span class="keywordsign">'</span>b)&nbsp;environment&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>b&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;(<span class="keywordsign">'</span>a,&nbsp;<span class="keywordsign">'</span>b)&nbsp;environment<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;find_opt&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;?cmp:(<span class="keywordsign">'</span>a&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;bool)&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;(<span class="keywordsign">'</span>a,&nbsp;<span class="keywordsign">'</span>b)&nbsp;environment&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>b&nbsp;option<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;iter&nbsp;:&nbsp;f:(<span class="keywordsign">'</span>a&nbsp;*&nbsp;<span class="keywordsign">'</span>b&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit)&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;(<span class="keywordsign">'</span>a,&nbsp;<span class="keywordsign">'</span>b)&nbsp;environment&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;metamap&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;map:(<span class="keywordsign">'</span>a&nbsp;*&nbsp;<span class="keywordsign">'</span>b&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>c)&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;reduce:(<span class="keywordsign">'</span>c&nbsp;list&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>d)&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;(<span class="keywordsign">'</span>a,&nbsp;<span class="keywordsign">'</span>b)&nbsp;environment&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>d&nbsp;list<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">end</span><br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;environment&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;?do_symbolic_equality:bool&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;?use_purity:bool&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;?variables:(<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.variable_name,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.typed_expression)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Env</span>.environment&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;unit&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;environment<br>
+&nbsp;&nbsp;<span class="keyword">exception</span>&nbsp;<span class="constructor">Division_by_zero_in</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.int_expression<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;int_unary_operator&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.int_unary_operator&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int64&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int64<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;int_binary_operator&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.int_binary_operator&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int64&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int64&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int64<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;transform_int_binop&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;environment&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.int_binary_operator&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.int_expression&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.int_expression&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.int_expression<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;bool_binary_operator&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.bool_binary_operator&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>b&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>b&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;bool<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;int_variable&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;environment&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.variable_name&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.int_expression<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;bool_variable&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;environment&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.variable_name&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.bool_expression<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;buffer_variable&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;environment&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.variable_name&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.buffer_expression<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;buffer_type&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.buffer_type&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.buffer_type<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;int_expression&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;environment&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.int_expression&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.int_expression<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;buffer_expression&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;environment&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.buffer_expression&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.buffer_expression<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;bool_expression&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;environment&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.bool_expression&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.bool_expression<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;typed_expression&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;environment&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.typed_expression&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.typed_expression<br>
+<span class="keyword">end</span></code></body></html>

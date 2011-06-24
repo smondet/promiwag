@@ -1,0 +1,43 @@
+<html><head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Promiwag" rel="Chapter" href="Promiwag.html">
+<link title="Promiwag_Yaboon_PolyComp" rel="Chapter" href="Promiwag_Yaboon_PolyComp.html">
+<link title="Promiwag_c_backend" rel="Chapter" href="Promiwag_c_backend.html">
+<link title="Promiwag_meta_packet" rel="Chapter" href="Promiwag_meta_packet.html">
+<link title="Promiwag_pcap_boilerplate" rel="Chapter" href="Promiwag_pcap_boilerplate.html">
+<link title="Promiwag_platform" rel="Chapter" href="Promiwag_platform.html">
+<link title="Promiwag_protocol_stack" rel="Chapter" href="Promiwag_protocol_stack.html">
+<link title="Promiwag_standard_protocols" rel="Chapter" href="Promiwag_standard_protocols.html">
+<link title="Promiwag_std" rel="Chapter" href="Promiwag_std.html">
+<link title="Promiwag_stiel" rel="Chapter" href="Promiwag_stiel.html">
+<link title="Promiwag_stiel_backends" rel="Chapter" href="Promiwag_stiel_backends.html"><title>Promiwag Library : Promiwag_standard_protocols.dhcp_format</title>
+</head>
+<body>
+<code class="code"><span class="keyword">let</span>&nbsp;dhcp_format&nbsp;=<br>
+&nbsp;&nbsp;<span class="constructor">MPS</span>.packet_format&nbsp;[<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;<span class="string">"op"</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;8;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;<span class="string">"htype"</span>&nbsp;&nbsp;8;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;<span class="string">"hlen"</span>&nbsp;&nbsp;&nbsp;8;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;<span class="string">"hops"</span>&nbsp;&nbsp;&nbsp;8;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;<span class="string">"xid"</span>&nbsp;&nbsp;&nbsp;32;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;<span class="string">"secs"</span>&nbsp;&nbsp;16;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;<span class="string">"broadcast"</span>&nbsp;1;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;<span class="string">"reserved"</span>&nbsp;15;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;<span class="string">"ciaddr"</span>&nbsp;&nbsp;&nbsp;32;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;<span class="string">"yiaddr"</span>&nbsp;&nbsp;&nbsp;32;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;<span class="string">"siaddr"</span>&nbsp;&nbsp;&nbsp;32;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;<span class="string">"giaddr"</span>&nbsp;&nbsp;&nbsp;32;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.string_field&nbsp;&nbsp;&nbsp;&nbsp;<span class="string">"chaddr"</span>&nbsp;&nbsp;(<span class="constructor">MPS</span>.size&nbsp;(<span class="keywordsign">`</span>int&nbsp;&nbsp;16));<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.string_field&nbsp;&nbsp;&nbsp;&nbsp;<span class="string">"sname"</span>&nbsp;&nbsp;&nbsp;(<span class="constructor">MPS</span>.size&nbsp;(<span class="keywordsign">`</span>int&nbsp;&nbsp;64));<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.string_field&nbsp;&nbsp;&nbsp;&nbsp;<span class="string">"file"</span>&nbsp;&nbsp;&nbsp;&nbsp;(<span class="constructor">MPS</span>.size&nbsp;(<span class="keywordsign">`</span>int&nbsp;128));<br>
+<span class="comment">(*&nbsp;&nbsp;&nbsp;&nbsp;MPS.fixed_int_field&nbsp;"options_code"&nbsp;8;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;MPS.fixed_int_field&nbsp;"option_len"&nbsp;&nbsp;&nbsp;8;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;MPS.string_field&nbsp;&nbsp;&nbsp;&nbsp;"option_content"&nbsp;(MPS.size&nbsp;(`var&nbsp;"option_len"));&nbsp;*)</span><br>
+&nbsp;&nbsp;]</code></body></html>

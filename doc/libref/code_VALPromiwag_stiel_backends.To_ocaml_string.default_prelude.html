@@ -1,0 +1,91 @@
+<html><head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Promiwag" rel="Chapter" href="Promiwag.html">
+<link title="Promiwag_Yaboon_PolyComp" rel="Chapter" href="Promiwag_Yaboon_PolyComp.html">
+<link title="Promiwag_c_backend" rel="Chapter" href="Promiwag_c_backend.html">
+<link title="Promiwag_meta_packet" rel="Chapter" href="Promiwag_meta_packet.html">
+<link title="Promiwag_pcap_boilerplate" rel="Chapter" href="Promiwag_pcap_boilerplate.html">
+<link title="Promiwag_platform" rel="Chapter" href="Promiwag_platform.html">
+<link title="Promiwag_protocol_stack" rel="Chapter" href="Promiwag_protocol_stack.html">
+<link title="Promiwag_standard_protocols" rel="Chapter" href="Promiwag_standard_protocols.html">
+<link title="Promiwag_std" rel="Chapter" href="Promiwag_std.html">
+<link title="Promiwag_stiel" rel="Chapter" href="Promiwag_stiel.html">
+<link title="Promiwag_stiel_backends" rel="Chapter" href="Promiwag_stiel_backends.html"><title>Promiwag Library : Promiwag_stiel_backends.To_ocaml_string.default_prelude</title>
+</head>
+<body>
+<code class="code"><span class="keyword">let</span>&nbsp;default_prelude&nbsp;=&nbsp;<br>
+<span class="keyword">begin</span><br>
+<span class="string">"<br>
+<br>
+module&nbsp;Integer&nbsp;=&nbsp;struct<br>
+<br>
+<br>
+&nbsp;&nbsp;include&nbsp;Int64<br>
+<br>
+&nbsp;&nbsp;let&nbsp;of_int64&nbsp;x&nbsp;=&nbsp;x<br>
+<br>
+&nbsp;&nbsp;let&nbsp;eq&nbsp;a&nbsp;b&nbsp;=&nbsp;(compare&nbsp;a&nbsp;b)&nbsp;&nbsp;=&nbsp;0<br>
+&nbsp;&nbsp;let&nbsp;ne&nbsp;a&nbsp;b&nbsp;=&nbsp;(compare&nbsp;a&nbsp;b)&nbsp;&lt;&gt;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;let&nbsp;gt&nbsp;a&nbsp;b&nbsp;=&nbsp;(compare&nbsp;a&nbsp;b)&nbsp;&gt;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;let&nbsp;lt&nbsp;a&nbsp;b&nbsp;=&nbsp;(compare&nbsp;a&nbsp;b)&nbsp;&lt;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;let&nbsp;ge&nbsp;a&nbsp;b&nbsp;=&nbsp;(compare&nbsp;a&nbsp;b)&nbsp;&gt;=&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;let&nbsp;le&nbsp;a&nbsp;b&nbsp;=&nbsp;(compare&nbsp;a&nbsp;b)&nbsp;&lt;=&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br>
+<br>
+&nbsp;&nbsp;let&nbsp;minus&nbsp;x&nbsp;=&nbsp;failwith&nbsp;\"Not&nbsp;unsigned&nbsp;operation\"<br>
+&nbsp;&nbsp;let&nbsp;plus&nbsp;x&nbsp;=&nbsp;x<br>
+&nbsp;&nbsp;let&nbsp;sub&nbsp;a&nbsp;b&nbsp;=&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;let&nbsp;r&nbsp;=&nbsp;Int64.sub&nbsp;a&nbsp;b&nbsp;in<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;lt&nbsp;r&nbsp;0L&nbsp;then&nbsp;0L&nbsp;else&nbsp;r<br>
+&nbsp;&nbsp;let&nbsp;bin_and&nbsp;=&nbsp;logand<br>
+&nbsp;&nbsp;let&nbsp;bin_or&nbsp;&nbsp;=&nbsp;logor<br>
+&nbsp;&nbsp;let&nbsp;bin_xor&nbsp;=&nbsp;logxor<br>
+&nbsp;&nbsp;let&nbsp;bin_lsl&nbsp;a&nbsp;b&nbsp;=&nbsp;shift_left&nbsp;a&nbsp;(to_int&nbsp;b)<br>
+&nbsp;&nbsp;let&nbsp;bin_lsr&nbsp;a&nbsp;b&nbsp;=&nbsp;shift_right_logical&nbsp;a&nbsp;(to_int&nbsp;b)<br>
+<br>
+end<br>
+<br>
+module&nbsp;Unsafe_buffer&nbsp;=&nbsp;struct<br>
+<br>
+&nbsp;&nbsp;type&nbsp;t&nbsp;=&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;underlying:&nbsp;string;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;beginning:&nbsp;int;<br>
+&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;let&nbsp;create&nbsp;s&nbsp;=&nbsp;{&nbsp;underlying&nbsp;=&nbsp;s;&nbsp;beginning&nbsp;=&nbsp;0}<br>
+&nbsp;&nbsp;let&nbsp;create_pointer&nbsp;()&nbsp;=&nbsp;create&nbsp;\"\"<br>
+<br>
+&nbsp;&nbsp;let&nbsp;offset&nbsp;s&nbsp;o&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;let&nbsp;ofs&nbsp;=&nbsp;Integer.to_int&nbsp;o&nbsp;in<br>
+&nbsp;&nbsp;&nbsp;&nbsp;{&nbsp;s&nbsp;with&nbsp;beginning&nbsp;=&nbsp;ofs&nbsp;+&nbsp;s.beginning}<br>
+<br>
+&nbsp;&nbsp;let&nbsp;get_native_uint8&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;b&nbsp;=&nbsp;&nbsp;failwith&nbsp;\"get&nbsp;native&nbsp;not&nbsp;implemented\"<br>
+&nbsp;&nbsp;let&nbsp;get_native_uint16&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;b&nbsp;=&nbsp;&nbsp;failwith&nbsp;\"get&nbsp;native&nbsp;not&nbsp;implemented\"<br>
+&nbsp;&nbsp;let&nbsp;get_native_uint32&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;b&nbsp;=&nbsp;&nbsp;failwith&nbsp;\"get&nbsp;native&nbsp;not&nbsp;implemented\"<br>
+&nbsp;&nbsp;let&nbsp;get_native_uint64&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;b&nbsp;=&nbsp;&nbsp;failwith&nbsp;\"get&nbsp;native&nbsp;not&nbsp;implemented\"<br>
+&nbsp;&nbsp;let&nbsp;get_native_uint_native&nbsp;b&nbsp;=&nbsp;&nbsp;failwith&nbsp;\"get&nbsp;native&nbsp;not&nbsp;implemented\"<br>
+<br>
+&nbsp;&nbsp;let&nbsp;get&nbsp;b&nbsp;i&nbsp;=&nbsp;Integer.of_int&nbsp;(int_of_char&nbsp;(String.unsafe_get&nbsp;b.underlying&nbsp;(i&nbsp;+&nbsp;b.beginning)))<br>
+&nbsp;&nbsp;open&nbsp;Integer<br>
+&nbsp;&nbsp;let&nbsp;get_bigend_uint8&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;b&nbsp;=&nbsp;let&nbsp;g&nbsp;=&nbsp;get&nbsp;b&nbsp;in&nbsp;&nbsp;(g&nbsp;0)<br>
+&nbsp;&nbsp;let&nbsp;get_bigend_uint16&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;b&nbsp;=&nbsp;let&nbsp;g&nbsp;=&nbsp;get&nbsp;b&nbsp;in&nbsp;&nbsp;add&nbsp;(bin_lsl&nbsp;(g&nbsp;0)&nbsp;8L)&nbsp;(g&nbsp;1)<br>
+&nbsp;&nbsp;let&nbsp;get_bigend_uint32&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;b&nbsp;=&nbsp;let&nbsp;g&nbsp;=&nbsp;get_bigend_uint16&nbsp;in&nbsp;&nbsp;add&nbsp;(bin_lsl&nbsp;(g&nbsp;b)&nbsp;16L)&nbsp;(g&nbsp;(offset&nbsp;b&nbsp;2L))<br>
+&nbsp;&nbsp;let&nbsp;get_bigend_uint64&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;b&nbsp;=&nbsp;let&nbsp;g&nbsp;=&nbsp;get_bigend_uint32&nbsp;in&nbsp;&nbsp;add&nbsp;(bin_lsl&nbsp;(g&nbsp;b)&nbsp;32L)&nbsp;(g&nbsp;(offset&nbsp;b&nbsp;4L))<br>
+&nbsp;&nbsp;let&nbsp;get_bigend_uint_native&nbsp;=&nbsp;if&nbsp;Sys.word_size&nbsp;=&nbsp;32&nbsp;then&nbsp;&nbsp;get_bigend_uint32&nbsp;else&nbsp;&nbsp;get_bigend_uint64<br>
+&nbsp;&nbsp;let&nbsp;get_ltlend_uint8&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;b&nbsp;=&nbsp;let&nbsp;g&nbsp;=&nbsp;get&nbsp;b&nbsp;in&nbsp;&nbsp;(g&nbsp;0)<br>
+&nbsp;&nbsp;let&nbsp;get_ltlend_uint16&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;b&nbsp;=&nbsp;let&nbsp;g&nbsp;=&nbsp;get&nbsp;b&nbsp;in&nbsp;&nbsp;add&nbsp;(bin_lsl&nbsp;(g&nbsp;1)&nbsp;8L)&nbsp;(g&nbsp;0)<br>
+&nbsp;&nbsp;let&nbsp;get_ltlend_uint32&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;b&nbsp;=&nbsp;let&nbsp;g&nbsp;=&nbsp;get_bigend_uint16&nbsp;in&nbsp;&nbsp;add&nbsp;(bin_lsl&nbsp;(g&nbsp;(offset&nbsp;b&nbsp;2L))&nbsp;16L)&nbsp;(g&nbsp;b)<br>
+&nbsp;&nbsp;let&nbsp;get_ltlend_uint64&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;b&nbsp;=&nbsp;let&nbsp;g&nbsp;=&nbsp;get_bigend_uint32&nbsp;in&nbsp;&nbsp;add&nbsp;(bin_lsl&nbsp;(g&nbsp;(offset&nbsp;b&nbsp;4L))&nbsp;32L)&nbsp;(g&nbsp;b)<br>
+&nbsp;&nbsp;let&nbsp;get_ltlend_uint_native&nbsp;b&nbsp;=&nbsp;&nbsp;if&nbsp;Sys.word_size&nbsp;=&nbsp;32&nbsp;then&nbsp;&nbsp;get_ltlend_uint32&nbsp;else&nbsp;&nbsp;get_ltlend_uint64<br>
+<br>
+end<br>
+<br>
+module&nbsp;Log&nbsp;=&nbsp;Printf<br>
+<br>
+"</span><br>
+<span class="keyword">end</span></code></body></html>

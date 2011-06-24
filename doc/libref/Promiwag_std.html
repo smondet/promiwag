@@ -1,0 +1,62 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link rel="previous" href="Promiwag_standard_protocols.html">
+<link rel="next" href="Promiwag_stiel.html">
+<link rel="Up" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Promiwag" rel="Chapter" href="Promiwag.html">
+<link title="Promiwag_Yaboon_PolyComp" rel="Chapter" href="Promiwag_Yaboon_PolyComp.html">
+<link title="Promiwag_c_backend" rel="Chapter" href="Promiwag_c_backend.html">
+<link title="Promiwag_meta_packet" rel="Chapter" href="Promiwag_meta_packet.html">
+<link title="Promiwag_pcap_boilerplate" rel="Chapter" href="Promiwag_pcap_boilerplate.html">
+<link title="Promiwag_platform" rel="Chapter" href="Promiwag_platform.html">
+<link title="Promiwag_protocol_stack" rel="Chapter" href="Promiwag_protocol_stack.html">
+<link title="Promiwag_standard_protocols" rel="Chapter" href="Promiwag_standard_protocols.html">
+<link title="Promiwag_std" rel="Chapter" href="Promiwag_std.html">
+<link title="Promiwag_stiel" rel="Chapter" href="Promiwag_stiel.html">
+<link title="Promiwag_stiel_backends" rel="Chapter" href="Promiwag_stiel_backends.html"><title>Promiwag Library : Promiwag_std</title>
+</head>
+<body>
+<div class="navbar"><a href="Promiwag_standard_protocols.html">Previous</a>
+&nbsp;<a href="index.html">Up</a>
+&nbsp;<a href="Promiwag_stiel.html">Next</a>
+</div>
+<center><h1>Module <a href="type_Promiwag_std.html">Promiwag_std</a></h1></center>
+<br>
+<pre><span class="keyword">module</span> Promiwag_std: <code class="code"><span class="keyword">sig</span></code> <a href="Promiwag_std.html">..</a> <code class="code"><span class="keyword">end</span></code></pre>Standard Prelude for the project.<br>
+<hr width="100%">
+<pre><span class="keyword">include</span> Printf</pre>
+<div class="info">
+c.f.
+    <a href="http://caml.inria.fr/pub/docs/manual-ocaml/libref/Printf.html">
+    Printf</a><br>
+</div>
+<pre><span class="keyword">include</span> <a href="Promiwag_Yaboon_PolyComp.CompAndNoPolyPhy.html">Promiwag_Yaboon_PolyComp.CompAndNoPolyPhy</a></pre>
+<pre><span class="keyword">module</span> <a href="Promiwag_std.Ls.html">Ls</a>: <code class="code"><span class="keyword">sig</span></code> <a href="Promiwag_std.Ls.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info">
+List module
+</div>
+<pre><span id="VAL(@)"><span class="keyword">val</span> <a href="code_VALPromiwag_std.(_at_).html">(@)</a></span> : <code class="type">'a list -> 'a list -> 'a list</code></pre><pre><span class="keyword">module</span> <a href="Promiwag_std.List.html">List</a>: <code class="code"><span class="keyword">sig</span></code> <a href="Promiwag_std.List.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><pre><span class="keyword">module</span> <a href="Promiwag_std.Opt.html">Opt</a>: <code class="type">Option</code></pre><div class="info">
+c.f.
+</div>
+<pre><span class="keyword">module</span> <a href="Promiwag_std.Option.html">Option</a>: <code class="code"><span class="keyword">sig</span></code> <a href="Promiwag_std.Option.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><pre><span class="keyword">module</span> <a href="Promiwag_std.Str.html">Str</a>: <code class="code"><span class="keyword">sig</span></code> <a href="Promiwag_std.Str.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info">
+This module name voluntarily forbids the Str module of the str
+    library
+</div>
+<pre><span class="keyword">module</span> <a href="Promiwag_std.String.html">String</a>: <code class="code"><span class="keyword">sig</span></code> <a href="Promiwag_std.String.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><pre><span class="keyword">module</span> <a href="Promiwag_std.Ht.html">Ht</a>: <code class="code"><span class="keyword">sig</span></code> <a href="Promiwag_std.Ht.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info">
+Hash tables.
+</div>
+<pre><span class="keyword">module</span> <a href="Promiwag_std.Hashtbl.html">Hashtbl</a>: <code class="code"><span class="keyword">sig</span></code> <a href="Promiwag_std.Hashtbl.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><pre><span class="keyword">module</span> <a href="Promiwag_std.Io.html">Io</a>: <code class="code"><span class="keyword">sig</span></code> <a href="Promiwag_std.Io.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info">
+Input/Output.
+</div>
+<pre><span class="keyword">module</span> <a href="Promiwag_std.IO.html">IO</a>: <code class="code"><span class="keyword">sig</span></code> <a href="Promiwag_std.IO.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><pre><span class="keyword">module</span> <a href="Promiwag_std.Environment.html">Environment</a>: <code class="code"><span class="keyword">sig</span></code> <a href="Promiwag_std.Environment.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><pre><span class="keyword">module</span> <a href="Promiwag_std.FIFO.html">FIFO</a>: <code class="code"><span class="keyword">sig</span></code> <a href="Promiwag_std.FIFO.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><pre><span class="keyword">module</span> <a href="Promiwag_std.Unique.html">Unique</a>: <code class="code"><span class="keyword">sig</span></code> <a href="Promiwag_std.Unique.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><pre><span class="keyword">module</span> <a href="Promiwag_std.Hash.html">Hash</a>: <code class="code"><span class="keyword">sig</span></code> <a href="Promiwag_std.Hash.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><pre><span class="keyword">module</span> <a href="Promiwag_std.Easy_format.html">Easy_format</a>: <code class="type">Easy_format</code></pre><div class="info">
+c.f.
+</div>
+<pre><span id="VAL($)"><span class="keyword">val</span> <a href="code_VALPromiwag_std.(_dollar_).html">($)</a></span> : <code class="type">('a -> 'b) -> 'a -> 'b</code></pre><pre><span id="VALdebug_mode"><span class="keyword">val</span> <a href="code_VALPromiwag_std.debug_mode.html">debug_mode</a></span> : <code class="type">[ `silent | `stdout ] Pervasives.ref</code></pre><pre><span id="VALdebug"><span class="keyword">val</span> <a href="code_VALPromiwag_std.debug.html">debug</a></span> : <code class="type">string -> unit</code></pre><pre><span id="VALcode"><span class="keyword">val</span> <a href="code_VALPromiwag_std.code.html">code</a></span> : <code class="type">string -> string</code></pre></body></html>

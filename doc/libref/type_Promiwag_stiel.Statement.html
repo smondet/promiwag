@@ -1,0 +1,64 @@
+<html><head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Promiwag" rel="Chapter" href="Promiwag.html">
+<link title="Promiwag_Yaboon_PolyComp" rel="Chapter" href="Promiwag_Yaboon_PolyComp.html">
+<link title="Promiwag_c_backend" rel="Chapter" href="Promiwag_c_backend.html">
+<link title="Promiwag_meta_packet" rel="Chapter" href="Promiwag_meta_packet.html">
+<link title="Promiwag_pcap_boilerplate" rel="Chapter" href="Promiwag_pcap_boilerplate.html">
+<link title="Promiwag_platform" rel="Chapter" href="Promiwag_platform.html">
+<link title="Promiwag_protocol_stack" rel="Chapter" href="Promiwag_protocol_stack.html">
+<link title="Promiwag_standard_protocols" rel="Chapter" href="Promiwag_standard_protocols.html">
+<link title="Promiwag_std" rel="Chapter" href="Promiwag_std.html">
+<link title="Promiwag_stiel" rel="Chapter" href="Promiwag_stiel.html">
+<link title="Promiwag_stiel_backends" rel="Chapter" href="Promiwag_stiel_backends.html"><title>Promiwag Library : Promiwag_stiel.Statement</title>
+</head>
+<body>
+<code class="code"><span class="keyword">sig</span><br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;declaration&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.variable_name&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.typed_variable_kind&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.statement<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;nop&nbsp;:&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.statement<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;block&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.statement&nbsp;list&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.statement<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;unblock&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.statement&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.statement&nbsp;list<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;conditional&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;?statement_then:<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.statement&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;?statement_else:<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.statement&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.typed_expression&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.statement<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;while_loop&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;?name:string&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.typed_expression&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.statement&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.statement<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;exit_while&nbsp;:&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.statement<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;exit_named_while&nbsp;:&nbsp;string&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.statement<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;cmt&nbsp;:&nbsp;string&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.statement<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;meta_log&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;(string&nbsp;*&nbsp;string&nbsp;*<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.typed_expression&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.typed_expression&nbsp;list))<br>
+&nbsp;&nbsp;&nbsp;&nbsp;list&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;string&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.typed_expression&nbsp;list&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.statement<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;log&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;string&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.typed_expression&nbsp;list&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.statement<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;switch_int&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.typed_expression&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;(int&nbsp;*&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.statement)&nbsp;list&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Promiwag_stiel</span>.<span class="constructor">Definition</span>.statement&nbsp;list<br>
+<span class="keyword">end</span></code></body></html>

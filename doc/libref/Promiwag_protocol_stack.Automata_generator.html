@@ -1,0 +1,220 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link rel="previous" href="Promiwag_protocol_stack.To_string.html">
+<link rel="Up" href="Promiwag_protocol_stack.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Promiwag" rel="Chapter" href="Promiwag.html">
+<link title="Promiwag_Yaboon_PolyComp" rel="Chapter" href="Promiwag_Yaboon_PolyComp.html">
+<link title="Promiwag_c_backend" rel="Chapter" href="Promiwag_c_backend.html">
+<link title="Promiwag_meta_packet" rel="Chapter" href="Promiwag_meta_packet.html">
+<link title="Promiwag_pcap_boilerplate" rel="Chapter" href="Promiwag_pcap_boilerplate.html">
+<link title="Promiwag_platform" rel="Chapter" href="Promiwag_platform.html">
+<link title="Promiwag_protocol_stack" rel="Chapter" href="Promiwag_protocol_stack.html">
+<link title="Promiwag_standard_protocols" rel="Chapter" href="Promiwag_standard_protocols.html">
+<link title="Promiwag_std" rel="Chapter" href="Promiwag_std.html">
+<link title="Promiwag_stiel" rel="Chapter" href="Promiwag_stiel.html">
+<link title="Promiwag_stiel_backends" rel="Chapter" href="Promiwag_stiel_backends.html"><title>Promiwag Library : Promiwag_protocol_stack.Automata_generator</title>
+</head>
+<body>
+<div class="navbar"><a href="Promiwag_protocol_stack.To_string.html">Previous</a>
+&nbsp;<a href="Promiwag_protocol_stack.html">Up</a>
+&nbsp;</div>
+<center><h1>Module <a href="type_Promiwag_protocol_stack.Automata_generator.html">Promiwag_protocol_stack.Automata_generator</a></h1></center>
+<br>
+<pre><span class="keyword">module</span> Automata_generator: <code class="code"><span class="keyword">sig</span></code> <a href="Promiwag_protocol_stack.Automata_generator.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><hr width="100%">
+<pre><span class="keyword">module</span> <a href="Promiwag_protocol_stack.Automata_generator.Partial_eval.html">Partial_eval</a>: <code class="type"><a href="Promiwag_stiel.Transform.Partial_evaluation.html">Promiwag_stiel.Transform.Partial_evaluation</a></code></pre><pre><span class="keyword">module</span> <a href="Promiwag_protocol_stack.Automata_generator.Packet_parsing.html">Packet_parsing</a>: <code class="type"><a href="Promiwag_meta_packet.Parser_generator.html">Promiwag_meta_packet.Parser_generator</a></code></pre><pre><span id="TYPEpacket_value"><span class="keyword">type</span> <code class="type"></code>packet_value</span> = <code class="type"><a href="Promiwag_meta_packet.Packet_structure.html#TYPEpacket_value">Promiwag_meta_packet.Packet_structure.packet_value</a></code> </pre>
+
+<br><code><span id="TYPEprotocol_handler"><span class="keyword">type</span> <code class="type"></code>protocol_handler</span> = {</code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>handled_format&nbsp;: <code class="type">string</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>user_request&nbsp;: <code class="type"><a href="Promiwag_protocol_stack.Automata_generator.html#TYPEpacket_value">packet_value</a> list</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>make_handler&nbsp;: <code class="type">Promiwag_stiel.Standard_renaming.STIEL.typed_expression list -><br>       Promiwag_stiel.Standard_renaming.STIEL.statement *<br>       Promiwag_stiel.Standard_renaming.STIEL.typed_expression</code>;</code></td>
+
+</tr></table>
+}
+
+
+<pre><span id="TYPEerror"><span class="keyword">type</span> <code class="type"></code>error</span> = <code class="type">[ `buffer_over_flow of<br>           string * Promiwag_stiel.Standard_renaming.STIEL.typed_expression *<br>           Promiwag_stiel.Standard_renaming.STIEL.typed_expression<br>       | `range_check of<br>           string * int * int *<br>           Promiwag_stiel.Standard_renaming.STIEL.typed_expression<br>       | `unknown of string ]</code> </pre>
+
+<pre><span id="TYPEerror_handler"><span class="keyword">type</span> <code class="type"></code>error_handler</span> = <code class="type"><a href="Promiwag_protocol_stack.Automata_generator.html#TYPEerror">error</a> -><br>       Promiwag_stiel.Standard_renaming.STIEL.statement</code> </pre>
+
+<pre><span id="VALdefault_error_handler"><span class="keyword">val</span> <a href="code_VALPromiwag_protocol_stack.Automata_generator.default_error_handler.html">default_error_handler</a></span> : <code class="type">[< `buffer_over_flow of<br>            string * <a href="Promiwag_stiel.Definition.html#TYPEtyped_expression">Promiwag_stiel.Definition.typed_expression</a> *<br>            <a href="Promiwag_stiel.Definition.html#TYPEtyped_expression">Promiwag_stiel.Definition.typed_expression</a><br>        | `range_check of<br>            string * int * int * <a href="Promiwag_stiel.Definition.html#TYPEtyped_expression">Promiwag_stiel.Definition.typed_expression</a><br>        | `unknown of string ] -><br>       <a href="Promiwag_stiel.Definition.html#TYPEstatement">Promiwag_stiel.Definition.statement</a></code></pre><br><code><span id="TYPEprotocol_stack_handler"><span class="keyword">type</span> <code class="type"></code>protocol_stack_handler</span> = {</code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>protocol_handlers&nbsp;: <code class="type"><a href="Promiwag_protocol_stack.Automata_generator.html#TYPEprotocol_handler">protocol_handler</a> list</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>error_handler&nbsp;: <code class="type"><a href="Promiwag_protocol_stack.Automata_generator.html#TYPEerror">error</a> -><br>       Promiwag_stiel.Standard_renaming.STIEL.statement</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>continue_expression&nbsp;: <code class="type">Promiwag_stiel.Standard_renaming.STIEL.typed_expression</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>initial_protocol&nbsp;: <code class="type">string</code>;</code></td>
+
+</tr></table>
+}
+
+
+<pre><span id="VALhandler"><span class="keyword">val</span> <a href="code_VALPromiwag_protocol_stack.Automata_generator.handler.html">handler</a></span> : <code class="type">?error_handler:(<a href="Promiwag_protocol_stack.Automata_generator.html#TYPEerror">error</a> -><br>                       Promiwag_stiel.Standard_renaming.STIEL.statement) -><br>       ?continue_expression:Promiwag_stiel.Standard_renaming.STIEL.typed_expression -><br>       initial_protocol:string -><br>       (string * <a href="Promiwag_protocol_stack.Automata_generator.html#TYPEpacket_value">packet_value</a> list *<br>        (Promiwag_stiel.Standard_renaming.STIEL.typed_expression list -><br>         Promiwag_stiel.Standard_renaming.STIEL.statement *<br>         Promiwag_stiel.Standard_renaming.STIEL.typed_expression))<br>       list -> <a href="Promiwag_protocol_stack.Automata_generator.html#TYPEprotocol_stack_handler">protocol_stack_handler</a></code></pre><br><code><span id="TYPEpacket_expression"><span class="keyword">type</span> <code class="type"></code>packet_expression</span> = {</code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>stiel_pointer&nbsp;: <code class="type">Promiwag_stiel.Standard_renaming.STIEL.typed_expression</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>stiel_size&nbsp;: <code class="type">Promiwag_stiel.Standard_renaming.STIEL.typed_expression option</code>;</code></td>
+
+</tr></table>
+}
+
+
+<pre><span id="VALpacket"><span class="keyword">val</span> <a href="code_VALPromiwag_protocol_stack.Automata_generator.packet.html">packet</a></span> : <code class="type">?size:Promiwag_stiel.Standard_renaming.STIEL.typed_expression -><br>       Promiwag_stiel.Standard_renaming.STIEL.typed_expression -><br>       <a href="Promiwag_protocol_stack.Automata_generator.html#TYPEpacket_expression">packet_expression</a></code></pre><pre><span id="VALtyped_pointer"><span class="keyword">val</span> <a href="code_VALPromiwag_protocol_stack.Automata_generator.typed_pointer.html">typed_pointer</a></span> : <code class="type"><a href="Promiwag_protocol_stack.Automata_generator.html#TYPEpacket_expression">packet_expression</a> -><br>       Promiwag_stiel.Standard_renaming.STIEL.typed_expression</code></pre><pre><span id="VALtyped_size"><span class="keyword">val</span> <a href="code_VALPromiwag_protocol_stack.Automata_generator.typed_size.html">typed_size</a></span> : <code class="type"><a href="Promiwag_protocol_stack.Automata_generator.html#TYPEpacket_expression">packet_expression</a> -><br>       Promiwag_stiel.Standard_renaming.STIEL.typed_expression option</code></pre><br><code><span id="TYPEcompiler"><span class="keyword">type</span> <code class="type"></code>compiler</span> = {</code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>protocol_stack&nbsp;: <code class="type"><a href="Promiwag_protocol_stack.html#TYPEprotocol_stack">Promiwag_protocol_stack.protocol_stack</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>handler&nbsp;: <code class="type"><a href="Promiwag_protocol_stack.Automata_generator.html#TYPEprotocol_stack_handler">protocol_stack_handler</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>todo_queue&nbsp;: <code class="type"><a href="Promiwag_protocol_stack.Automata_generator.html#TYPEprotocol_handler">protocol_handler</a><br>       <a href="Promiwag_std.FIFO.html#TYPEt">Promiwag_std.FIFO.t</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>var_current_packet&nbsp;: <code class="type">Promiwag_stiel.Standard_renaming.STIEL.typed_variable</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>var_current_packet_size&nbsp;: <code class="type">Promiwag_stiel.Standard_renaming.STIEL.typed_variable option</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>var_current_format&nbsp;: <code class="type">Promiwag_stiel.Standard_renaming.STIEL.typed_variable</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>var_next_format&nbsp;: <code class="type">Promiwag_stiel.Standard_renaming.STIEL.typed_variable</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>format_values_ht&nbsp;: <code class="type">(string, Promiwag_stiel.Standard_renaming.STIEL.typed_expression)<br>       Promiwag_std.Ht.t</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>compiled_handlers&nbsp;: <code class="type">(string, Promiwag_stiel.Standard_renaming.STIEL.statement) Promiwag_std.Ht.t</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>while_name&nbsp;: <code class="type">string</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>create_access_checks_for_pointers&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr></table>
+}
+
+
+<pre><span id="VALint_expression_for_format"><span class="keyword">val</span> <a href="code_VALPromiwag_protocol_stack.Automata_generator.int_expression_for_format.html">int_expression_for_format</a></span> : <code class="type"><a href="Promiwag_protocol_stack.Automata_generator.html#TYPEcompiler">compiler</a> -><br>       string -> Promiwag_stiel.Standard_renaming.STIEL.typed_expression</code></pre><pre><span id="VALget_out_value"><span class="keyword">val</span> <a href="code_VALPromiwag_protocol_stack.Automata_generator.get_out_value.html">get_out_value</a></span> : <code class="type"><a href="Promiwag_protocol_stack.Automata_generator.html#TYPEcompiler">compiler</a> -><br>       Promiwag_stiel.Standard_renaming.STIEL.typed_expression</code></pre><pre><span id="VALget_out_statement"><span class="keyword">val</span> <a href="code_VALPromiwag_protocol_stack.Automata_generator.get_out_statement.html">get_out_statement</a></span> : <code class="type"><a href="Promiwag_protocol_stack.Automata_generator.html#TYPEcompiler">compiler</a> -><br>       <a href="Promiwag_stiel.Definition.html#TYPEstatement">Promiwag_stiel.Definition.statement</a></code></pre><pre><span id="VALassign_next_to_out"><span class="keyword">val</span> <a href="code_VALPromiwag_protocol_stack.Automata_generator.assign_next_to_out.html">assign_next_to_out</a></span> : <code class="type"><a href="Promiwag_protocol_stack.Automata_generator.html#TYPEcompiler">compiler</a> -><br>       <a href="Promiwag_stiel.Definition.html#TYPEstatement">Promiwag_stiel.Definition.statement</a></code></pre><br><code><span id="TYPEatomic_transition"><span class="keyword">type</span> <code class="type"></code>atomic_transition</span> = {</code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>condition&nbsp;: <code class="type">Promiwag_stiel.Standard_renaming.STIEL.typed_expression</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>next_format&nbsp;: <code class="type">string</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>next_payload&nbsp;: <code class="type">string</code>;</code></td>
+
+</tr></table>
+}
+
+
+<pre><span id="VALstiel_var"><span class="keyword">val</span> <a href="code_VALPromiwag_protocol_stack.Automata_generator.stiel_var.html">stiel_var</a></span> : <code class="type">[< `offset of string<br>        | `pointer of string<br>        | `size of string<br>        | `value of string ] -><br>       string</code></pre><pre><span id="VALpacket_value_of_string"><span class="keyword">val</span> <a href="code_VALPromiwag_protocol_stack.Automata_generator.packet_value_of_string.html">packet_value_of_string</a></span> : <code class="type">string -><br>       [> `offset of string<br>        | `pointer of string<br>        | `size of string<br>        | `value of string ]</code></pre><pre><span id="VALatomic_transition"><span class="keyword">val</span> <a href="code_VALPromiwag_protocol_stack.Automata_generator.atomic_transition.html">atomic_transition</a></span> : <code class="type">?condition:Promiwag_stiel.Standard_renaming.STIEL.typed_expression -><br>       next_payload:string -><br>       string -> <a href="Promiwag_protocol_stack.Automata_generator.html#TYPEatomic_transition">atomic_transition</a></code></pre><pre><span id="VALtransform_input_case"><span class="keyword">val</span> <a href="code_VALPromiwag_protocol_stack.Automata_generator.transform_input_case.html">transform_input_case</a></span> : <code class="type">string -><br>       <a href="Promiwag_protocol_stack.html#TYPEswitch_case">Promiwag_protocol_stack.switch_case</a> -><br>       <a href="Promiwag_protocol_stack.Automata_generator.html#TYPEatomic_transition">atomic_transition</a></code></pre><pre><span id="VALtransform_transitions"><span class="keyword">val</span> <a href="code_VALPromiwag_protocol_stack.Automata_generator.transform_transitions.html">transform_transitions</a></span> : <code class="type"><a href="Promiwag_protocol_stack.html#TYPEtransition">Promiwag_protocol_stack.transition</a> -><br>       <a href="Promiwag_protocol_stack.Automata_generator.html#TYPEatomic_transition">atomic_transition</a> list</code></pre><pre><span id="VALcompile_transition"><span class="keyword">val</span> <a href="code_VALPromiwag_protocol_stack.Automata_generator.compile_transition.html">compile_transition</a></span> : <code class="type"><a href="Promiwag_protocol_stack.Automata_generator.html#TYPEcompiler">compiler</a> -><br>       ([< `offset of string<br>         | `pointer of string<br>         | `size of string<br>         | `value of string ] *<br>        <a href="Promiwag_stiel.Definition.html#TYPEtyped_expression">Promiwag_stiel.Definition.typed_expression</a>)<br>       list -><br>       ([> `offset of string ] * <a href="Promiwag_stiel.Definition.html#TYPEtyped_expression">Promiwag_stiel.Definition.typed_expression</a>) list -><br>       <a href="Promiwag_protocol_stack.Automata_generator.html#TYPEatomic_transition">atomic_transition</a> -><br>       <a href="Promiwag_stiel.Definition.html#TYPEstatement">Promiwag_stiel.Definition.statement</a></code></pre><pre><span id="VALfind_handler"><span class="keyword">val</span> <a href="code_VALPromiwag_protocol_stack.Automata_generator.find_handler.html">find_handler</a></span> : <code class="type"><a href="Promiwag_protocol_stack.Automata_generator.html#TYPEcompiler">compiler</a> -><br>       string -> <a href="Promiwag_protocol_stack.Automata_generator.html#TYPEprotocol_handler">protocol_handler</a></code></pre><pre><span id="VALcompile_runtime_checks"><span class="keyword">val</span> <a href="code_VALPromiwag_protocol_stack.Automata_generator.compile_runtime_checks.html">compile_runtime_checks</a></span> : <code class="type"><a href="Promiwag_protocol_stack.Automata_generator.html#TYPEcompiler">compiler</a> -><br>       <a href="Promiwag_protocol_stack.html#TYPEruntime_check">Promiwag_protocol_stack.runtime_check</a> list -><br>       Promiwag_stiel.Standard_renaming.STIEL.typed_expression list -><br>       <a href="Promiwag_stiel.Definition.html#TYPEstatement">Promiwag_stiel.Definition.statement</a> list</code></pre><pre><span id="VALcompile_protocol_handler"><span class="keyword">val</span> <a href="code_VALPromiwag_protocol_stack.Automata_generator.compile_protocol_handler.html">compile_protocol_handler</a></span> : <code class="type"><a href="Promiwag_protocol_stack.Automata_generator.html#TYPEcompiler">compiler</a> -><br>       <a href="Promiwag_protocol_stack.html#TYPEprotocol">Promiwag_protocol_stack.protocol</a> -><br>       <a href="Promiwag_protocol_stack.Automata_generator.html#TYPEprotocol_handler">protocol_handler</a> -> unit</code></pre><pre><span id="VALtry_compile_handler"><span class="keyword">val</span> <a href="code_VALPromiwag_protocol_stack.Automata_generator.try_compile_handler.html">try_compile_handler</a></span> : <code class="type"><a href="Promiwag_protocol_stack.Automata_generator.html#TYPEcompiler">compiler</a> -><br>       <a href="Promiwag_protocol_stack.Automata_generator.html#TYPEprotocol_handler">protocol_handler</a> -> unit</code></pre><pre><span id="VALautomata_block"><span class="keyword">val</span> <a href="code_VALPromiwag_protocol_stack.Automata_generator.automata_block.html">automata_block</a></span> : <code class="type">?create_access_checks_for_pointers:bool -><br>       <a href="Promiwag_protocol_stack.html#TYPEprotocol_stack">Promiwag_protocol_stack.protocol_stack</a> -><br>       <a href="Promiwag_protocol_stack.Automata_generator.html#TYPEprotocol_stack_handler">protocol_stack_handler</a> -><br>       <a href="Promiwag_protocol_stack.Automata_generator.html#TYPEpacket_expression">packet_expression</a> -><br>       <a href="Promiwag_stiel.Definition.html#TYPEstatement">Promiwag_stiel.Definition.statement</a> list</code></pre></body></html>

@@ -1,0 +1,43 @@
+<html><head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Promiwag" rel="Chapter" href="Promiwag.html">
+<link title="Promiwag_Yaboon_PolyComp" rel="Chapter" href="Promiwag_Yaboon_PolyComp.html">
+<link title="Promiwag_c_backend" rel="Chapter" href="Promiwag_c_backend.html">
+<link title="Promiwag_meta_packet" rel="Chapter" href="Promiwag_meta_packet.html">
+<link title="Promiwag_pcap_boilerplate" rel="Chapter" href="Promiwag_pcap_boilerplate.html">
+<link title="Promiwag_platform" rel="Chapter" href="Promiwag_platform.html">
+<link title="Promiwag_protocol_stack" rel="Chapter" href="Promiwag_protocol_stack.html">
+<link title="Promiwag_standard_protocols" rel="Chapter" href="Promiwag_standard_protocols.html">
+<link title="Promiwag_std" rel="Chapter" href="Promiwag_std.html">
+<link title="Promiwag_stiel" rel="Chapter" href="Promiwag_stiel.html">
+<link title="Promiwag_stiel_backends" rel="Chapter" href="Promiwag_stiel_backends.html"><title>Promiwag Library : Promiwag_pcap_boilerplate.OCaml.basic_loop</title>
+</head>
+<body>
+<code class="code"><span class="keyword">let</span>&nbsp;basic_loop&nbsp;~call&nbsp;=<br>
+sprintf<br>
+<span class="string">"<br>
+open&nbsp;Pcap<br>
+let&nbsp;()&nbsp;=<br>
+&nbsp;&nbsp;let&nbsp;callbkfun&nbsp;(s:string)&nbsp;(h:pcap_pkthdr)&nbsp;(t:string)&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;%s<br>
+&nbsp;&nbsp;in<br>
+&nbsp;&nbsp;if&nbsp;Array.length&nbsp;Sys.argv&nbsp;&lt;&gt;&nbsp;3&nbsp;then<br>
+&nbsp;&nbsp;&nbsp;&nbsp;failwith&nbsp;\"usage:&nbsp;./a.out&nbsp;[file|device]&nbsp;&lt;name&gt;\";<br>
+&nbsp;&nbsp;let&nbsp;opened&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;match&nbsp;Sys.argv.(1)&nbsp;with<br>
+&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;\"file\"&nbsp;-&gt;&nbsp;&nbsp;pcap_open_offline&nbsp;Sys.argv.(2)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;\"device\"&nbsp;|&nbsp;\"dev\"&nbsp;-&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;pcap_open_live&nbsp;Sys.argv.(2)&nbsp;65535&nbsp;0&nbsp;0<br>
+&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;_&nbsp;-&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;failwith&nbsp;\"usage:&nbsp;./a.out&nbsp;[file|device]&nbsp;&lt;name&gt;\";<br>
+&nbsp;&nbsp;in<br>
+&nbsp;&nbsp;ignore&nbsp;(pcap_loop&nbsp;opened&nbsp;(-1)&nbsp;callbkfun&nbsp;\"\")<br>
+"</span><br>
+(call&nbsp;<span class="string">"t"</span>&nbsp;<span class="string">"h.caplen"</span>)</code></body></html>

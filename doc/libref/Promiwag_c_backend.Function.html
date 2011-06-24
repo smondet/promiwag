@@ -1,0 +1,67 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link rel="previous" href="Promiwag_c_backend.C_to_str.html">
+<link rel="next" href="Promiwag_c_backend.Construct.html">
+<link rel="Up" href="Promiwag_c_backend.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Promiwag" rel="Chapter" href="Promiwag.html">
+<link title="Promiwag_Yaboon_PolyComp" rel="Chapter" href="Promiwag_Yaboon_PolyComp.html">
+<link title="Promiwag_c_backend" rel="Chapter" href="Promiwag_c_backend.html">
+<link title="Promiwag_meta_packet" rel="Chapter" href="Promiwag_meta_packet.html">
+<link title="Promiwag_pcap_boilerplate" rel="Chapter" href="Promiwag_pcap_boilerplate.html">
+<link title="Promiwag_platform" rel="Chapter" href="Promiwag_platform.html">
+<link title="Promiwag_protocol_stack" rel="Chapter" href="Promiwag_protocol_stack.html">
+<link title="Promiwag_standard_protocols" rel="Chapter" href="Promiwag_standard_protocols.html">
+<link title="Promiwag_std" rel="Chapter" href="Promiwag_std.html">
+<link title="Promiwag_stiel" rel="Chapter" href="Promiwag_stiel.html">
+<link title="Promiwag_stiel_backends" rel="Chapter" href="Promiwag_stiel_backends.html"><title>Promiwag Library : Promiwag_c_backend.Function</title>
+</head>
+<body>
+<div class="navbar"><a href="Promiwag_c_backend.C_to_str.html">Previous</a>
+&nbsp;<a href="Promiwag_c_backend.html">Up</a>
+&nbsp;<a href="Promiwag_c_backend.Construct.html">Next</a>
+</div>
+<center><h1>Module <a href="type_Promiwag_c_backend.Function.html">Promiwag_c_backend.Function</a></h1></center>
+<br>
+<pre><span class="keyword">module</span> Function: <code class="code"><span class="keyword">sig</span></code> <a href="Promiwag_c_backend.Function.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><hr width="100%">
+<br><code><span id="TYPEt"><span class="keyword">type</span> <code class="type"></code>t</span> = {</code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>name&nbsp;: <code class="type">string</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>return_type&nbsp;: <code class="type"><a href="Promiwag_c_backend.C_LightAST.html#TYPEc_type">Promiwag_c_backend.C_LightAST.c_type</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>arguments&nbsp;: <code class="type"><a href="Promiwag_c_backend.Variable.html#TYPEt">Promiwag_c_backend.Variable.t</a> list</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>block&nbsp;: <code class="type"><a href="Promiwag_c_backend.C_LightAST.html#TYPEblock">Promiwag_c_backend.C_LightAST.block</a></code>;</code></td>
+
+</tr></table>
+}
+
+
+<pre><span id="VALcreate"><span class="keyword">val</span> <a href="code_VALPromiwag_c_backend.Function.create.html">create</a></span> : <code class="type">?unique:bool -><br>       ?name:string -><br>       ?return_type:<a href="Promiwag_c_backend.C_LightAST.html#TYPEc_type">Promiwag_c_backend.C_LightAST.c_type</a> -><br>       ?arguments:<a href="Promiwag_c_backend.Variable.html#TYPEt">Promiwag_c_backend.Variable.t</a> list -><br>       ?block:<a href="Promiwag_c_backend.C_LightAST.html#TYPEblock">Promiwag_c_backend.C_LightAST.block</a> -><br>       unit -> <a href="Promiwag_c_backend.Function.html#TYPEt">t</a></code></pre><pre><span id="VALsignature"><span class="keyword">val</span> <a href="code_VALPromiwag_c_backend.Function.signature.html">signature</a></span> : <code class="type"><a href="Promiwag_c_backend.Function.html#TYPEt">t</a> -><br>       <a href="Promiwag_c_backend.C_LightAST.html#TYPEfunction_signature">Promiwag_c_backend.C_LightAST.function_signature</a></code></pre><pre><span id="VALlocal_declaration"><span class="keyword">val</span> <a href="code_VALPromiwag_c_backend.Function.local_declaration.html">local_declaration</a></span> : <code class="type"><a href="Promiwag_c_backend.Function.html#TYPEt">t</a> -> <a href="Promiwag_c_backend.C_LightAST.html#TYPEtoplevel">Promiwag_c_backend.C_LightAST.toplevel</a></code></pre><pre><span id="VALdefinition"><span class="keyword">val</span> <a href="code_VALPromiwag_c_backend.Function.definition.html">definition</a></span> : <code class="type"><a href="Promiwag_c_backend.Function.html#TYPEt">t</a> -> <a href="Promiwag_c_backend.C_LightAST.html#TYPEtoplevel">Promiwag_c_backend.C_LightAST.toplevel</a></code></pre><pre><span id="VALvariable"><span class="keyword">val</span> <a href="code_VALPromiwag_c_backend.Function.variable.html">variable</a></span> : <code class="type"><a href="Promiwag_c_backend.Function.html#TYPEt">t</a> -> [> `variable of string ]</code></pre></body></html>

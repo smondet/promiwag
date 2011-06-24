@@ -1,0 +1,59 @@
+<html><head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Promiwag" rel="Chapter" href="Promiwag.html">
+<link title="Promiwag_Yaboon_PolyComp" rel="Chapter" href="Promiwag_Yaboon_PolyComp.html">
+<link title="Promiwag_c_backend" rel="Chapter" href="Promiwag_c_backend.html">
+<link title="Promiwag_meta_packet" rel="Chapter" href="Promiwag_meta_packet.html">
+<link title="Promiwag_pcap_boilerplate" rel="Chapter" href="Promiwag_pcap_boilerplate.html">
+<link title="Promiwag_platform" rel="Chapter" href="Promiwag_platform.html">
+<link title="Promiwag_protocol_stack" rel="Chapter" href="Promiwag_protocol_stack.html">
+<link title="Promiwag_standard_protocols" rel="Chapter" href="Promiwag_standard_protocols.html">
+<link title="Promiwag_std" rel="Chapter" href="Promiwag_std.html">
+<link title="Promiwag_stiel" rel="Chapter" href="Promiwag_stiel.html">
+<link title="Promiwag_stiel_backends" rel="Chapter" href="Promiwag_stiel_backends.html"><title>Promiwag Library : Promiwag_c_backend.To_big_string.statement</title>
+</head>
+<body>
+<code class="code"><span class="keyword">let</span>&nbsp;<span class="keyword">rec</span>&nbsp;block:&nbsp;<span class="constructor">C</span>.block&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">BS</span>.t&nbsp;=&nbsp;<span class="keyword">fun</span>&nbsp;(local_vars,&nbsp;statements)&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">BS</span>.cat&nbsp;[<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">BS</span>.str&nbsp;<span class="string">"&nbsp;{"</span>;&nbsp;<span class="constructor">BS</span>.new_line&nbsp;();<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">BS</span>.cat&nbsp;(<span class="constructor">Ls</span>.map&nbsp;(and_newline&nbsp;***&nbsp;local_variable)&nbsp;local_vars);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">BS</span>.cat&nbsp;(<span class="constructor">Ls</span>.map&nbsp;(and_newline&nbsp;***&nbsp;statement)&nbsp;statements);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">BS</span>.str&nbsp;<span class="string">"}"</span>;&nbsp;<span class="constructor">BS</span>.new_line&nbsp;();&nbsp;]<br>
+&nbsp;&nbsp;<span class="keyword">and</span>&nbsp;statement:&nbsp;<span class="constructor">C</span>.statement&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">BS</span>.t&nbsp;=&nbsp;<span class="keyword">function</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span>empty&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">BS</span>.str&nbsp;<span class="string">";"</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span>expression&nbsp;exp&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">BS</span>.cat&nbsp;[expression&nbsp;exp;&nbsp;<span class="constructor">BS</span>.str&nbsp;<span class="string">";"</span>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span>block&nbsp;b&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;block&nbsp;b;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span>conditional&nbsp;(exp,&nbsp;thn,&nbsp;els)&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">BS</span>.cat&nbsp;[&nbsp;<span class="constructor">BS</span>.str&nbsp;<span class="string">"if&nbsp;"</span>;&nbsp;parentize&nbsp;(expression&nbsp;exp);&nbsp;<span class="constructor">BS</span>.new_line&nbsp;();<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;statement&nbsp;thn;&nbsp;<span class="constructor">BS</span>.str&nbsp;<span class="string">"else&nbsp;"</span>;&nbsp;statement&nbsp;els;&nbsp;]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span>while_loop&nbsp;(exp,&nbsp;st)&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">BS</span>.cat&nbsp;[&nbsp;<span class="constructor">BS</span>.str&nbsp;<span class="string">"while&nbsp;"</span>;&nbsp;parentize&nbsp;(expression&nbsp;exp);&nbsp;statement&nbsp;st;]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span>break&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">BS</span>.str&nbsp;<span class="string">"break;"</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span>dowhile_loop&nbsp;(exp,&nbsp;st)&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">BS</span>.cat&nbsp;[&nbsp;<span class="constructor">BS</span>.str&nbsp;<span class="string">"do&nbsp;"</span>;&nbsp;statement&nbsp;st;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">BS</span>.str&nbsp;<span class="string">"while&nbsp;"</span>;&nbsp;parentize&nbsp;(expression&nbsp;exp);&nbsp;<span class="constructor">BS</span>.str&nbsp;<span class="string">";"</span>;&nbsp;]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span>return&nbsp;exp&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">BS</span>.cat&nbsp;[<span class="constructor">BS</span>.str&nbsp;<span class="string">"return&nbsp;"</span>;&nbsp;expression&nbsp;exp;&nbsp;<span class="constructor">BS</span>.str&nbsp;<span class="string">";"</span>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span>return_void&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">BS</span>.str&nbsp;<span class="string">"return;"</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span>simple_switch&nbsp;(exp,&nbsp;statements)&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">BS</span>.cat&nbsp;[<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="constructor">BS</span>.str&nbsp;<span class="string">"switch&nbsp;"</span>);&nbsp;(parentize&nbsp;(expression&nbsp;exp));&nbsp;(<span class="constructor">BS</span>.str&nbsp;<span class="string">"{"</span>);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="constructor">BS</span>.new_line&nbsp;());<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">BS</span>.cat&nbsp;(<span class="constructor">Ls</span>.map&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="keyword">fun</span>&nbsp;(casexp,&nbsp;blok)&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">BS</span>.cat&nbsp;[<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case_expression&nbsp;casexp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;block&nbsp;blok;&nbsp;<span class="constructor">BS</span>.str&nbsp;<span class="string">"break;"</span>;&nbsp;<span class="constructor">BS</span>.new_line&nbsp;()])<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;statements);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">BS</span>.str&nbsp;<span class="string">"}"</span>;&nbsp;]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span>assignment&nbsp;(var,&nbsp;exp)&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">BS</span>.cat&nbsp;[expression&nbsp;var;&nbsp;<span class="constructor">BS</span>.str&nbsp;<span class="string">"&nbsp;=&nbsp;"</span>;&nbsp;expression&nbsp;exp;&nbsp;<span class="constructor">BS</span>.str&nbsp;<span class="string">";"</span>;&nbsp;]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span>comment&nbsp;s&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;comment&nbsp;~at_dangerous_place:<span class="keyword">true</span>&nbsp;s<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span>list&nbsp;l&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">BS</span>.cat&nbsp;(<span class="constructor">Ls</span>.map&nbsp;(and_newline&nbsp;***&nbsp;statement)&nbsp;l)</code></body></html>

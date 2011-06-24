@@ -1,0 +1,154 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link rel="next" href="Promiwag_meta_packet.To_string.html">
+<link rel="Up" href="Promiwag_meta_packet.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Promiwag" rel="Chapter" href="Promiwag.html">
+<link title="Promiwag_Yaboon_PolyComp" rel="Chapter" href="Promiwag_Yaboon_PolyComp.html">
+<link title="Promiwag_c_backend" rel="Chapter" href="Promiwag_c_backend.html">
+<link title="Promiwag_meta_packet" rel="Chapter" href="Promiwag_meta_packet.html">
+<link title="Promiwag_pcap_boilerplate" rel="Chapter" href="Promiwag_pcap_boilerplate.html">
+<link title="Promiwag_platform" rel="Chapter" href="Promiwag_platform.html">
+<link title="Promiwag_protocol_stack" rel="Chapter" href="Promiwag_protocol_stack.html">
+<link title="Promiwag_standard_protocols" rel="Chapter" href="Promiwag_standard_protocols.html">
+<link title="Promiwag_std" rel="Chapter" href="Promiwag_std.html">
+<link title="Promiwag_stiel" rel="Chapter" href="Promiwag_stiel.html">
+<link title="Promiwag_stiel_backends" rel="Chapter" href="Promiwag_stiel_backends.html"><title>Promiwag Library : Promiwag_meta_packet.Packet_structure</title>
+</head>
+<body>
+<div class="navbar">&nbsp;<a href="Promiwag_meta_packet.html">Up</a>
+&nbsp;<a href="Promiwag_meta_packet.To_string.html">Next</a>
+</div>
+<center><h1>Module <a href="type_Promiwag_meta_packet.Packet_structure.html">Promiwag_meta_packet.Packet_structure</a></h1></center>
+<br>
+<pre><span class="keyword">module</span> Packet_structure: <code class="code"><span class="keyword">sig</span></code> <a href="Promiwag_meta_packet.Packet_structure.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><hr width="100%">
+<br><code><span id="TYPEint_operator"><span class="keyword">type</span> <code class="type"></code>int_operator</span> = </code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Op_add</span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Op_sub</span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Op_mul</span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Op_div</span></code></td>
+
+</tr></table>
+
+
+<pre><span id="VALcaml_op_of_size_op"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Packet_structure.caml_op_of_size_op.html">caml_op_of_size_op</a></span> : <code class="type"><a href="Promiwag_meta_packet.Packet_structure.html#TYPEint_operator">int_operator</a> -> int -> int -> int</code></pre><pre><span id="VALstring_of_size_op"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Packet_structure.string_of_size_op.html">string_of_size_op</a></span> : <code class="type"><a href="Promiwag_meta_packet.Packet_structure.html#TYPEint_operator">int_operator</a> -> string</code></pre><br><code><span id="TYPEsize"><span class="keyword">type</span> <code class="type"></code>size</span> = </code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Size_fixed</span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Size_variable</span> <span class="keyword">of</span> <code class="type">string</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Size_binary_expression</span> <span class="keyword">of</span> <code class="type"><a href="Promiwag_meta_packet.Packet_structure.html#TYPEint_operator">int_operator</a><br>        * <a href="Promiwag_meta_packet.Packet_structure.html#TYPEsize">size</a><br>        * <a href="Promiwag_meta_packet.Packet_structure.html#TYPEsize">size</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Size_alignment</span> <span class="keyword">of</span> <code class="type">int * <a href="Promiwag_meta_packet.Packet_structure.html#TYPEsize">size</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Size_offset_of</span> <span class="keyword">of</span> <code class="type">string</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Size_unknown</span></code></td>
+
+</tr></table>
+
+
+<pre><span id="VALsize_int"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Packet_structure.size_int.html">size_int</a></span> : <code class="type">int -> <a href="Promiwag_meta_packet.Packet_structure.html#TYPEsize">size</a></code></pre><pre><span id="VALsize_var"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Packet_structure.size_var.html">size_var</a></span> : <code class="type">string -> <a href="Promiwag_meta_packet.Packet_structure.html#TYPEsize">size</a></code></pre><pre><span id="VALstring_of_size"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Packet_structure.string_of_size.html">string_of_size</a></span> : <code class="type"><a href="Promiwag_meta_packet.Packet_structure.html#TYPEsize">size</a> -> string</code></pre><pre><span id="VALparse_size"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Packet_structure.parse_size.html">parse_size</a></span> : <code class="type">([< `add of 'a * 'a<br>         | `align16 of 'a<br>         | `align32 of 'a<br>         | `align64 of 'a<br>         | `align8 of 'a<br>         | `div of 'a * 'a<br>         | `int of int<br>         | `mul of 'a * 'a<br>         | `offset of string<br>         | `size of <a href="Promiwag_meta_packet.Packet_structure.html#TYPEsize">size</a><br>         | `sub of 'a * 'a<br>         | `var of string ]<br>        as 'a) -><br>       <a href="Promiwag_meta_packet.Packet_structure.html#TYPEsize">size</a></code></pre><pre><span id="VALsize"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Packet_structure.size.html">size</a></span> : <code class="type">([< `add of 'a * 'a<br>         | `align16 of 'a<br>         | `align32 of 'a<br>         | `align64 of 'a<br>         | `align8 of 'a<br>         | `div of 'a * 'a<br>         | `int of int<br>         | `mul of 'a * 'a<br>         | `offset of string<br>         | `size of <a href="Promiwag_meta_packet.Packet_structure.html#TYPEsize">size</a><br>         | `sub of 'a * 'a<br>         | `var of string ]<br>        as 'a) -><br>       <a href="Promiwag_meta_packet.Packet_structure.html#TYPEsize">size</a></code></pre><br><code><span id="TYPEcontent_type"><span class="keyword">type</span> <code class="type"></code>content_type</span> = </code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Type_unsigned_integer</span> <span class="keyword">of</span> <code class="type"><a href="Promiwag_meta_packet.Packet_structure.html#TYPEsize">size</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Type_signed_integer</span> <span class="keyword">of</span> <code class="type"><a href="Promiwag_meta_packet.Packet_structure.html#TYPEsize">size</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Type_little_endian</span> <span class="keyword">of</span> <code class="type"><a href="Promiwag_meta_packet.Packet_structure.html#TYPEcontent_type">content_type</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Type_string</span> <span class="keyword">of</span> <code class="type"><a href="Promiwag_meta_packet.Packet_structure.html#TYPEsize">size</a></code></code></td>
+
+</tr></table>
+
+
+<pre><span id="VALstring_of_content_type"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Packet_structure.string_of_content_type.html">string_of_content_type</a></span> : <code class="type">?little_endian:bool -><br>       <a href="Promiwag_meta_packet.Packet_structure.html#TYPEcontent_type">content_type</a> -> string</code></pre><pre><span id="VALfixed_int"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Packet_structure.fixed_int.html">fixed_int</a></span> : <code class="type">?unsigned:bool -><br>       ?little_endian:bool -><br>       int -> <a href="Promiwag_meta_packet.Packet_structure.html#TYPEcontent_type">content_type</a></code></pre><pre><span id="VALfixed_string"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Packet_structure.fixed_string.html">fixed_string</a></span> : <code class="type">int -> <a href="Promiwag_meta_packet.Packet_structure.html#TYPEcontent_type">content_type</a></code></pre><pre><span id="VALvariable_string"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Packet_structure.variable_string.html">variable_string</a></span> : <code class="type">string -> <a href="Promiwag_meta_packet.Packet_structure.html#TYPEcontent_type">content_type</a></code></pre><br><code><span id="TYPEcontent_item"><span class="keyword">type</span> <code class="type"></code>content_item</span> = </code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Item_field</span> <span class="keyword">of</span> <code class="type">string * <a href="Promiwag_meta_packet.Packet_structure.html#TYPEcontent_type">content_type</a></code></code></td>
+
+</tr></table>
+
+
+<pre><span id="VALfield"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Packet_structure.field.html">field</a></span> : <code class="type">string -><br>       <a href="Promiwag_meta_packet.Packet_structure.html#TYPEcontent_type">content_type</a> -><br>       <a href="Promiwag_meta_packet.Packet_structure.html#TYPEcontent_item">content_item</a></code></pre><pre><span id="VALfixed_int_field"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Packet_structure.fixed_int_field.html">fixed_int_field</a></span> : <code class="type">string -> int -> <a href="Promiwag_meta_packet.Packet_structure.html#TYPEcontent_item">content_item</a></code></pre><pre><span id="VALstring_field"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Packet_structure.string_field.html">string_field</a></span> : <code class="type">string -><br>       <a href="Promiwag_meta_packet.Packet_structure.html#TYPEsize">size</a> -><br>       <a href="Promiwag_meta_packet.Packet_structure.html#TYPEcontent_item">content_item</a></code></pre><pre><span id="VALpayload"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Packet_structure.payload.html">payload</a></span> : <code class="type">?size:<a href="Promiwag_meta_packet.Packet_structure.html#TYPEsize">size</a> -><br>       ?name:string -> unit -> <a href="Promiwag_meta_packet.Packet_structure.html#TYPEcontent_item">content_item</a></code></pre><pre><span id="TYPEformat"><span class="keyword">type</span> <code class="type"></code>format</span> = <code class="type"><a href="Promiwag_meta_packet.Packet_structure.html#TYPEcontent_item">content_item</a> list</code> </pre>
+
+<pre><span id="VALempty"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Packet_structure.empty.html">empty</a></span> : <code class="type">'a list</code></pre><pre><span id="VALpacket_format"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Packet_structure.packet_format.html">packet_format</a></span> : <code class="type"><a href="Promiwag_meta_packet.Packet_structure.html#TYPEformat">format</a> -><br>       <a href="Promiwag_meta_packet.Packet_structure.html#TYPEformat">format</a></code></pre><pre><span id="TYPEpacket_value"><span class="keyword">type</span> <code class="type"></code>packet_value</span> = <code class="type">[ `offset of string | `pointer of string | `size of string | `value of string ]</code> </pre>
+
+</body></html>

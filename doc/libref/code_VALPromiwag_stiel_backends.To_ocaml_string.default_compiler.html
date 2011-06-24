@@ -1,0 +1,64 @@
+<html><head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Promiwag" rel="Chapter" href="Promiwag.html">
+<link title="Promiwag_Yaboon_PolyComp" rel="Chapter" href="Promiwag_Yaboon_PolyComp.html">
+<link title="Promiwag_c_backend" rel="Chapter" href="Promiwag_c_backend.html">
+<link title="Promiwag_meta_packet" rel="Chapter" href="Promiwag_meta_packet.html">
+<link title="Promiwag_pcap_boilerplate" rel="Chapter" href="Promiwag_pcap_boilerplate.html">
+<link title="Promiwag_platform" rel="Chapter" href="Promiwag_platform.html">
+<link title="Promiwag_protocol_stack" rel="Chapter" href="Promiwag_protocol_stack.html">
+<link title="Promiwag_standard_protocols" rel="Chapter" href="Promiwag_standard_protocols.html">
+<link title="Promiwag_std" rel="Chapter" href="Promiwag_std.html">
+<link title="Promiwag_stiel" rel="Chapter" href="Promiwag_stiel.html">
+<link title="Promiwag_stiel_backends" rel="Chapter" href="Promiwag_stiel_backends.html"><title>Promiwag Library : Promiwag_stiel_backends.To_ocaml_string.default_compiler</title>
+</head>
+<body>
+<code class="code"><span class="keyword">let</span>&nbsp;default_compiler&nbsp;()&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">let</span>&nbsp;list_for_statements&nbsp;=&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{&nbsp;list&nbsp;<span class="keyword">with</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;stick_to_label&nbsp;=&nbsp;<span class="keyword">true</span>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;align_closing&nbsp;=&nbsp;<span class="keyword">true</span>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;wrap_body&nbsp;=&nbsp;<span class="keywordsign">`</span><span class="constructor">Force_breaks</span>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;separators_stick_left&nbsp;=&nbsp;<span class="keyword">true</span>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;space_before_separator&nbsp;=&nbsp;<span class="keyword">false</span>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;indent_body&nbsp;=&nbsp;0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;<span class="keyword">in</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">let</span>&nbsp;list_for_sentence&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{&nbsp;list&nbsp;<span class="keyword">with</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;stick_to_label&nbsp;=&nbsp;<span class="keyword">true</span>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;align_closing&nbsp;=&nbsp;<span class="keyword">false</span>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;space_after_opening&nbsp;=&nbsp;<span class="keyword">false</span>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;space_before_closing&nbsp;=&nbsp;<span class="keyword">false</span>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;wrap_body&nbsp;=&nbsp;<span class="keywordsign">`</span><span class="constructor">Always_wrap</span>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;indent_body&nbsp;=&nbsp;0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;<span class="keyword">in</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">let</span>&nbsp;label&nbsp;=&nbsp;{label&nbsp;<span class="keyword">with</span>&nbsp;indent_after_label&nbsp;=&nbsp;4&nbsp;}&nbsp;<span class="keyword">in</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;atom_type&nbsp;=&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;atom&nbsp;;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;atom_keyword&nbsp;=&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;atom&nbsp;;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;atom_operator&nbsp;=&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;atom&nbsp;;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;atom_funciton&nbsp;=&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;atom&nbsp;;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;atom_literal&nbsp;=&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;atom&nbsp;;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;atom_comment&nbsp;=&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;atom&nbsp;;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;list_expression&nbsp;=&nbsp;(<span class="string">"("</span>,&nbsp;<span class="string">""</span>,&nbsp;<span class="string">")"</span>,&nbsp;list_for_sentence);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;list_statement&nbsp;=&nbsp;(<span class="string">""</span>,&nbsp;<span class="string">""</span>,&nbsp;<span class="string">""</span>,&nbsp;list_for_sentence);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;list_sentence&nbsp;=&nbsp;(<span class="string">""</span>,&nbsp;<span class="string">""</span>,&nbsp;<span class="string">""</span>,&nbsp;list_for_sentence);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;list_coma&nbsp;=&nbsp;(<span class="string">"("</span>,&nbsp;<span class="string">","</span>,&nbsp;<span class="string">")"</span>,&nbsp;list_for_sentence);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;list_typed_expression&nbsp;=&nbsp;(<span class="string">"["</span>,&nbsp;<span class="string">":"</span>,&nbsp;<span class="string">"]"</span>,&nbsp;list_for_sentence);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;list_block&nbsp;=&nbsp;&nbsp;(<span class="string">"begin"</span>,&nbsp;<span class="string">";"</span>,&nbsp;<span class="string">"end"</span>,&nbsp;{list_for_statements&nbsp;<span class="keyword">with</span>&nbsp;indent_body&nbsp;=&nbsp;2;}&nbsp;);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;list_statements&nbsp;=&nbsp;&nbsp;(<span class="string">""</span>,&nbsp;<span class="string">""</span>,&nbsp;<span class="string">""</span>,&nbsp;list_for_statements);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;list_variability&nbsp;=&nbsp;&nbsp;(<span class="string">""</span>,&nbsp;<span class="string">""</span>,&nbsp;<span class="string">""</span>,&nbsp;list);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;list_comment&nbsp;=&nbsp;&nbsp;(<span class="string">"(*"</span>,&nbsp;<span class="string">""</span>,&nbsp;<span class="string">"*)"</span>,&nbsp;list);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;list_specification&nbsp;=&nbsp;&nbsp;(<span class="string">"{"</span>,&nbsp;<span class="string">""</span>,&nbsp;<span class="string">"}"</span>,&nbsp;list);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;label_statement&nbsp;=&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;label;&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;label_logic&nbsp;=&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;label;&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;label_alternative&nbsp;=&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;label;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;while_list&nbsp;=&nbsp;[];&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}</code></body></html>

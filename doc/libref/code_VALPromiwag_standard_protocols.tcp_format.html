@@ -1,0 +1,48 @@
+<html><head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Promiwag" rel="Chapter" href="Promiwag.html">
+<link title="Promiwag_Yaboon_PolyComp" rel="Chapter" href="Promiwag_Yaboon_PolyComp.html">
+<link title="Promiwag_c_backend" rel="Chapter" href="Promiwag_c_backend.html">
+<link title="Promiwag_meta_packet" rel="Chapter" href="Promiwag_meta_packet.html">
+<link title="Promiwag_pcap_boilerplate" rel="Chapter" href="Promiwag_pcap_boilerplate.html">
+<link title="Promiwag_platform" rel="Chapter" href="Promiwag_platform.html">
+<link title="Promiwag_protocol_stack" rel="Chapter" href="Promiwag_protocol_stack.html">
+<link title="Promiwag_standard_protocols" rel="Chapter" href="Promiwag_standard_protocols.html">
+<link title="Promiwag_std" rel="Chapter" href="Promiwag_std.html">
+<link title="Promiwag_stiel" rel="Chapter" href="Promiwag_stiel.html">
+<link title="Promiwag_stiel_backends" rel="Chapter" href="Promiwag_stiel_backends.html"><title>Promiwag Library : Promiwag_standard_protocols.tcp_format</title>
+</head>
+<body>
+<code class="code"><span class="keyword">let</span>&nbsp;tcp_format&nbsp;=<br>
+&nbsp;&nbsp;<span class="constructor">MPS</span>.packet_format&nbsp;[<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;<span class="string">"src_port"</span>&nbsp;16;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;<span class="string">"dst_port"</span>&nbsp;16;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;<span class="string">"seq_number"</span>&nbsp;32;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;<span class="string">"ack_number"</span>&nbsp;32;<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;<span class="string">"data_offset"</span>&nbsp;4;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;<span class="string">"reserved"</span>&nbsp;&nbsp;&nbsp;&nbsp;4;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;&nbsp;<span class="string">"cwr"</span>&nbsp;1;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;&nbsp;<span class="string">"ece"</span>&nbsp;1;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;&nbsp;<span class="string">"urg"</span>&nbsp;1;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;&nbsp;<span class="string">"ack"</span>&nbsp;1;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;&nbsp;<span class="string">"psh"</span>&nbsp;1;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;&nbsp;<span class="string">"rst"</span>&nbsp;1;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;&nbsp;<span class="string">"syn"</span>&nbsp;1;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;&nbsp;<span class="string">"fin"</span>&nbsp;1;<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;&nbsp;<span class="string">"window"</span>&nbsp;16;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;&nbsp;<span class="string">"checksum"</span>&nbsp;16;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;&nbsp;<span class="string">"urg_pointer"</span>&nbsp;16;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.string_field&nbsp;&nbsp;<span class="string">"options"</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="constructor">MPS</span>.size&nbsp;(<span class="keywordsign">`</span>sub&nbsp;(<span class="keywordsign">`</span>mul&nbsp;(<span class="keywordsign">`</span>var&nbsp;<span class="string">"data_offset"</span>,&nbsp;<span class="keywordsign">`</span>int&nbsp;4),<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">`</span>add&nbsp;(<span class="keywordsign">`</span>offset&nbsp;<span class="string">"urg_pointer"</span>,&nbsp;<span class="keywordsign">`</span>int&nbsp;2))));<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.payload&nbsp;~name:<span class="string">"tcp_payload"</span>&nbsp;();<br>
+&nbsp;&nbsp;]</code></body></html>

@@ -1,0 +1,147 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link rel="previous" href="Promiwag_meta_packet.Parser_generator.Stage_1.html">
+<link rel="Up" href="Promiwag_meta_packet.Parser_generator.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Promiwag" rel="Chapter" href="Promiwag.html">
+<link title="Promiwag_Yaboon_PolyComp" rel="Chapter" href="Promiwag_Yaboon_PolyComp.html">
+<link title="Promiwag_c_backend" rel="Chapter" href="Promiwag_c_backend.html">
+<link title="Promiwag_meta_packet" rel="Chapter" href="Promiwag_meta_packet.html">
+<link title="Promiwag_pcap_boilerplate" rel="Chapter" href="Promiwag_pcap_boilerplate.html">
+<link title="Promiwag_platform" rel="Chapter" href="Promiwag_platform.html">
+<link title="Promiwag_protocol_stack" rel="Chapter" href="Promiwag_protocol_stack.html">
+<link title="Promiwag_standard_protocols" rel="Chapter" href="Promiwag_standard_protocols.html">
+<link title="Promiwag_std" rel="Chapter" href="Promiwag_std.html">
+<link title="Promiwag_stiel" rel="Chapter" href="Promiwag_stiel.html">
+<link title="Promiwag_stiel_backends" rel="Chapter" href="Promiwag_stiel_backends.html"><title>Promiwag Library : Promiwag_meta_packet.Parser_generator.Stage_2_stiel</title>
+</head>
+<body>
+<div class="navbar"><a href="Promiwag_meta_packet.Parser_generator.Stage_1.html">Previous</a>
+&nbsp;<a href="Promiwag_meta_packet.Parser_generator.html">Up</a>
+&nbsp;</div>
+<center><h1>Module <a href="type_Promiwag_meta_packet.Parser_generator.Stage_2_stiel.html">Promiwag_meta_packet.Parser_generator.Stage_2_stiel</a></h1></center>
+<br>
+<pre><span class="keyword">module</span> Stage_2_stiel: <code class="code"><span class="keyword">sig</span></code> <a href="Promiwag_meta_packet.Parser_generator.Stage_2_stiel.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><hr width="100%">
+<pre><span class="keyword">module</span> <a href="Promiwag_meta_packet.Parser_generator.Stage_2_stiel.Stiel_types.html">Stiel_types</a>: <code class="type"><a href="Promiwag_stiel.Definition.html">Promiwag_stiel.Definition</a></code></pre><pre><span id="TYPEvariable_creation_preference"><span class="keyword">type</span> <code class="type"></code>variable_creation_preference</span> = <code class="type">[ `as_needed | `for_all | `minimalistically ]</code> </pre>
+
+<pre><span id="TYPEsize_error_handler"><span class="keyword">type</span> <code class="type"></code>size_error_handler</span> = <code class="type">Promiwag_stiel.Standard_renaming.STIEL.typed_expression -><br>       Promiwag_stiel.Standard_renaming.STIEL.typed_expression -><br>       Promiwag_stiel.Standard_renaming.STIEL.statement</code> </pre>
+
+<pre><span id="EXCEPTIONCompilation_error"><span class="keyword">exception</span> Compilation_error</span> <span class="keyword">of</span> <code class="type">string</code></pre>
+<br><code><span id="TYPEcompiled"><span class="keyword">type</span> <code class="type"></code>compiled</span> = </code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Stiel_variable</span> <span class="keyword">of</span> <code class="type">Stiel_types.typed_variable<br>        * Stiel_types.typed_expression</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Stiel_expression</span> <span class="keyword">of</span> <code class="type">Stiel_types.typed_expression</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Stiel_not_compiled</span></code></td>
+
+</tr></table>
+
+
+<br><code><span id="TYPEcompiled_entity"><span class="keyword">type</span> <code class="type"></code>compiled_entity</span> = {</code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>value&nbsp;: <code class="type"><a href="Promiwag_meta_packet.Parser_generator.Stage_2_stiel.html#TYPEcompiled">compiled</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>offset&nbsp;: <code class="type"><a href="Promiwag_meta_packet.Parser_generator.Stage_2_stiel.html#TYPEcompiled">compiled</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>pointer&nbsp;: <code class="type"><a href="Promiwag_meta_packet.Parser_generator.Stage_2_stiel.html#TYPEcompiled">compiled</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>size&nbsp;: <code class="type"><a href="Promiwag_meta_packet.Parser_generator.Stage_2_stiel.html#TYPEcompiled">compiled</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>stage_1_expression&nbsp;: <code class="type"><a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEstage_1_compiled_expression">Promiwag_meta_packet.Parser_generator.Stage_1.stage_1_compiled_expression</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>buffer_access&nbsp;: <code class="type">Stiel_types.typed_expression *<br>       int</code>;</code></td>
+
+</tr></table>
+}
+
+
+<br><code><span id="TYPEcompiler"><span class="keyword">type</span> <code class="type"></code>compiler</span> = {</code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>stage_1&nbsp;: <code class="type"><a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEresult">Promiwag_meta_packet.Parser_generator.Stage_1.result</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>compiled_entities&nbsp;: <code class="type">(string, <a href="Promiwag_meta_packet.Parser_generator.Stage_2_stiel.html#TYPEcompiled_entity">compiled_entity</a>)<br>       Promiwag_std.Ht.t</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>variable_creation_preference&nbsp;: <code class="type"><a href="Promiwag_meta_packet.Parser_generator.Stage_2_stiel.html#TYPEvariable_creation_preference">variable_creation_preference</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>create_access_checks_for_pointers&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span class="keyword">mutable&nbsp;</span>location&nbsp;: <code class="type">string option</code>;</code></td>
+
+</tr></table>
+}
+
+
+<pre><span id="VALerror_prefix"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Parser_generator.Stage_2_stiel.error_prefix.html">error_prefix</a></span> : <code class="type">string</code></pre><pre><span id="VALto_do"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Parser_generator.Stage_2_stiel.to_do.html">to_do</a></span> : <code class="type">string -> 'a</code></pre><pre><span id="VALfail"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Parser_generator.Stage_2_stiel.fail.html">fail</a></span> : <code class="type"><a href="Promiwag_meta_packet.Parser_generator.Stage_2_stiel.html#TYPEcompiler">compiler</a> -> string -> 'a</code></pre><pre><span id="VALerror"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Parser_generator.Stage_2_stiel.error.html">error</a></span> : <code class="type"><a href="Promiwag_meta_packet.Parser_generator.Stage_2_stiel.html#TYPEcompiler">compiler</a> -> string -> 'a</code></pre><pre><span id="VALset_location_field"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Parser_generator.Stage_2_stiel.set_location_field.html">set_location_field</a></span> : <code class="type"><a href="Promiwag_meta_packet.Parser_generator.Stage_2_stiel.html#TYPEcompiler">compiler</a> -><br>       string -> unit</code></pre><pre><span id="VALget_stiel_expression"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Parser_generator.Stage_2_stiel.get_stiel_expression.html">get_stiel_expression</a></span> : <code class="type"><a href="Promiwag_meta_packet.Parser_generator.Stage_2_stiel.html#TYPEcompiler">compiler</a> -><br>       <a href="Promiwag_meta_packet.Parser_generator.Stage_2_stiel.html#TYPEcompiled">compiled</a> -><br>       Stiel_types.typed_expression</code></pre><pre><span id="VALget_stiel_dependency"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Parser_generator.Stage_2_stiel.get_stiel_dependency.html">get_stiel_dependency</a></span> : <code class="type"><a href="Promiwag_meta_packet.Parser_generator.Stage_2_stiel.html#TYPEcompiler">compiler</a> -><br>       [< `offset | `pointer | `size | `value ] -><br>       string -><br>       Stiel_types.typed_expression</code></pre><pre><span id="VALexpr_op_of_size_op"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Parser_generator.Stage_2_stiel.expr_op_of_size_op.html">expr_op_of_size_op</a></span> : <code class="type"><a href="Promiwag_meta_packet.Packet_structure.html#TYPEint_operator">Promiwag_meta_packet.Packet_structure.int_operator</a> -><br>       <a href="Promiwag_stiel.Definition.html#TYPEtyped_expression">Promiwag_stiel.Definition.typed_expression</a> -><br>       <a href="Promiwag_stiel.Definition.html#TYPEtyped_expression">Promiwag_stiel.Definition.typed_expression</a> -><br>       <a href="Promiwag_stiel.Definition.html#TYPEtyped_expression">Promiwag_stiel.Definition.typed_expression</a></code></pre><pre><span id="VALcompile_size"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Parser_generator.Stage_2_stiel.compile_size.html">compile_size</a></span> : <code class="type"><a href="Promiwag_meta_packet.Parser_generator.Stage_2_stiel.html#TYPEcompiler">compiler</a> -><br>       [< `offset | `pointer | `size | `value > `size ] -><br>       <a href="Promiwag_meta_packet.Packet_structure.html#TYPEsize">Promiwag_meta_packet.Packet_structure.size</a> -><br>       Stiel_types.typed_expression</code></pre><pre><span id="VALoffset"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Parser_generator.Stage_2_stiel.offset.html">offset</a></span> : <code class="type"><a href="Promiwag_meta_packet.Parser_generator.Stage_2_stiel.html#TYPEcompiler">compiler</a> -><br>       <a href="Promiwag_meta_packet.Packet_structure.html#TYPEsize">Promiwag_meta_packet.Packet_structure.size</a> -><br>       Stiel_types.typed_expression</code></pre><pre><span id="VALpointer_in_packet"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Parser_generator.Stage_2_stiel.pointer_in_packet.html">pointer_in_packet</a></span> : <code class="type"><a href="Promiwag_meta_packet.Parser_generator.Stage_2_stiel.html#TYPEcompiler">compiler</a> -><br>       <a href="Promiwag_stiel.Definition.html#TYPEtyped_expression">Promiwag_stiel.Definition.typed_expression</a> -><br>       <a href="Promiwag_meta_packet.Packet_structure.html#TYPEsize">Promiwag_meta_packet.Packet_structure.size</a> -><br>       <a href="Promiwag_stiel.Definition.html#TYPEtyped_expression">Promiwag_stiel.Definition.typed_expression</a></code></pre><pre><span id="VALsize"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Parser_generator.Stage_2_stiel.size.html">size</a></span> : <code class="type"><a href="Promiwag_meta_packet.Parser_generator.Stage_2_stiel.html#TYPEcompiler">compiler</a> -><br>       <a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEfinal_computation">Promiwag_meta_packet.Parser_generator.Stage_1.final_computation</a> -><br>       Stiel_types.typed_expression</code></pre><pre><span id="VALvalue_type_of_size"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Parser_generator.Stage_2_stiel.value_type_of_size.html">value_type_of_size</a></span> : <code class="type"><a href="Promiwag_meta_packet.Parser_generator.Stage_2_stiel.html#TYPEcompiler">compiler</a> -><br>       <a href="Promiwag_meta_packet.Packet_structure.html#TYPEsize">Promiwag_meta_packet.Packet_structure.size</a> -><br>       <a href="Promiwag_stiel.Definition.html#TYPEinteger_type">Promiwag_stiel.Definition.integer_type</a> * int</code></pre><pre><span id="VALvalue"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Parser_generator.Stage_2_stiel.value.html">value</a></span> : <code class="type"><a href="Promiwag_meta_packet.Parser_generator.Stage_2_stiel.html#TYPEcompiler">compiler</a> -><br>       <a href="Promiwag_stiel.Definition.html#TYPEtyped_expression">Promiwag_stiel.Definition.typed_expression</a> -><br>       <a href="Promiwag_meta_packet.Packet_structure.html#TYPEsize">Promiwag_meta_packet.Packet_structure.size</a> -><br>       <a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEfinal_computation">Promiwag_meta_packet.Parser_generator.Stage_1.final_computation</a> -><br>       <a href="Promiwag_stiel.Definition.html#TYPEtyped_expression">Promiwag_stiel.Definition.typed_expression</a> * int</code></pre><pre><span id="VALcompile_expression"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Parser_generator.Stage_2_stiel.compile_expression.html">compile_expression</a></span> : <code class="type"><a href="Promiwag_meta_packet.Parser_generator.Stage_2_stiel.html#TYPEcompiler">compiler</a> -><br>       <a href="Promiwag_stiel.Definition.html#TYPEtyped_expression">Promiwag_stiel.Definition.typed_expression</a> -><br>       <a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEstage_1_compiled_expression">Promiwag_meta_packet.Parser_generator.Stage_1.stage_1_compiled_expression</a> -><br>       <a href="Promiwag_meta_packet.Parser_generator.Stage_2_stiel.html#TYPEcompiled_entity">compiled_entity</a></code></pre><pre><span id="VALgenerate_constant_size_checks"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Parser_generator.Stage_2_stiel.generate_constant_size_checks.html">generate_constant_size_checks</a></span> : <code class="type"><a href="Promiwag_meta_packet.Parser_generator.Stage_2_stiel.html#TYPEcompiler">compiler</a> -><br>       <a href="Promiwag_meta_packet.Parser_generator.Stage_2_stiel.html#TYPEcompiled_entity">compiled_entity</a> list -><br>       <a href="Promiwag_stiel.Definition.html#TYPEtyped_expression">Promiwag_stiel.Definition.typed_expression</a> -><br>       (<a href="Promiwag_stiel.Definition.html#TYPEtyped_expression">Promiwag_stiel.Definition.typed_expression</a> -><br>        <a href="Promiwag_stiel.Definition.html#TYPEtyped_expression">Promiwag_stiel.Definition.typed_expression</a> -><br>        <a href="Promiwag_stiel.Definition.html#TYPEstatement">Promiwag_stiel.Definition.statement</a>) -><br>       <a href="Promiwag_stiel.Definition.html#TYPEstatement">Promiwag_stiel.Definition.statement</a> list</code></pre><pre><span id="VALgenerate_size_check"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Parser_generator.Stage_2_stiel.generate_size_check.html">generate_size_check</a></span> : <code class="type"><a href="Promiwag_meta_packet.Parser_generator.Stage_2_stiel.html#TYPEcompiler">compiler</a> -><br>       <a href="Promiwag_meta_packet.Parser_generator.Stage_2_stiel.html#TYPEcompiled_entity">compiled_entity</a> -><br>       <a href="Promiwag_stiel.Definition.html#TYPEtyped_expression">Promiwag_stiel.Definition.typed_expression</a> option -><br>       (<a href="Promiwag_stiel.Definition.html#TYPEtyped_expression">Promiwag_stiel.Definition.typed_expression</a> -><br>        <a href="Promiwag_stiel.Definition.html#TYPEtyped_expression">Promiwag_stiel.Definition.typed_expression</a> -><br>        <a href="Promiwag_stiel.Definition.html#TYPEstatement">Promiwag_stiel.Definition.statement</a>) -><br>       <a href="Promiwag_stiel.Definition.html#TYPEstatement">Promiwag_stiel.Definition.statement</a> list</code></pre><pre><span id="VALget_variables_and_size_checks"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Parser_generator.Stage_2_stiel.get_variables_and_size_checks.html">get_variables_and_size_checks</a></span> : <code class="type"><a href="Promiwag_meta_packet.Parser_generator.Stage_2_stiel.html#TYPEcompiler">compiler</a> -><br>       <a href="Promiwag_meta_packet.Parser_generator.Stage_2_stiel.html#TYPEcompiled_entity">compiled_entity</a> list -><br>       <a href="Promiwag_stiel.Definition.html#TYPEtyped_expression">Promiwag_stiel.Definition.typed_expression</a> option -><br>       (<a href="Promiwag_stiel.Definition.html#TYPEtyped_expression">Promiwag_stiel.Definition.typed_expression</a> -><br>        <a href="Promiwag_stiel.Definition.html#TYPEtyped_expression">Promiwag_stiel.Definition.typed_expression</a> -><br>        <a href="Promiwag_stiel.Definition.html#TYPEstatement">Promiwag_stiel.Definition.statement</a>) -><br>       <a href="Promiwag_stiel.Definition.html#TYPEstatement">Promiwag_stiel.Definition.statement</a> list</code></pre><pre><span id="VALinformed_block"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Parser_generator.Stage_2_stiel.informed_block.html">informed_block</a></span> : <code class="type">stage_1:<a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEresult">Promiwag_meta_packet.Parser_generator.Stage_1.result</a> -><br>       ?create_variables:<a href="Promiwag_meta_packet.Parser_generator.Stage_2_stiel.html#TYPEvariable_creation_preference">variable_creation_preference</a> -><br>       packet:Stiel_types.typed_expression -><br>       ?packet_size:Stiel_types.typed_expression -><br>       ?on_size_error:<a href="Promiwag_meta_packet.Parser_generator.Stage_2_stiel.html#TYPEsize_error_handler">size_error_handler</a> -><br>       ?create_access_checks_for_pointers:bool -><br>       make_user_block:(Stiel_types.typed_expression<br>                        list -><br>                        Stiel_types.statement<br>                        list) -><br>       unit -><br>       Stiel_types.statement<br>       list</code></pre></body></html>

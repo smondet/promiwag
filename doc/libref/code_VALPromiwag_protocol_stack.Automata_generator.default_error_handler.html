@@ -1,0 +1,28 @@
+<html><head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Promiwag" rel="Chapter" href="Promiwag.html">
+<link title="Promiwag_Yaboon_PolyComp" rel="Chapter" href="Promiwag_Yaboon_PolyComp.html">
+<link title="Promiwag_c_backend" rel="Chapter" href="Promiwag_c_backend.html">
+<link title="Promiwag_meta_packet" rel="Chapter" href="Promiwag_meta_packet.html">
+<link title="Promiwag_pcap_boilerplate" rel="Chapter" href="Promiwag_pcap_boilerplate.html">
+<link title="Promiwag_platform" rel="Chapter" href="Promiwag_platform.html">
+<link title="Promiwag_protocol_stack" rel="Chapter" href="Promiwag_protocol_stack.html">
+<link title="Promiwag_standard_protocols" rel="Chapter" href="Promiwag_standard_protocols.html">
+<link title="Promiwag_std" rel="Chapter" href="Promiwag_std.html">
+<link title="Promiwag_stiel" rel="Chapter" href="Promiwag_stiel.html">
+<link title="Promiwag_stiel_backends" rel="Chapter" href="Promiwag_stiel_backends.html"><title>Promiwag Library : Promiwag_protocol_stack.Automata_generator.default_error_handler</title>
+</head>
+<body>
+<code class="code"><span class="keyword">let</span>&nbsp;default_error_handler&nbsp;=&nbsp;<span class="keyword">function</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span>buffer_over_flow&nbsp;(f,&nbsp;a,&nbsp;b)&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Do</span>.log&nbsp;(sprintf&nbsp;<span class="string">"Error&nbsp;BOF:&nbsp;fmt:&nbsp;%s,&nbsp;@int&nbsp;&lt;&nbsp;@int\n"</span>&nbsp;f)&nbsp;[a;&nbsp;b]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span>unknown&nbsp;s&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">Do</span>.log&nbsp;(sprintf&nbsp;<span class="string">"Error&nbsp;unknown:&nbsp;%s\n"</span>&nbsp;s)&nbsp;[]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span>range_check&nbsp;(f,&nbsp;a,&nbsp;b,&nbsp;te)&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Do</span>.log&nbsp;(sprintf&nbsp;<span class="string">"Range&nbsp;for&nbsp;%s:&nbsp;@int&nbsp;not&nbsp;in&nbsp;[|&nbsp;%d,&nbsp;%d&nbsp;|]\n"</span>&nbsp;f&nbsp;a&nbsp;b)&nbsp;[te]</code></body></html>

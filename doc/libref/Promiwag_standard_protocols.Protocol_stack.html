@@ -1,0 +1,129 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link rel="previous" href="Promiwag_standard_protocols.MPS.html">
+<link rel="next" href="Promiwag_standard_protocols.PS.html">
+<link rel="Up" href="Promiwag_standard_protocols.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Promiwag" rel="Chapter" href="Promiwag.html">
+<link title="Promiwag_Yaboon_PolyComp" rel="Chapter" href="Promiwag_Yaboon_PolyComp.html">
+<link title="Promiwag_c_backend" rel="Chapter" href="Promiwag_c_backend.html">
+<link title="Promiwag_meta_packet" rel="Chapter" href="Promiwag_meta_packet.html">
+<link title="Promiwag_pcap_boilerplate" rel="Chapter" href="Promiwag_pcap_boilerplate.html">
+<link title="Promiwag_platform" rel="Chapter" href="Promiwag_platform.html">
+<link title="Promiwag_protocol_stack" rel="Chapter" href="Promiwag_protocol_stack.html">
+<link title="Promiwag_standard_protocols" rel="Chapter" href="Promiwag_standard_protocols.html">
+<link title="Promiwag_std" rel="Chapter" href="Promiwag_std.html">
+<link title="Promiwag_stiel" rel="Chapter" href="Promiwag_stiel.html">
+<link title="Promiwag_stiel_backends" rel="Chapter" href="Promiwag_stiel_backends.html"><title>Promiwag Library : Promiwag_standard_protocols.Protocol_stack</title>
+</head>
+<body>
+<div class="navbar"><a href="Promiwag_standard_protocols.MPS.html">Previous</a>
+&nbsp;<a href="Promiwag_standard_protocols.html">Up</a>
+&nbsp;<a href="Promiwag_standard_protocols.PS.html">Next</a>
+</div>
+<center><h1>Module <a href="type_Promiwag_standard_protocols.Protocol_stack.html">Promiwag_standard_protocols.Protocol_stack</a></h1></center>
+<br>
+<pre><span class="keyword">module</span> Protocol_stack: <code class="type">Promiwag_protocol_stack</code></pre><hr width="100%">
+<pre><span class="keyword">module</span> <a href="Promiwag_protocol_stack.MP_format.html">MP_format</a>: <code class="type"><a href="Promiwag_meta_packet.Packet_structure.html">Promiwag_meta_packet.Packet_structure</a></code></pre><br><code><span id="TYPEswitch_case"><span class="keyword">type</span> <code class="type"></code>switch_case</span> = </code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Case_int_value</span> <span class="keyword">of</span> <code class="type">int * string * string</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Case_int_range</span> <span class="keyword">of</span> <code class="type">int * int * string * string</code></code></td>
+
+</tr></table>
+
+
+<br><code><span id="TYPEtransition"><span class="keyword">type</span> <code class="type"></code>transition</span> = </code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Switch</span> <span class="keyword">of</span> <code class="type">string * <a href="Promiwag_protocol_stack.html#TYPEswitch_case">switch_case</a> list</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Sequence</span> <span class="keyword">of</span> <code class="type"><a href="Promiwag_protocol_stack.html#TYPEtransition">transition</a> list</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">No_transition</span></code></td>
+
+</tr></table>
+
+
+<br><code><span id="TYPEruntime_check"><span class="keyword">type</span> <code class="type"></code>runtime_check</span> = </code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Range</span> <span class="keyword">of</span> <code class="type">string * int * int</code></code></td>
+
+</tr></table>
+
+
+<br><code><span id="TYPEprotocol"><span class="keyword">type</span> <code class="type"></code>protocol</span> = {</code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>name&nbsp;: <code class="type">string</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>format&nbsp;: <code class="type">MP_format.format</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>transitions&nbsp;: <code class="type"><a href="Promiwag_protocol_stack.html#TYPEtransition">transition</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>runtime_checks&nbsp;: <code class="type"><a href="Promiwag_protocol_stack.html#TYPEruntime_check">runtime_check</a> list</code>;</code></td>
+
+</tr></table>
+}
+
+
+<br><code><span id="TYPEprotocol_stack"><span class="keyword">type</span> <code class="type"></code>protocol_stack</span> = {</code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>stack_description&nbsp;: <code class="type">(string, <a href="Promiwag_protocol_stack.html#TYPEprotocol">protocol</a>) Promiwag_std.Ht.t</code>;</code></td>
+
+</tr></table>
+}
+
+
+<pre><span id="VALempty_protcol_stack"><span class="keyword">val</span> <a href="code_VALPromiwag_protocol_stack.empty_protcol_stack.html">empty_protcol_stack</a></span> : <code class="type">unit -> <a href="Promiwag_protocol_stack.html#TYPEprotocol_stack">protocol_stack</a></code></pre><pre><span id="VALcase_int_value"><span class="keyword">val</span> <a href="code_VALPromiwag_protocol_stack.case_int_value.html">case_int_value</a></span> : <code class="type">int -> string -> string -> <a href="Promiwag_protocol_stack.html#TYPEswitch_case">switch_case</a></code></pre><pre><span id="VALcase_int_range"><span class="keyword">val</span> <a href="code_VALPromiwag_protocol_stack.case_int_range.html">case_int_range</a></span> : <code class="type">int -> int -> string -> string -> <a href="Promiwag_protocol_stack.html#TYPEswitch_case">switch_case</a></code></pre><pre><span id="VALswitch"><span class="keyword">val</span> <a href="code_VALPromiwag_protocol_stack.switch.html">switch</a></span> : <code class="type">string -><br>       <a href="Promiwag_protocol_stack.html#TYPEswitch_case">switch_case</a> list -><br>       <a href="Promiwag_protocol_stack.html#TYPEtransition">transition</a></code></pre><pre><span id="VALempty_transition"><span class="keyword">val</span> <a href="code_VALPromiwag_protocol_stack.empty_transition.html">empty_transition</a></span> : <code class="type"><a href="Promiwag_protocol_stack.html#TYPEtransition">transition</a></code></pre><pre><span id="VALsequence"><span class="keyword">val</span> <a href="code_VALPromiwag_protocol_stack.sequence.html">sequence</a></span> : <code class="type"><a href="Promiwag_protocol_stack.html#TYPEtransition">transition</a> list -> <a href="Promiwag_protocol_stack.html#TYPEtransition">transition</a></code></pre><pre><span id="VALcheck_range"><span class="keyword">val</span> <a href="code_VALPromiwag_protocol_stack.check_range.html">check_range</a></span> : <code class="type">string -> int -> int -> <a href="Promiwag_protocol_stack.html#TYPEruntime_check">runtime_check</a></code></pre><pre><span id="VALadd_protocol"><span class="keyword">val</span> <a href="code_VALPromiwag_protocol_stack.add_protocol.html">add_protocol</a></span> : <code class="type"><a href="Promiwag_protocol_stack.html#TYPEprotocol_stack">protocol_stack</a> -><br>       ?format:MP_format.format -><br>       ?transitions:<a href="Promiwag_protocol_stack.html#TYPEtransition">transition</a> -><br>       ?runtime_checks:<a href="Promiwag_protocol_stack.html#TYPEruntime_check">runtime_check</a> list -> string -> unit</code></pre><pre><span id="VALget_protocol"><span class="keyword">val</span> <a href="code_VALPromiwag_protocol_stack.get_protocol.html">get_protocol</a></span> : <code class="type"><a href="Promiwag_protocol_stack.html#TYPEprotocol_stack">protocol_stack</a> -><br>       string -> <a href="Promiwag_protocol_stack.html#TYPEprotocol">protocol</a> option</code></pre><pre><span class="keyword">module</span> <a href="Promiwag_protocol_stack.To_string.html">To_string</a>: <code class="code"><span class="keyword">sig</span></code> <a href="Promiwag_protocol_stack.To_string.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><pre><span class="keyword">module</span> <a href="Promiwag_protocol_stack.Automata_generator.html">Automata_generator</a>: <code class="code"><span class="keyword">sig</span></code> <a href="Promiwag_protocol_stack.Automata_generator.html">..</a> <code class="code"><span class="keyword">end</span></code></pre></body></html>

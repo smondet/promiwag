@@ -1,0 +1,37 @@
+<html><head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Promiwag" rel="Chapter" href="Promiwag.html">
+<link title="Promiwag_Yaboon_PolyComp" rel="Chapter" href="Promiwag_Yaboon_PolyComp.html">
+<link title="Promiwag_c_backend" rel="Chapter" href="Promiwag_c_backend.html">
+<link title="Promiwag_meta_packet" rel="Chapter" href="Promiwag_meta_packet.html">
+<link title="Promiwag_pcap_boilerplate" rel="Chapter" href="Promiwag_pcap_boilerplate.html">
+<link title="Promiwag_platform" rel="Chapter" href="Promiwag_platform.html">
+<link title="Promiwag_protocol_stack" rel="Chapter" href="Promiwag_protocol_stack.html">
+<link title="Promiwag_standard_protocols" rel="Chapter" href="Promiwag_standard_protocols.html">
+<link title="Promiwag_std" rel="Chapter" href="Promiwag_std.html">
+<link title="Promiwag_stiel" rel="Chapter" href="Promiwag_stiel.html">
+<link title="Promiwag_stiel_backends" rel="Chapter" href="Promiwag_stiel_backends.html"><title>Promiwag Library : Promiwag_standard_protocols.internet_stack_from_ethernet</title>
+</head>
+<body>
+<code class="code"><span class="keyword">let</span>&nbsp;internet_stack_from_ethernet&nbsp;()&nbsp;=<br>
+&nbsp;&nbsp;<span class="keyword">let</span>&nbsp;s&nbsp;=&nbsp;<span class="constructor">Protocol_stack</span>.empty_protcol_stack&nbsp;()&nbsp;<span class="keyword">in</span><br>
+&nbsp;&nbsp;<span class="keyword">let</span>&nbsp;add&nbsp;n&nbsp;format&nbsp;transitions&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Protocol_stack</span>.add_protocol&nbsp;s&nbsp;~format&nbsp;~transitions&nbsp;n&nbsp;<span class="keyword">in</span><br>
+&nbsp;&nbsp;add&nbsp;ethernet&nbsp;ethernet_format&nbsp;ethernet_transitions;<br>
+&nbsp;&nbsp;add&nbsp;udp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;udp_format&nbsp;udp_transitions;<br>
+&nbsp;&nbsp;add&nbsp;tcp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tcp_format&nbsp;tcp_transitions;<br>
+&nbsp;&nbsp;add&nbsp;arp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;arp_format&nbsp;arp_transitions;<br>
+&nbsp;&nbsp;add&nbsp;gre&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gre_format&nbsp;gre_transitions;<br>
+&nbsp;&nbsp;add&nbsp;dhcp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;dhcp_format&nbsp;dhcp_transitions;<br>
+&nbsp;&nbsp;add&nbsp;dns&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;dns_format&nbsp;dns_transitions;<br>
+&nbsp;&nbsp;<span class="constructor">Protocol_stack</span>.add_protocol&nbsp;s&nbsp;ipv4&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;~format:ipv4_format&nbsp;~transitions:ipv4_transitions<br>
+&nbsp;&nbsp;&nbsp;&nbsp;~runtime_checks:ipv4_checks;<br>
+&nbsp;&nbsp;s</code></body></html>

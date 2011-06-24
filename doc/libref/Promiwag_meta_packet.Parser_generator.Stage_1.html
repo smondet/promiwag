@@ -1,0 +1,180 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link rel="next" href="Promiwag_meta_packet.Parser_generator.Stage_2_stiel.html">
+<link rel="Up" href="Promiwag_meta_packet.Parser_generator.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Promiwag" rel="Chapter" href="Promiwag.html">
+<link title="Promiwag_Yaboon_PolyComp" rel="Chapter" href="Promiwag_Yaboon_PolyComp.html">
+<link title="Promiwag_c_backend" rel="Chapter" href="Promiwag_c_backend.html">
+<link title="Promiwag_meta_packet" rel="Chapter" href="Promiwag_meta_packet.html">
+<link title="Promiwag_pcap_boilerplate" rel="Chapter" href="Promiwag_pcap_boilerplate.html">
+<link title="Promiwag_platform" rel="Chapter" href="Promiwag_platform.html">
+<link title="Promiwag_protocol_stack" rel="Chapter" href="Promiwag_protocol_stack.html">
+<link title="Promiwag_standard_protocols" rel="Chapter" href="Promiwag_standard_protocols.html">
+<link title="Promiwag_std" rel="Chapter" href="Promiwag_std.html">
+<link title="Promiwag_stiel" rel="Chapter" href="Promiwag_stiel.html">
+<link title="Promiwag_stiel_backends" rel="Chapter" href="Promiwag_stiel_backends.html"><title>Promiwag Library : Promiwag_meta_packet.Parser_generator.Stage_1</title>
+</head>
+<body>
+<div class="navbar">&nbsp;<a href="Promiwag_meta_packet.Parser_generator.html">Up</a>
+&nbsp;<a href="Promiwag_meta_packet.Parser_generator.Stage_2_stiel.html">Next</a>
+</div>
+<center><h1>Module <a href="type_Promiwag_meta_packet.Parser_generator.Stage_1.html">Promiwag_meta_packet.Parser_generator.Stage_1</a></h1></center>
+<br>
+<pre><span class="keyword">module</span> Stage_1: <code class="code"><span class="keyword">sig</span></code> <a href="Promiwag_meta_packet.Parser_generator.Stage_1.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><hr width="100%">
+<pre><span id="VALcmp_str"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Parser_generator.Stage_1.cmp_str.html">cmp_str</a></span> : <code class="type">Promiwag_std.Str.t -> Promiwag_std.Str.t -> bool</code></pre><pre><span id="VALerror_prefix"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Parser_generator.Stage_1.error_prefix.html">error_prefix</a></span> : <code class="type">string</code></pre><pre><span id="VALto_do"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Parser_generator.Stage_1.to_do.html">to_do</a></span> : <code class="type">string -> 'a</code></pre><pre><span id="VALfail"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Parser_generator.Stage_1.fail.html">fail</a></span> : <code class="type">string -> 'a</code></pre><br><code><span id="TYPEdependency"><span class="keyword">type</span> <code class="type"></code>dependency</span> = </code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Depend_on_value_of</span> <span class="keyword">of</span> <code class="type">string</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Depend_on_offset_of</span> <span class="keyword">of</span> <code class="type">string</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Depend_on_pointer_to</span> <span class="keyword">of</span> <code class="type">string</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Depend_on_size_of</span> <span class="keyword">of</span> <code class="type">string</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Depend_on_unknown</span></code></td>
+
+</tr></table>
+
+
+<pre><span id="VALdependencies_of_size"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Parser_generator.Stage_1.dependencies_of_size.html">dependencies_of_size</a></span> : <code class="type"><a href="Promiwag_meta_packet.Packet_structure.html#TYPEsize">Promiwag_meta_packet.Packet_structure.size</a> -><br>       <a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEdependency">dependency</a> list</code></pre><pre><span id="VALstring_of_dependency"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Parser_generator.Stage_1.string_of_dependency.html">string_of_dependency</a></span> : <code class="type"><a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEdependency">dependency</a> -> string</code></pre><br><code><span id="TYPEcomputation_item"><span class="keyword">type</span> <code class="type"></code>computation_item</span> = </code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Compute_byte_offset</span> <span class="keyword">of</span> <code class="type"><a href="Promiwag_meta_packet.Packet_structure.html#TYPEsize">Promiwag_meta_packet.Packet_structure.size</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Compute_bit_offset</span> <span class="keyword">of</span> <code class="type"><a href="Promiwag_meta_packet.Packet_structure.html#TYPEsize">Promiwag_meta_packet.Packet_structure.size</a></code></code></td>
+
+</tr></table>
+
+
+<pre><span id="VALcomputation_of_content_type"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Parser_generator.Stage_1.computation_of_content_type.html">computation_of_content_type</a></span> : <code class="type"><a href="Promiwag_meta_packet.Packet_structure.html#TYPEcontent_type">Promiwag_meta_packet.Packet_structure.content_type</a> -><br>       <a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEcomputation_item">computation_item</a> *<br>       <a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEdependency">dependency</a> list</code></pre><pre><span id="VALstring_of_computation_item"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Parser_generator.Stage_1.string_of_computation_item.html">string_of_computation_item</a></span> : <code class="type"><a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEcomputation_item">computation_item</a> -> string</code></pre><br><code><span id="TYPEfinal_computation"><span class="keyword">type</span> <code class="type"></code>final_computation</span> = </code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Finally_get_integer</span> <span class="keyword">of</span> <code class="type">[ `big | `little ] * [ `signed | `unsigned ]<br>        * <a href="Promiwag_meta_packet.Packet_structure.html#TYPEsize">Promiwag_meta_packet.Packet_structure.size</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Finally_get_string</span> <span class="keyword">of</span> <code class="type"><a href="Promiwag_meta_packet.Packet_structure.html#TYPEsize">Promiwag_meta_packet.Packet_structure.size</a></code></code></td>
+
+</tr></table>
+
+
+<pre><span id="VALstring_of_final_computation"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Parser_generator.Stage_1.string_of_final_computation.html">string_of_final_computation</a></span> : <code class="type"><a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEfinal_computation">final_computation</a> -> string</code></pre><pre><span id="VALfinal_computation_of_content_type"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Parser_generator.Stage_1.final_computation_of_content_type.html">final_computation_of_content_type</a></span> : <code class="type">?endianism:[ `big | `little ] -><br>       <a href="Promiwag_meta_packet.Packet_structure.html#TYPEcontent_type">Promiwag_meta_packet.Packet_structure.content_type</a> -><br>       <a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEfinal_computation">final_computation</a> *<br>       <a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEdependency">dependency</a> list</code></pre><pre><span id="VALpropagate_constants_in_size"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Parser_generator.Stage_1.propagate_constants_in_size.html">propagate_constants_in_size</a></span> : <code class="type"><a href="Promiwag_meta_packet.Packet_structure.html#TYPEsize">Promiwag_meta_packet.Packet_structure.size</a> -><br>       <a href="Promiwag_meta_packet.Packet_structure.html#TYPEsize">Promiwag_meta_packet.Packet_structure.size</a></code></pre><pre><span id="VALaggregate_computations"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Parser_generator.Stage_1.aggregate_computations.html">aggregate_computations</a></span> : <code class="type"><a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEcomputation_item">computation_item</a> list -><br>       <a href="Promiwag_meta_packet.Packet_structure.html#TYPEsize">Promiwag_meta_packet.Packet_structure.size</a> *<br>       <a href="Promiwag_meta_packet.Packet_structure.html#TYPEsize">Promiwag_meta_packet.Packet_structure.size</a></code></pre><pre><span id="VALfind_field_in_packet"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Parser_generator.Stage_1.find_field_in_packet.html">find_field_in_packet</a></span> : <code class="type"><a href="Promiwag_meta_packet.Packet_structure.html#TYPEcontent_item">Promiwag_meta_packet.Packet_structure.content_item</a> list -><br>       Promiwag_std.Str.t -><br>       <a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEfinal_computation">final_computation</a> *<br>       <a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEdependency">dependency</a> list *<br>       <a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEcomputation_item">computation_item</a> list *<br>       <a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEdependency">dependency</a> list list</code></pre><pre><span id="TYPEneeder"><span class="keyword">type</span> <code class="type"></code>needer</span> = <code class="type">[ `other of<br>           <a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEstage_1_compiled_expression">stage_1_compiled_expression</a><br>       | `request ]</code> </pre>
+
+<pre><span id="TYPEneed"><span class="keyword">type</span> <code class="type"></code>need</span> = <code class="type">[ `offset of <a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEneeder">needer</a><br>       | `pointer of <a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEneeder">needer</a><br>       | `size of <a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEneeder">needer</a><br>       | `value of <a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEneeder">needer</a> ]</code> </pre>
+
+<br><code><span id="TYPEstage_1_compiled_expression"><span class="keyword">type</span> <code class="type"></code>stage_1_compiled_expression</span> = {</code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>s1_field&nbsp;: <code class="type">string</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>s1_byte_offset&nbsp;: <code class="type"><a href="Promiwag_meta_packet.Packet_structure.html#TYPEsize">Promiwag_meta_packet.Packet_structure.size</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>s1_bit_offset&nbsp;: <code class="type"><a href="Promiwag_meta_packet.Packet_structure.html#TYPEsize">Promiwag_meta_packet.Packet_structure.size</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>s1_final&nbsp;: <code class="type"><a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEfinal_computation">final_computation</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>s1_dependencies&nbsp;: <code class="type"><a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEdependency">dependency</a> list</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span class="keyword">mutable&nbsp;</span>s1_needed_as_by&nbsp;: <code class="type"><a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEneed">need</a> list</code>;</code></td>
+
+</tr></table>
+}
+
+
+<pre><span id="VALexplode_stage_1_compiled_expression"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Parser_generator.Stage_1.explode_stage_1_compiled_expression.html">explode_stage_1_compiled_expression</a></span> : <code class="type"><a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEstage_1_compiled_expression">stage_1_compiled_expression</a> -><br>       string * <a href="Promiwag_meta_packet.Packet_structure.html#TYPEsize">Promiwag_meta_packet.Packet_structure.size</a> *<br>       <a href="Promiwag_meta_packet.Packet_structure.html#TYPEsize">Promiwag_meta_packet.Packet_structure.size</a> *<br>       <a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEfinal_computation">final_computation</a> *<br>       <a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEdependency">dependency</a> list *<br>       <a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEneed">need</a> list</code></pre><pre><span id="VALstage_1_compile_field"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Parser_generator.Stage_1.stage_1_compile_field.html">stage_1_compile_field</a></span> : <code class="type"><a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEneed">need</a> -><br>       <a href="Promiwag_meta_packet.Packet_structure.html#TYPEcontent_item">Promiwag_meta_packet.Packet_structure.content_item</a> list -><br>       Promiwag_std.Str.t -><br>       <a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEstage_1_compiled_expression">stage_1_compiled_expression</a></code></pre><pre><span id="VALstage_1_compile_dependency"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Parser_generator.Stage_1.stage_1_compile_dependency.html">stage_1_compile_dependency</a></span> : <code class="type"><a href="Promiwag_meta_packet.Packet_structure.html#TYPEcontent_item">Promiwag_meta_packet.Packet_structure.content_item</a> list -><br>       <a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEneeder">needer</a> -><br>       <a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEdependency">dependency</a> -><br>       <a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEstage_1_compiled_expression">stage_1_compiled_expression</a></code></pre><pre><span id="VALdependencies_of_request"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Parser_generator.Stage_1.dependencies_of_request.html">dependencies_of_request</a></span> : <code class="type"><a href="Promiwag_meta_packet.Parser_generator.html#TYPErequest">Promiwag_meta_packet.Parser_generator.request</a> list -><br>       <a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEdependency">dependency</a> list</code></pre><br><code><span id="TYPEresult"><span class="keyword">type</span> <code class="type"></code>result</span> = {</code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>packet_format&nbsp;: <code class="type"><a href="Promiwag_meta_packet.Packet_structure.html#TYPEformat">Promiwag_meta_packet.Packet_structure.format</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>request_list&nbsp;: <code class="type"><a href="Promiwag_meta_packet.Parser_generator.html#TYPErequest">Promiwag_meta_packet.Parser_generator.request</a> list</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>compiled_expressions&nbsp;: <code class="type"><a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEstage_1_compiled_expression">stage_1_compiled_expression</a><br>       list</code>;</code></td>
+
+</tr></table>
+}
+
+
+<pre><span id="VALcompile_with_dependencies"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Parser_generator.Stage_1.compile_with_dependencies.html">compile_with_dependencies</a></span> : <code class="type">?max_depth:int -><br>       packet_format:<a href="Promiwag_meta_packet.Packet_structure.html#TYPEformat">Promiwag_meta_packet.Packet_structure.format</a> -><br>       <a href="Promiwag_meta_packet.Parser_generator.html#TYPErequest">Promiwag_meta_packet.Parser_generator.request</a> list -><br>       <a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEresult">result</a></code></pre><pre><span id="VALstring_of_stage_1_compiled_expression"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Parser_generator.Stage_1.string_of_stage_1_compiled_expression.html">string_of_stage_1_compiled_expression</a></span> : <code class="type">?before:string -><br>       ?sep_parens:string -><br>       <a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEstage_1_compiled_expression">stage_1_compiled_expression</a> -><br>       string</code></pre><pre><span id="VALstring_of_stage_1_compilation_ht"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Parser_generator.Stage_1.string_of_stage_1_compilation_ht.html">string_of_stage_1_compilation_ht</a></span> : <code class="type">?sep_items:string -><br>       ?before:string -><br>       ?sep_parens:string -><br>       <a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEstage_1_compiled_expression">stage_1_compiled_expression</a><br>       list -> string</code></pre><pre><span id="VALdump"><span class="keyword">val</span> <a href="code_VALPromiwag_meta_packet.Parser_generator.Stage_1.dump.html">dump</a></span> : <code class="type"><a href="Promiwag_meta_packet.Parser_generator.Stage_1.html#TYPEresult">result</a> -> string</code></pre></body></html>

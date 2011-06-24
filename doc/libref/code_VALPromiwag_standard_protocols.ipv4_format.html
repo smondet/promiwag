@@ -1,0 +1,55 @@
+<html><head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Promiwag" rel="Chapter" href="Promiwag.html">
+<link title="Promiwag_Yaboon_PolyComp" rel="Chapter" href="Promiwag_Yaboon_PolyComp.html">
+<link title="Promiwag_c_backend" rel="Chapter" href="Promiwag_c_backend.html">
+<link title="Promiwag_meta_packet" rel="Chapter" href="Promiwag_meta_packet.html">
+<link title="Promiwag_pcap_boilerplate" rel="Chapter" href="Promiwag_pcap_boilerplate.html">
+<link title="Promiwag_platform" rel="Chapter" href="Promiwag_platform.html">
+<link title="Promiwag_protocol_stack" rel="Chapter" href="Promiwag_protocol_stack.html">
+<link title="Promiwag_standard_protocols" rel="Chapter" href="Promiwag_standard_protocols.html">
+<link title="Promiwag_std" rel="Chapter" href="Promiwag_std.html">
+<link title="Promiwag_stiel" rel="Chapter" href="Promiwag_stiel.html">
+<link title="Promiwag_stiel_backends" rel="Chapter" href="Promiwag_stiel_backends.html"><title>Promiwag Library : Promiwag_standard_protocols.ipv4_format</title>
+</head>
+<body>
+<code class="code"><span class="keyword">let</span>&nbsp;ipv4_format&nbsp;=<br>
+&nbsp;&nbsp;<span class="constructor">MPS</span>.packet_format&nbsp;[<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;<span class="string">"version"</span>&nbsp;4;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;<span class="string">"ihl"</span>&nbsp;4;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;<span class="string">"tos_precedence"</span>&nbsp;3;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;<span class="string">"tos_delay"</span>&nbsp;1;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;<span class="string">"tos_throughput"</span>&nbsp;1;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;<span class="string">"tos_reliability"</span>&nbsp;1;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;<span class="string">"tos_reserved"</span>&nbsp;2;&nbsp;<span class="comment">(*&nbsp;16&nbsp;bits&nbsp;*)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;<span class="string">"length"</span>&nbsp;16;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;<span class="string">"id"</span>&nbsp;16;&nbsp;<span class="comment">(*&nbsp;48&nbsp;bits,&nbsp;6&nbsp;bytes&nbsp;*)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;<span class="string">"reserved"</span>&nbsp;1;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;<span class="string">"dont_fragment"</span>&nbsp;1;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;<span class="string">"can_fragment"</span>&nbsp;1;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;<span class="string">"frag_offset"</span>&nbsp;13;&nbsp;<span class="comment">(*&nbsp;8&nbsp;bytes&nbsp;*)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;<span class="string">"ttl"</span>&nbsp;8;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;<span class="string">"protocol"</span>&nbsp;8;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;<span class="string">"checksum"</span>&nbsp;16;&nbsp;<span class="comment">(*&nbsp;12&nbsp;bytes&nbsp;*)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;<span class="string">"src"</span>&nbsp;32;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.fixed_int_field&nbsp;<span class="string">"dest"</span>&nbsp;32;&nbsp;<span class="comment">(*&nbsp;20&nbsp;bytes&nbsp;*)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.string_field&nbsp;<span class="string">"options"</span>&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="constructor">MPS</span>.size<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="keywordsign">`</span>align32&nbsp;(<span class="keywordsign">`</span>sub&nbsp;(<span class="keywordsign">`</span>mul&nbsp;(<span class="keywordsign">`</span>var&nbsp;<span class="string">"ihl"</span>,&nbsp;<span class="keywordsign">`</span>int&nbsp;4),<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">`</span>add&nbsp;(<span class="keywordsign">`</span>offset&nbsp;<span class="string">"dest"</span>,&nbsp;<span class="keywordsign">`</span>int&nbsp;4)))));<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">(*&nbsp;:&nbsp;byte[(ihl&nbsp;*&nbsp;4)&nbsp;-&nbsp;offsetafter(dest)]&nbsp;align(32);&nbsp;*)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">(*&nbsp;options&nbsp;are&nbsp;of&nbsp;size&nbsp;0&nbsp;when&nbsp;ihl&nbsp;=&nbsp;5&nbsp;*)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">(*&nbsp;TODO&nbsp;in&nbsp;the&nbsp;future&nbsp;maybe&nbsp;replace&nbsp;the&nbsp;last&nbsp;4&nbsp;by&nbsp;(`size&nbsp;"dest")&nbsp;?&nbsp;*)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">MPS</span>.payload&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;~size:(<span class="constructor">MPS</span>.size&nbsp;(<span class="keywordsign">`</span>sub&nbsp;(<span class="keywordsign">`</span>var&nbsp;<span class="string">"length"</span>,&nbsp;<span class="keywordsign">`</span>mul&nbsp;(<span class="keywordsign">`</span>var&nbsp;<span class="string">"ihl"</span>,&nbsp;<span class="keywordsign">`</span>int&nbsp;4))))<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;~name:<span class="string">"ip_payload"</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;();<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">(*&nbsp;byte[length-(ihl*4)];&nbsp;*)</span><br>
+&nbsp;&nbsp;]</code></body></html>

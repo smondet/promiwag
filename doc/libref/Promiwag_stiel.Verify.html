@@ -1,0 +1,52 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link rel="previous" href="Promiwag_stiel.Visit.html">
+<link rel="next" href="Promiwag_stiel.Standard_renaming.html">
+<link rel="Up" href="Promiwag_stiel.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Promiwag" rel="Chapter" href="Promiwag.html">
+<link title="Promiwag_Yaboon_PolyComp" rel="Chapter" href="Promiwag_Yaboon_PolyComp.html">
+<link title="Promiwag_c_backend" rel="Chapter" href="Promiwag_c_backend.html">
+<link title="Promiwag_meta_packet" rel="Chapter" href="Promiwag_meta_packet.html">
+<link title="Promiwag_pcap_boilerplate" rel="Chapter" href="Promiwag_pcap_boilerplate.html">
+<link title="Promiwag_platform" rel="Chapter" href="Promiwag_platform.html">
+<link title="Promiwag_protocol_stack" rel="Chapter" href="Promiwag_protocol_stack.html">
+<link title="Promiwag_standard_protocols" rel="Chapter" href="Promiwag_standard_protocols.html">
+<link title="Promiwag_std" rel="Chapter" href="Promiwag_std.html">
+<link title="Promiwag_stiel" rel="Chapter" href="Promiwag_stiel.html">
+<link title="Promiwag_stiel_backends" rel="Chapter" href="Promiwag_stiel_backends.html"><title>Promiwag Library : Promiwag_stiel.Verify</title>
+</head>
+<body>
+<div class="navbar"><a href="Promiwag_stiel.Visit.html">Previous</a>
+&nbsp;<a href="Promiwag_stiel.html">Up</a>
+&nbsp;<a href="Promiwag_stiel.Standard_renaming.html">Next</a>
+</div>
+<center><h1>Module <a href="type_Promiwag_stiel.Verify.html">Promiwag_stiel.Verify</a></h1></center>
+<br>
+<pre><span class="keyword">module</span> Verify: <code class="code"><span class="keyword">sig</span></code> <a href="Promiwag_stiel.Verify.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><hr width="100%">
+<br><code><span id="TYPEproblem"><span class="keyword">type</span> <code class="type"></code>problem</span> = </code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Ok</span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Double_defined_variables</span> <span class="keyword">of</span> <code class="type">string list</code></code></td>
+
+</tr></table>
+
+
+<pre><span id="VALcheck_block_for_double_vriables"><span class="keyword">val</span> <a href="code_VALPromiwag_stiel.Verify.check_block_for_double_vriables.html">check_block_for_double_vriables</a></span> : <code class="type">'a -><br>       <a href="Promiwag_stiel.Definition.html#TYPEstatement">Promiwag_stiel.Definition.statement</a> list -> <a href="Promiwag_stiel.Verify.html#TYPEproblem">problem</a></code></pre><pre><span id="VALblock"><span class="keyword">val</span> <a href="code_VALPromiwag_stiel.Verify.block.html">block</a></span> : <code class="type">'a -> <a href="Promiwag_stiel.Definition.html#TYPEstatement">Promiwag_stiel.Definition.statement</a> -> <a href="Promiwag_stiel.Verify.html#TYPEproblem">problem</a></code></pre></body></html>

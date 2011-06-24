@@ -1,0 +1,479 @@
+<!DOCTYPE html
+PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<!-- Generated with Dibrawi, BraceTax, Sebib, and some more hacks -->
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<style type="text/css">
+body {
+   color: #070707;
+   background-color: #f8f8f8;
+}
+ {
+   color: #070707;
+   background-color: #f8f8f8;
+}
+a:link {
+   color: #D62111;
+}
+a:visited {
+   color: #8F1310;
+}
+a:hover {
+   background-color: #44E157;
+}
+tt {
+   color: #135510;
+}pre {
+   color: #135510;
+}code {
+   color: #135510;
+}
+.dbwmixcode {
+   background-color: #ddd;
+}
+div.figure:after {
+   color: #D62111;
+}caption.tablefigure:after {
+   color: #D62111;
+}
+body {
+   font-family: sans-serif;
+   text-align: none;
+   font-size: 70%;
+
+}
+ {
+   font-family: sans-serif;
+   text-align: none;
+   font-size: 70%;
+
+}
+div.header {
+   text-align: center;
+
+}
+h1 {
+   font-size: 200%;
+   font-variant: small-caps;
+
+}
+div.authors {
+   font-size: 110%;
+
+}
+div.subtitle {
+   font-size: 110%;
+   font-style: italic;
+}
+h2 {
+   font-size: 180%;
+
+}
+h3 {
+   font-size: 150%;
+
+}
+h4 {
+   font-size: 130%;
+
+}
+h5 {
+   font-size: 108%;
+
+}
+a {
+   text-decoration: underline thin;
+}
+tt,code,pre {
+   font-family: monospace;
+
+}
+div.figure,div.tablefigure {
+   font-size: 90%;
+
+}
+.content body {
+   font-family: serif;
+   text-align: justify;
+   font-size: 120%;
+
+}
+.content  {
+   font-family: serif;
+   text-align: justify;
+   font-size: 120%;
+
+}
+.content div.header {
+   text-align: center;
+
+}
+.content h1 {
+   font-size: 200%;
+   font-variant: small-caps;
+
+}
+.content div.authors {
+   font-size: 110%;
+
+}
+.content div.subtitle {
+   font-size: 110%;
+   font-style: italic;
+}
+.content h2 {
+   font-size: 180%;
+
+}
+.content h3 {
+   font-size: 150%;
+
+}
+.content h4 {
+   font-size: 130%;
+
+}
+.content h5 {
+   font-size: 108%;
+
+}
+.content a {
+   text-decoration: underline thin;
+}
+.content tt,code,pre {
+   font-family: monospace;
+
+}
+.content div.figure,div.tablefigure {
+   font-size: 90%;
+
+}
+div.header {
+    text-align: center;
+    border:  #8F1310 solid 7px;
+    padding-top:    2.1em;
+    padding-bottom: 2.05em;
+    margin-bottom: 3em;
+}
+div.p {
+    padding-bottom: 0em;
+}
+div.p + div.p { padding-top: 0.5em; }
+body {overflow: auto;}
+code,pre {overflow: auto}
+blockquote {
+    border-left: 2px solid #8F1310;
+    padding-left: 1em;
+}
+ul, ol {
+    padding-top: 0em;
+    padding-bottom: 0em;
+    padding-left:  1.8em;
+    margin-top: 0em;
+    margin-bottom: 0em;
+}
+.dibrawicomment:before { content:  "["; }
+.dibrawicomment:after { content: "]"; }
+.dibrawicomment {
+    background-color: yellow;
+    color: red;
+}
+.dibrawimenudir { display: block; }
+         ul  li.dibrawi_menuli {
+           display: inline;
+         } 
+         ul.dibrawi_menuul {
+           padding: 0em;
+           margin: 0em;
+           margin-left: 1em;
+         }
+table.tablefigure {
+    margin-right:auto;
+    margin-left: auto;
+    border-collapse: collapse;
+    min-width: 80%;
+    margin-bottom: 1em;
+}
+caption.tablefigure {
+    caption-side:bottom;
+}
+div.figure:after, caption.tablefigure:after { content: " [" attr(id) "]"; }
+td, th {
+    padding: 0.4em;
+}
+img {
+    border: none;
+    padding-bottom: 0.5em;
+}div.figure, div.tablefigure {
+    text-align: center;
+    font-size:90%;
+    border: thin #959595 solid;
+    padding: 1ex;
+    margin: 1em;
+    width: 90%;
+    margin-left: 5%;
+    margin-right: 0em;
+    clear: both;
+
+}
+small.notebegin { font-size: 70%; vertical-align: super; counter-increment: footnote; }
+small.noteend { font-size: 70%; vertical-align: super; }
+small.noteend:before {  content: counter(footnote) }
+small.note:before { content: counter(footnote) ": " }
+body { counter-reset: section subsection subsubsection footnote; }
+
+small.note {
+    font-size: 76%;
+    clear: right;
+    width: 40%;
+    border: thin #959595 solid;
+    float: right;
+    margin: 0.5em;
+    margin-right: 0em;
+    padding: 0.5em;
+}
+h2 { border: #8F1310 solid 2px; padding: 0.2em; }
+h3 { text-decoration: underline;}
+pre {
+    position: relative; left: 5%; width: 90%; clear: left;
+}
+div.sidepane {
+  right: 0.400000%; width: 19.000000%; padding: 0.900000%;
+  border-left: #070707 ridge 1px;
+    top: 2px;
+    position:fixed;
+    overflow: auto;
+    bottom: 2px;
+}
+div.content {
+  left: 0.400000%; right: 22.000000%; padding: 0.900000%;
+    top: 2px;
+    position: absolute;
+    text-align: justify;
+}
+</style>
+<title>[DBW]/stiel_interface</title>
+</head>
+<body>
+<div class="sidepane">
+<b>Page:</b> [DBW]/stiel_interface <br/><hr/>
+<div class="p"><a href="./Main.html">Main</a>&nbsp;<a href="#">Top</a>&nbsp;<a href="#pagefoot">Bottom</a><br/>
+ <a href="http://bracetax.berlios.de/bracetax_syntax.html">Bracetax Syntax</a></div>
+<hr/>
+<b>Menu: </b><div class="p dibrawi_menup">
+<ul class="dibrawi_menuul">
+ <li class="dibrawi_menuli"> <a href="././Build.html" class="dibrawi_menua">Build</a> </li>
+<li class="dibrawi_menuli"> <a href="././Main.html" class="dibrawi_menua">Main</a> </li>
+<li class="dibrawi_menuli"> <a href="././main_test.html" class="dibrawi_menua">main_test</a> </li>
+<li class="dibrawi_menuli"> <a href="././module_std.html" class="dibrawi_menua">module_std</a> </li>
+<li class="dibrawi_menuli"> <a href="././stiel_interface.html" class="dibrawi_menua">stiel_interface</a> </li>
+</ul>
+ </div>
+<hr/>
+<b>Table of contents:</b><br/><div class="p dbwtocp">
+<ol class="dbwtocol">
+   <li class="dbwtocli">  <a href="#module_STIEL_" class="dbwtoca">module STIEL </a>   </li>
+<li class="dbwtocli">  <a href="#module_Expr_" class="dbwtoca">module Expr </a>   </li>
+<li class="dbwtocli">  <a href="#module_Var_" class="dbwtoca">module Var </a>   </li>
+<li class="dbwtocli">  <a href="#module_Do_" class="dbwtoca">module Do </a>   </li>
+<li class="dbwtocli">  <a href="#module_Annot_" class="dbwtoca">module Annot </a>   </li>
+<li class="dbwtocli">  <a href="#module_Stiel_to_str_" class="dbwtoca">module Stiel_to_str </a> </li>
+</ol>
+</div>
+<br/>
+</div>
+<div class="content">
+<div class="p"><tt>  </div>
+<h2 id="module_STIEL_">module STIEL </h2>
+<div class="p">       <br/>
+<b>type</b> integer_type =       integer_type =         Type_uint8       <br/>
+| Type_uint16       <br/>
+| Type_uint32       <br/>
+| Type_uint64       <br/>
+| Type_uint_native    <br/>
+<b>type</b> int_unary_operator =       int_unary_operator =         Int_unary_minus       <br/>
+| Int_unary_plus    <br/>
+<b>type</b> int_binary_operator =       int_binary_operator =         Int_binop_add       <br/>
+| Int_binop_sub       <br/>
+| Int_binop_mul       <br/>
+| Int_binop_div       <br/>
+| Int_binop_mod       <br/>
+| Int_binop_bin_and       <br/>
+| Int_binop_bin_or       <br/>
+| Int_binop_bin_xor       <br/>
+| Int_binop_bin_shl       <br/>
+| Int_binop_bin_shr    <br/>
+<b>type</b> bool_binary_operator =       bool_binary_operator =         Bool_binop_equals       <br/>
+| Bool_binop_notequals       <br/>
+| Bool_binop_strictly_greater       <br/>
+| Bool_binop_strictly_lower       <br/>
+| Bool_binop_equal_or_greater       <br/>
+| Bool_binop_equal_or_lower    <br/>
+<b>type</b> variable_name = string    <br/>
+<b>type</b> get_int_at_buffer =       get_int_at_buffer =         Get_native of integer_type       <br/>
+| Get_big_ian of integer_type       <br/>
+| Get_little_ian of integer_type    <br/>
+<b>type</b> buffer_type =       buffer_type =         Type_sized_buffer of int       <br/>
+| Type_pointer       <br/>
+| Type_sizable_buffer of int_expression    <br/>
+<b>and</b> int_expression =       int_expression =         Int_expr_unary of int_unary_operator * int_expression       <br/>
+| Int_expr_binary of int_binary_operator * int_expression *           int_expression       <br/>
+| Int_expr_variable of variable_name       <br/>
+| Int_expr_buffer_content of get_int_at_buffer * buffer_expression       <br/>
+| Int_expr_literal of int64    <br/>
+<b>and</b> buffer_expression =       buffer_expression =         Buffer_expr_variable of variable_name       <br/>
+| Buffer_expr_offset of buffer_expression * int_expression    <br/>
+<b>and</b> bool_expression =       bool_expression =         Bool_expr_true       <br/>
+| Bool_expr_false       <br/>
+| Bool_expr_variable of variable_name       <br/>
+| Bool_expr_and of bool_expression * bool_expression       <br/>
+| Bool_expr_or of bool_expression * bool_expression       <br/>
+| Bool_expr_not of bool_expression       <br/>
+| Bool_expr_binary_int of bool_binary_operator * int_expression *           int_expression    <br/>
+<b>type</b> typed_expression =       typed_expression =         Typed_int of integer_type * int_expression       <br/>
+| Typed_bool of bool_expression       <br/>
+| Typed_buffer of buffer_type * buffer_expression    <br/>
+<b>type</b> typed_variable_kind =       typed_variable_kind =         Kind_int of integer_type       <br/>
+| Kind_bool       <br/>
+| Kind_buffer of buffer_type    <br/>
+<b>type</b> typed_variable =       typed_variable = {       name : variable_name;       kind : typed_variable_kind;     }    <br/>
+<b>type</b> logic =       logic =         Logic_bool_expr of bool_expression       <br/>
+| Logic_variability of bool_expression * int_expression    <br/>
+<b>type</b> statement_annotation =       statement_annotation =         Annot_comment of string       <br/>
+| Annot_specify of logic       <br/>
+| Annot_alternative of [ `C | `Why ] * statement    <br/>
+<b>and</b> statement =       statement =         Do_nothing       <br/>
+| Do_block of statement list       <br/>
+| Do_if of bool_expression * statement * statement       <br/>
+| Do_while_loop of string * bool_expression * statement       <br/>
+| Do_exit_while of string       <br/>
+| Do_asnment of variable_name * typed_expression       <br/>
+| Do_external_asnment of variable_name * string *           typed_expression list       <br/>
+| Do_declaration of typed_variable       <br/>
+| Do_log of string * typed_expression list       <br/>
+| Do_annotated_statement of statement_annotation * statement    </div>
+<h2 id="module_Expr_">module Expr </h2>
+<div class="p">       <br/>
+<b>val</b> fail : string -&gt; 'a    <br/>
+<b>val</b> fail_e : string -&gt; typed_expression -&gt; 'a    <br/>
+<b>val</b> fail_2e :       string -&gt;       typed_expression -&gt;       typed_expression -&gt; 'a    <br/>
+<b>val</b> int_expression :       typed_expression -&gt;       int_expression    <br/>
+<b>val</b> buffer_expression :       typed_expression -&gt;       buffer_expression    <br/>
+<b>val</b> bool_expression :       typed_expression -&gt;       bool_expression    <br/>
+<b>val</b> int :       typed_expression -&gt;       int_expression    <br/>
+<b>val</b> buffer :       typed_expression -&gt;       buffer_expression    <br/>
+<b>val</b> bool :       typed_expression -&gt;       bool_expression    <br/>
+<b>val</b> u8 : int -&gt; typed_expression    <br/>
+<b>val</b> u16 : int -&gt; typed_expression    <br/>
+<b>val</b> u32 : int -&gt; typed_expression    <br/>
+<b>val</b> u64 : int -&gt; typed_expression    <br/>
+<b>val</b> unat : int -&gt; typed_expression    <br/>
+<b>val</b> i64_to_u8 : int64 -&gt; typed_expression    <br/>
+<b>val</b> i64_to_u16 : int64 -&gt; typed_expression    <br/>
+<b>val</b> i64_to_u32 : int64 -&gt; typed_expression    <br/>
+<b>val</b> i64_to_u64 : int64 -&gt; typed_expression    <br/>
+<b>val</b> i64_to_unat : int64 -&gt; typed_expression    <br/>
+<b>val</b> type1 :       typed_expression -&gt;       int_expression -&gt;       typed_expression    <br/>
+<b>val</b> type2 :       typed_expression -&gt;       typed_expression -&gt;       int_expression -&gt;       typed_expression    <br/>
+<b>val</b> to_unat :       typed_expression -&gt;       typed_expression    <br/>
+<b>val</b> minus :       typed_expression -&gt;       typed_expression    <br/>
+<b>val</b> add :       typed_expression -&gt;       typed_expression -&gt;       typed_expression    <br/>
+<b>val</b> sub :       typed_expression -&gt;       typed_expression -&gt;       typed_expression    <br/>
+<b>val</b> mul :       typed_expression -&gt;       typed_expression -&gt;       typed_expression    <br/>
+<b>val</b> div :       typed_expression -&gt;       typed_expression -&gt;       typed_expression    <br/>
+<b>val</b> modulo :       typed_expression -&gt;       typed_expression -&gt;       typed_expression    <br/>
+<b>val</b> bin_and :       typed_expression -&gt;       typed_expression -&gt;       typed_expression    <br/>
+<b>val</b> bin_or :       typed_expression -&gt;       typed_expression -&gt;       typed_expression    <br/>
+<b>val</b> bin_xor :       typed_expression -&gt;       typed_expression -&gt;       typed_expression    <br/>
+<b>val</b> bin_shl :       typed_expression -&gt;       typed_expression -&gt;       typed_expression    <br/>
+<b>val</b> bin_shr :       typed_expression -&gt;       typed_expression -&gt;       typed_expression    <br/>
+<b>val</b> get_style :       [&lt; `big | `little | `native ] -&gt;       integer_type -&gt;       get_int_at_buffer    <br/>
+<b>val</b> u8_at :       ?how:[&lt; `big | `little | `native &gt; `big ] -&gt;       typed_expression -&gt;       typed_expression    <br/>
+<b>val</b> u16_at :       ?how:[&lt; `big | `little | `native &gt; `big ] -&gt;       typed_expression -&gt;       typed_expression    <br/>
+<b>val</b> u32_at :       ?how:[&lt; `big | `little | `native &gt; `big ] -&gt;       typed_expression -&gt;       typed_expression    <br/>
+<b>val</b> u64_at :       ?how:[&lt; `big | `little | `native &gt; `big ] -&gt;       typed_expression -&gt;       typed_expression    <br/>
+<b>val</b> unat_at :       ?how:[&lt; `big | `little | `native &gt; `big ] -&gt;       typed_expression -&gt;       typed_expression    <br/>
+<b>val</b> fitted_uint_type_and_size :       ?fail:(string -&gt; 'a) -&gt;       int -&gt; integer_type * int    <br/>
+<b>val</b> ufitted :       size:int -&gt; int64 -&gt; typed_expression    <br/>
+<b>val</b> ufitted_at :       size:int -&gt;       how:[&lt; `big | `little | `native &gt; `big ] -&gt;       typed_expression -&gt;       typed_expression    <br/>
+<b>val</b> ones : int -&gt; int64    <br/>
+<b>val</b> t : typed_expression    <br/>
+<b>val</b> f : typed_expression    <br/>
+<b>val</b> band :       typed_expression -&gt;       typed_expression -&gt;       typed_expression    <br/>
+<b>val</b> bor :       typed_expression -&gt;       typed_expression -&gt;       typed_expression    <br/>
+<b>val</b> bnot :       typed_expression -&gt;       typed_expression    <br/>
+<b>val</b> eq :       typed_expression -&gt;       typed_expression -&gt;       typed_expression    <br/>
+<b>val</b> neq :       typed_expression -&gt;       typed_expression -&gt;       typed_expression    <br/>
+<b>val</b> gt :       typed_expression -&gt;       typed_expression -&gt;       typed_expression    <br/>
+<b>val</b> lt :       typed_expression -&gt;       typed_expression -&gt;       typed_expression    <br/>
+<b>val</b> ge :       typed_expression -&gt;       typed_expression -&gt;       typed_expression    <br/>
+<b>val</b> le :       typed_expression -&gt;       typed_expression -&gt;       typed_expression    <br/>
+<b>val</b> ls_and :       typed_expression list -&gt;       typed_expression    <br/>
+<b>val</b> ls_or :       typed_expression list -&gt;       typed_expression    <br/>
+<b>val</b> offset :       typed_expression -&gt;       typed_expression -&gt;       typed_expression    </div>
+<h2 id="module_Var_">module Var </h2>
+<div class="p">       <br/>
+<b>val</b> typed_variable :       ?unique:bool -&gt;       variable_name -&gt;       typed_variable_kind -&gt;       typed_variable    <br/>
+<b>val</b> name :       typed_variable -&gt;       variable_name    <br/>
+<b>val</b> kind :       typed_variable -&gt;       typed_variable_kind    <br/>
+<b>val</b> tv :       ?unique:bool -&gt;       variable_name -&gt;       typed_variable_kind -&gt;       typed_variable    <br/>
+<b>val</b> sized_buffer :       ?unique:bool -&gt;       int -&gt;       variable_name -&gt;       typed_variable    <br/>
+<b>val</b> pointer :       ?unique:bool -&gt;       variable_name -&gt;       typed_variable    <br/>
+<b>val</b> u8 :       ?unique:bool -&gt;       variable_name -&gt;       typed_variable    <br/>
+<b>val</b> u16 :       ?unique:bool -&gt;       variable_name -&gt;       typed_variable    <br/>
+<b>val</b> u32 :       ?unique:bool -&gt;       variable_name -&gt;       typed_variable    <br/>
+<b>val</b> u64 :       ?unique:bool -&gt;       variable_name -&gt;       typed_variable    <br/>
+<b>val</b> unat :       ?unique:bool -&gt;       variable_name -&gt;       typed_variable    <br/>
+<b>val</b> bool :       ?unique:bool -&gt;       variable_name -&gt;       typed_variable    <br/>
+<b>val</b> expression :       typed_variable -&gt;       typed_expression    <br/>
+<b>val</b> int_expression :       typed_variable -&gt;       int_expression    <br/>
+<b>val</b> bool_expression :       typed_variable -&gt;       bool_expression    <br/>
+<b>val</b> buffer_expression :       typed_variable -&gt;       buffer_expression    <br/>
+<b>val</b> kind_of_expr :       typed_expression -&gt;       typed_variable_kind    <br/>
+<b>val</b> asn :       typed_variable -&gt;       typed_expression -&gt;       statement    <br/>
+<b>val</b> ext_asn :       typed_variable -&gt;       string -&gt;       typed_expression list -&gt;       statement    <br/>
+<b>val</b> declare :       typed_variable -&gt;       statement    <br/>
+<b>val</b> declare_and_asn :       typed_variable -&gt;       typed_expression -&gt;       statement list    </div>
+<h2 id="module_Do_">module Do </h2>
+<div class="p">       <br/>
+<b>val</b> declaration :       variable_name -&gt;       typed_variable_kind -&gt;       statement    <br/>
+<b>val</b> nop : statement    <br/>
+<b>val</b> block :       statement list -&gt;       statement    <br/>
+<b>val</b> unblock :       statement -&gt;       statement list    <br/>
+<b>val</b> conditional :       ?statement_then:statement -&gt;       ?statement_else:statement -&gt;       typed_expression -&gt;       statement    <br/>
+<b>val</b> while_loop :       ?name:string -&gt;       typed_expression -&gt;       statement -&gt;       statement    <br/>
+<b>val</b> exit_while : statement    <br/>
+<b>val</b> exit_named_while : string -&gt; statement    <br/>
+<b>val</b> cmt : string -&gt; statement    <br/>
+<b>val</b> meta_log :       (string * string *        (typed_expression -&gt;         typed_expression list))       list -&gt;       string -&gt;       typed_expression list -&gt;       statement    <br/>
+<b>val</b> log :       string -&gt;       typed_expression list -&gt;       statement    <br/>
+<b>val</b> switch_int :       typed_expression -&gt;       (int * statement) list -&gt;       statement list    </div>
+<h2 id="module_Annot_">module Annot </h2>
+<div class="p">       <br/>
+<b>val</b> cmt :       string -&gt;       statement -&gt;       statement    <br/>
+<b>val</b> why :       statement -&gt;       statement -&gt;       statement    <br/>
+<b>val</b> variability :       typed_expression -&gt;       typed_expression -&gt;       statement -&gt;       statement    </div>
+<h2 id="module_Stiel_to_str_">module Stiel_to_str </h2>
+<div class="p">       <br/>
+<b>val</b> spr : ('a, unit, string) format -&gt; 'a    <br/>
+<b>val</b> integer_type : integer_type -&gt; string    <br/>
+<b>val</b> int_unary_operator :       int_unary_operator -&gt; string    <br/>
+<b>val</b> int_binary_operator :       int_binary_operator -&gt; string    <br/>
+<b>val</b> bool_binary_operator :       bool_binary_operator -&gt; string    <br/>
+<b>val</b> get_int_at_buffer :       get_int_at_buffer -&gt; string    <br/>
+<b>val</b> variable_name : string -&gt; string    <br/>
+<b>val</b> buffer_type : buffer_type -&gt; string    <br/>
+<b>val</b> int_expression : int_expression -&gt; string    <br/>
+<b>val</b> buffer_expression :       buffer_expression -&gt; string    <br/>
+<b>val</b> bool_expression : bool_expression -&gt; string    <br/>
+<b>val</b> typed_expression :       typed_expression -&gt; string    <br/>
+<b>val</b> typed_variable_kind :       typed_variable_kind -&gt; string    <br/>
+<b>val</b> logic : ?before:string -&gt; logic -&gt; string    <br/>
+<b>val</b> statement_annotation :       ?before:string -&gt;       statement_annotation -&gt; string    <br/>
+<b>val</b> statement :       ?indent:int -&gt; statement -&gt; string      </tt> </div>
+
+<div id="pagefoot" />
+</div>
+</body></html>

@@ -1,0 +1,42 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link rel="previous" href="Promiwag_std.Hashtbl.html">
+<link rel="next" href="Promiwag_std.IO.html">
+<link rel="Up" href="Promiwag_std.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Promiwag" rel="Chapter" href="Promiwag.html">
+<link title="Promiwag_Yaboon_PolyComp" rel="Chapter" href="Promiwag_Yaboon_PolyComp.html">
+<link title="Promiwag_c_backend" rel="Chapter" href="Promiwag_c_backend.html">
+<link title="Promiwag_meta_packet" rel="Chapter" href="Promiwag_meta_packet.html">
+<link title="Promiwag_pcap_boilerplate" rel="Chapter" href="Promiwag_pcap_boilerplate.html">
+<link title="Promiwag_platform" rel="Chapter" href="Promiwag_platform.html">
+<link title="Promiwag_protocol_stack" rel="Chapter" href="Promiwag_protocol_stack.html">
+<link title="Promiwag_standard_protocols" rel="Chapter" href="Promiwag_standard_protocols.html">
+<link title="Promiwag_std" rel="Chapter" href="Promiwag_std.html">
+<link title="Promiwag_stiel" rel="Chapter" href="Promiwag_stiel.html">
+<link title="Promiwag_stiel_backends" rel="Chapter" href="Promiwag_stiel_backends.html"><title>Promiwag Library : Promiwag_std.Io</title>
+</head>
+<body>
+<div class="navbar"><a href="Promiwag_std.Hashtbl.html">Previous</a>
+&nbsp;<a href="Promiwag_std.html">Up</a>
+&nbsp;<a href="Promiwag_std.IO.html">Next</a>
+</div>
+<center><h1>Module <a href="type_Promiwag_std.Io.html">Promiwag_std.Io</a></h1></center>
+<br>
+<pre><span class="keyword">module</span> Io: <code class="code"><span class="keyword">sig</span></code> <a href="Promiwag_std.Io.html">..</a> <code class="code"><span class="keyword">end</span></code></pre>Input/Output.<br>
+<hr width="100%">
+<pre><span class="keyword">include</span> IO</pre>
+<div class="info">
+c.f.
+        <a href="http://ocaml-extlib.googlecode.com/svn/doc/apiref/IO.html">
+        IO</a><br>
+</div>
+<pre><span id="VALopen_in"><span class="keyword">val</span> <a href="code_VALPromiwag_std.Io.open_in.html">open_in</a></span> : <code class="type">string -> IO.input</code></pre><pre><span id="VALopen_out"><span class="keyword">val</span> <a href="code_VALPromiwag_std.Io.open_out.html">open_out</a></span> : <code class="type">string -> unit IO.output</code></pre><pre><span id="VALstdout"><span class="keyword">val</span> <a href="code_VALPromiwag_std.Io.stdout.html">stdout</a></span> : <code class="type">unit output</code></pre><pre><span id="VALwith_file_out"><span class="keyword">val</span> <a href="code_VALPromiwag_std.Io.with_file_out.html">with_file_out</a></span> : <code class="type">string -> (unit IO.output -> 'a) -> 'a</code></pre><pre><span id="VALwith_file_in"><span class="keyword">val</span> <a href="code_VALPromiwag_std.Io.with_file_in.html">with_file_in</a></span> : <code class="type">string -> (IO.input -> 'a) -> 'a</code></pre><pre><span id="VALwith_new_tmp"><span class="keyword">val</span> <a href="code_VALPromiwag_std.Io.with_new_tmp.html">with_new_tmp</a></span> : <code class="type">?suffix:string -> ?prefix:string -> (unit output -> string -> 'a) -> 'a</code></pre></body></html>

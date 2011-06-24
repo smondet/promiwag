@@ -1,0 +1,68 @@
+<html><head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Promiwag" rel="Chapter" href="Promiwag.html">
+<link title="Promiwag_Yaboon_PolyComp" rel="Chapter" href="Promiwag_Yaboon_PolyComp.html">
+<link title="Promiwag_c_backend" rel="Chapter" href="Promiwag_c_backend.html">
+<link title="Promiwag_meta_packet" rel="Chapter" href="Promiwag_meta_packet.html">
+<link title="Promiwag_pcap_boilerplate" rel="Chapter" href="Promiwag_pcap_boilerplate.html">
+<link title="Promiwag_platform" rel="Chapter" href="Promiwag_platform.html">
+<link title="Promiwag_protocol_stack" rel="Chapter" href="Promiwag_protocol_stack.html">
+<link title="Promiwag_standard_protocols" rel="Chapter" href="Promiwag_standard_protocols.html">
+<link title="Promiwag_std" rel="Chapter" href="Promiwag_std.html">
+<link title="Promiwag_stiel" rel="Chapter" href="Promiwag_stiel.html">
+<link title="Promiwag_stiel_backends" rel="Chapter" href="Promiwag_stiel_backends.html"><title>Promiwag Library : Promiwag_pcap_boilerplate.C.basic_loop</title>
+</head>
+<body>
+<code class="code"><span class="keyword">let</span>&nbsp;basic_loop&nbsp;~call&nbsp;=<br>
+sprintf&nbsp;<span class="string">"%s%s%s"</span><br>
+<span class="string">"<br>
+<br>
+#include&nbsp;&lt;stdio.h&gt;<br>
+#include&nbsp;&lt;stdlib.h&gt;<br>
+#include&nbsp;&lt;pcap.h&gt;<br>
+<br>
+/*&nbsp;Pcap's&nbsp;callback&nbsp;handler:&nbsp;*/<br>
+void&nbsp;the_handler(unsigned&nbsp;char&nbsp;*&nbsp;user,<br>
+&nbsp;&nbsp;&nbsp;const&nbsp;struct&nbsp;pcap_pkthdr&nbsp;*&nbsp;packet_header,&nbsp;<br>
+&nbsp;&nbsp;&nbsp;const&nbsp;u_char&nbsp;*&nbsp;packet)&nbsp;{<br>
+"</span><br>
+&nbsp;&nbsp;(call&nbsp;<span class="string">"packet"</span>&nbsp;<span class="string">"packet_header-&gt;caplen"</span>)<br>
+<span class="string">"<br>
+<br>
+}<br>
+<br>
+int&nbsp;main(int&nbsp;argc,&nbsp;char&nbsp;*&nbsp;*&nbsp;argv)&nbsp;{<br>
+<br>
+&nbsp;&nbsp;char&nbsp;error_buffer[PCAP_ERRBUF_SIZE];<br>
+&nbsp;&nbsp;pcap_t&nbsp;*&nbsp;pcap_source&nbsp;=&nbsp;NULL;<br>
+&nbsp;&nbsp;<br>
+&nbsp;&nbsp;<br>
+&nbsp;&nbsp;if&nbsp;(argc&nbsp;!=&nbsp;3)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;printf(\"usage:&nbsp;%s&nbsp;[file|device]&nbsp;&lt;name&gt;\\n\",&nbsp;argv[0]);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;exit(2);<br>
+&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;<br>
+&nbsp;&nbsp;if&nbsp;(strncmp(argv[1],&nbsp;\"file\",&nbsp;5)&nbsp;==&nbsp;0)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;pcap_source&nbsp;=&nbsp;pcap_open_offline((argv)[2],&nbsp;error_buffer);<br>
+&nbsp;&nbsp;}&nbsp;else&nbsp;if&nbsp;(&nbsp;strncmp(argv[1],&nbsp;\"device\",&nbsp;7)&nbsp;==&nbsp;0&nbsp;||&nbsp;&nbsp;strncmp(argv[1],&nbsp;\"dev\",&nbsp;4)&nbsp;==&nbsp;0)&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;pcap_source&nbsp;=&nbsp;pcap_open_live(argv[2],&nbsp;65536,&nbsp;0,&nbsp;0,&nbsp;error_buffer);<br>
+&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;<br>
+&nbsp;&nbsp;if&nbsp;((pcap_source)&nbsp;==&nbsp;(NULL))&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;printf(\"libPCAP&nbsp;ERROR:&nbsp;pcap_open_offline:&nbsp;%s\\n\",&nbsp;error_buffer);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;exit(3);<br>
+&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;<br>
+&nbsp;&nbsp;(void)(pcap_loop(pcap_source,&nbsp;-1,&nbsp;the_handler,&nbsp;NULL));<br>
+&nbsp;&nbsp;(void)(pcap_close(pcap_source));<br>
+&nbsp;&nbsp;return&nbsp;0;<br>
+}<br>
+<br>
+"</span></code></body></html>

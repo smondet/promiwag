@@ -1,0 +1,541 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link rel="Up" href="Promiwag_meta_packet.Parser_generator.Stage_2_stiel.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Promiwag" rel="Chapter" href="Promiwag.html">
+<link title="Promiwag_Yaboon_PolyComp" rel="Chapter" href="Promiwag_Yaboon_PolyComp.html">
+<link title="Promiwag_c_backend" rel="Chapter" href="Promiwag_c_backend.html">
+<link title="Promiwag_meta_packet" rel="Chapter" href="Promiwag_meta_packet.html">
+<link title="Promiwag_pcap_boilerplate" rel="Chapter" href="Promiwag_pcap_boilerplate.html">
+<link title="Promiwag_platform" rel="Chapter" href="Promiwag_platform.html">
+<link title="Promiwag_protocol_stack" rel="Chapter" href="Promiwag_protocol_stack.html">
+<link title="Promiwag_standard_protocols" rel="Chapter" href="Promiwag_standard_protocols.html">
+<link title="Promiwag_std" rel="Chapter" href="Promiwag_std.html">
+<link title="Promiwag_stiel" rel="Chapter" href="Promiwag_stiel.html">
+<link title="Promiwag_stiel_backends" rel="Chapter" href="Promiwag_stiel_backends.html"><title>Promiwag Library : Promiwag_meta_packet.Parser_generator.Stage_2_stiel.Stiel_types</title>
+</head>
+<body>
+<div class="navbar">&nbsp;<a href="Promiwag_meta_packet.Parser_generator.Stage_2_stiel.html">Up</a>
+&nbsp;</div>
+<center><h1>Module <a href="type_Promiwag_meta_packet.Parser_generator.Stage_2_stiel.Stiel_types.html">Promiwag_meta_packet.Parser_generator.Stage_2_stiel.Stiel_types</a></h1></center>
+<br>
+<pre><span class="keyword">module</span> Stiel_types: <code class="type"><a href="Promiwag_stiel.Definition.html">Promiwag_stiel.Definition</a></code></pre><hr width="100%">
+<br><code><span id="TYPEinteger_type"><span class="keyword">type</span> <code class="type"></code>integer_type</span> = </code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Type_uint8</span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Type_uint16</span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Type_uint32</span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Type_uint64</span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Type_uint_native</span></code></td>
+
+</tr></table>
+
+
+<br><code><span id="TYPEint_unary_operator"><span class="keyword">type</span> <code class="type"></code>int_unary_operator</span> = </code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Int_unary_minus</span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Int_unary_plus</span></code></td>
+
+</tr></table>
+
+
+<br><code><span id="TYPEint_binary_operator"><span class="keyword">type</span> <code class="type"></code>int_binary_operator</span> = </code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Int_binop_add</span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Int_binop_sub</span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Int_binop_mul</span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Int_binop_div</span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Int_binop_mod</span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Int_binop_bin_and</span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Int_binop_bin_or</span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Int_binop_bin_xor</span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Int_binop_bin_shl</span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Int_binop_bin_shr</span></code></td>
+
+</tr></table>
+
+
+<br><code><span id="TYPEbool_binary_operator"><span class="keyword">type</span> <code class="type"></code>bool_binary_operator</span> = </code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Bool_binop_equals</span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Bool_binop_notequals</span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Bool_binop_strictly_greater</span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Bool_binop_strictly_lower</span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Bool_binop_equal_or_greater</span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Bool_binop_equal_or_lower</span></code></td>
+
+</tr></table>
+
+
+<pre><span id="TYPEvariable_name"><span class="keyword">type</span> <code class="type"></code>variable_name</span> = <code class="type">string</code> </pre>
+
+<br><code><span id="TYPEget_int_at_buffer"><span class="keyword">type</span> <code class="type"></code>get_int_at_buffer</span> = </code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Get_native</span> <span class="keyword">of</span> <code class="type"><a href="Promiwag_stiel.Definition.html#TYPEinteger_type">integer_type</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Get_big_endian</span> <span class="keyword">of</span> <code class="type"><a href="Promiwag_stiel.Definition.html#TYPEinteger_type">integer_type</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Get_little_endian</span> <span class="keyword">of</span> <code class="type"><a href="Promiwag_stiel.Definition.html#TYPEinteger_type">integer_type</a></code></code></td>
+
+</tr></table>
+
+
+<br><code><span id="TYPEbuffer_type"><span class="keyword">type</span> <code class="type"></code>buffer_type</span> = </code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Type_sized_buffer</span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Type_pointer</span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Type_sizable_buffer</span> <span class="keyword">of</span> <code class="type"><a href="Promiwag_stiel.Definition.html#TYPEint_expression">int_expression</a></code></code></td>
+
+</tr></table>
+
+
+<br><code><span id="TYPEint_expression"><span class="keyword">type</span> <code class="type"></code>int_expression</span> = </code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Int_expr_unary</span> <span class="keyword">of</span> <code class="type"><a href="Promiwag_stiel.Definition.html#TYPEint_unary_operator">int_unary_operator</a><br>        * <a href="Promiwag_stiel.Definition.html#TYPEint_expression">int_expression</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Int_expr_binary</span> <span class="keyword">of</span> <code class="type"><a href="Promiwag_stiel.Definition.html#TYPEint_binary_operator">int_binary_operator</a><br>        * <a href="Promiwag_stiel.Definition.html#TYPEint_expression">int_expression</a><br>        * <a href="Promiwag_stiel.Definition.html#TYPEint_expression">int_expression</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Int_expr_variable</span> <span class="keyword">of</span> <code class="type"><a href="Promiwag_stiel.Definition.html#TYPEvariable_name">variable_name</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Int_expr_buffer_content</span> <span class="keyword">of</span> <code class="type"><a href="Promiwag_stiel.Definition.html#TYPEget_int_at_buffer">get_int_at_buffer</a><br>        * <a href="Promiwag_stiel.Definition.html#TYPEbuffer_expression">buffer_expression</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Int_expr_literal</span> <span class="keyword">of</span> <code class="type">int64</code></code></td>
+
+</tr></table>
+
+
+<br><code><span id="TYPEbuffer_expression"><span class="keyword">type</span> <code class="type"></code>buffer_expression</span> = </code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Buffer_expr_variable</span> <span class="keyword">of</span> <code class="type"><a href="Promiwag_stiel.Definition.html#TYPEvariable_name">variable_name</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Buffer_expr_offset</span> <span class="keyword">of</span> <code class="type"><a href="Promiwag_stiel.Definition.html#TYPEbuffer_expression">buffer_expression</a><br>        * <a href="Promiwag_stiel.Definition.html#TYPEint_expression">int_expression</a></code></code></td>
+
+</tr></table>
+
+
+<br><code><span id="TYPEbool_expression"><span class="keyword">type</span> <code class="type"></code>bool_expression</span> = </code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Bool_expr_true</span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Bool_expr_false</span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Bool_expr_variable</span> <span class="keyword">of</span> <code class="type"><a href="Promiwag_stiel.Definition.html#TYPEvariable_name">variable_name</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Bool_expr_and</span> <span class="keyword">of</span> <code class="type"><a href="Promiwag_stiel.Definition.html#TYPEbool_expression">bool_expression</a><br>        * <a href="Promiwag_stiel.Definition.html#TYPEbool_expression">bool_expression</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Bool_expr_or</span> <span class="keyword">of</span> <code class="type"><a href="Promiwag_stiel.Definition.html#TYPEbool_expression">bool_expression</a><br>        * <a href="Promiwag_stiel.Definition.html#TYPEbool_expression">bool_expression</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Bool_expr_not</span> <span class="keyword">of</span> <code class="type"><a href="Promiwag_stiel.Definition.html#TYPEbool_expression">bool_expression</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Bool_expr_binary_int</span> <span class="keyword">of</span> <code class="type"><a href="Promiwag_stiel.Definition.html#TYPEbool_binary_operator">bool_binary_operator</a><br>        * <a href="Promiwag_stiel.Definition.html#TYPEint_expression">int_expression</a><br>        * <a href="Promiwag_stiel.Definition.html#TYPEint_expression">int_expression</a></code></code></td>
+
+</tr></table>
+
+
+<br><code><span id="TYPEtyped_expression"><span class="keyword">type</span> <code class="type"></code>typed_expression</span> = </code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Typed_int</span> <span class="keyword">of</span> <code class="type"><a href="Promiwag_stiel.Definition.html#TYPEinteger_type">integer_type</a><br>        * <a href="Promiwag_stiel.Definition.html#TYPEint_expression">int_expression</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Typed_bool</span> <span class="keyword">of</span> <code class="type"><a href="Promiwag_stiel.Definition.html#TYPEbool_expression">bool_expression</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Typed_buffer</span> <span class="keyword">of</span> <code class="type"><a href="Promiwag_stiel.Definition.html#TYPEbuffer_type">buffer_type</a><br>        * <a href="Promiwag_stiel.Definition.html#TYPEbuffer_expression">buffer_expression</a></code></code></td>
+
+</tr></table>
+
+
+<br><code><span id="TYPEtyped_variable_kind"><span class="keyword">type</span> <code class="type"></code>typed_variable_kind</span> = </code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Kind_int</span> <span class="keyword">of</span> <code class="type"><a href="Promiwag_stiel.Definition.html#TYPEinteger_type">integer_type</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Kind_bool</span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Kind_buffer</span> <span class="keyword">of</span> <code class="type"><a href="Promiwag_stiel.Definition.html#TYPEbuffer_type">buffer_type</a></code></code></td>
+
+</tr></table>
+
+
+<br><code><span id="TYPEtyped_variable"><span class="keyword">type</span> <code class="type"></code>typed_variable</span> = {</code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>name&nbsp;: <code class="type"><a href="Promiwag_stiel.Definition.html#TYPEvariable_name">variable_name</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>kind&nbsp;: <code class="type"><a href="Promiwag_stiel.Definition.html#TYPEtyped_variable_kind">typed_variable_kind</a></code>;</code></td>
+
+</tr></table>
+}
+
+
+<br><code><span id="TYPElogic"><span class="keyword">type</span> <code class="type"></code>logic</span> = </code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Logic_bool_expr</span> <span class="keyword">of</span> <code class="type"><a href="Promiwag_stiel.Definition.html#TYPEbool_expression">bool_expression</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Logic_variability</span> <span class="keyword">of</span> <code class="type"><a href="Promiwag_stiel.Definition.html#TYPEbool_expression">bool_expression</a><br>        * <a href="Promiwag_stiel.Definition.html#TYPEint_expression">int_expression</a></code></code></td>
+
+</tr></table>
+
+
+<br><code><span id="TYPEstatement_annotation"><span class="keyword">type</span> <code class="type"></code>statement_annotation</span> = </code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Annot_comment</span> <span class="keyword">of</span> <code class="type">string</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Annot_specify</span> <span class="keyword">of</span> <code class="type"><a href="Promiwag_stiel.Definition.html#TYPElogic">logic</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Annot_alternative</span> <span class="keyword">of</span> <code class="type">[ `C | `Why ] * <a href="Promiwag_stiel.Definition.html#TYPEstatement">statement</a></code></code></td>
+
+</tr></table>
+
+
+<br><code><span id="TYPEstatement"><span class="keyword">type</span> <code class="type"></code>statement</span> = </code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Do_nothing</span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Do_block</span> <span class="keyword">of</span> <code class="type"><a href="Promiwag_stiel.Definition.html#TYPEstatement">statement</a> list</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Do_if</span> <span class="keyword">of</span> <code class="type"><a href="Promiwag_stiel.Definition.html#TYPEbool_expression">bool_expression</a><br>        * <a href="Promiwag_stiel.Definition.html#TYPEstatement">statement</a><br>        * <a href="Promiwag_stiel.Definition.html#TYPEstatement">statement</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Do_while_loop</span> <span class="keyword">of</span> <code class="type">string * <a href="Promiwag_stiel.Definition.html#TYPEbool_expression">bool_expression</a><br>        * <a href="Promiwag_stiel.Definition.html#TYPEstatement">statement</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Do_exit_while</span> <span class="keyword">of</span> <code class="type">string</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Do_assignment</span> <span class="keyword">of</span> <code class="type"><a href="Promiwag_stiel.Definition.html#TYPEvariable_name">variable_name</a><br>        * <a href="Promiwag_stiel.Definition.html#TYPEtyped_expression">typed_expression</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Do_external_assignment</span> <span class="keyword">of</span> <code class="type"><a href="Promiwag_stiel.Definition.html#TYPEvariable_name">variable_name</a> * string<br>        * <a href="Promiwag_stiel.Definition.html#TYPEtyped_expression">typed_expression</a> list</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Do_declaration</span> <span class="keyword">of</span> <code class="type"><a href="Promiwag_stiel.Definition.html#TYPEtyped_variable">typed_variable</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Do_log</span> <span class="keyword">of</span> <code class="type">string * <a href="Promiwag_stiel.Definition.html#TYPEtyped_expression">typed_expression</a> list</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">Do_annotated_statement</span> <span class="keyword">of</span> <code class="type"><a href="Promiwag_stiel.Definition.html#TYPEstatement_annotation">statement_annotation</a><br>        * <a href="Promiwag_stiel.Definition.html#TYPEstatement">statement</a></code></code></td>
+
+</tr></table>
+
+
+</body></html>
