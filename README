@@ -1,4 +1,3 @@
-
 This is Promiwag (from Protection Middle-Ware Generator).
 
 It is research project which, for now, provides code generation for
@@ -22,7 +21,7 @@ generated code:
 
 The project was presented in a paper at IFIP Sec 2011:
 http://www.springerlink.com/content/53045v8440t4t734/
-(Slides: http://smondet.at.ifi.uio.no/resources/Promiwag_SMondet_IFIPSec11.pdf)
+(Slides: http://wr.mondet.org/smondet/ifipsec11/Promiwag_SMondet_IFIPSec11.pdf)
 
 
 Any comments, or questions → seb <AT> mondet.org
