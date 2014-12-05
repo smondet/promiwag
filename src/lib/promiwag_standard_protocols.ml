@@ -65,7 +65,7 @@ From Ion's:
    don't ask me why ATM has three values, Internet is what
    it is... */
 
-ptype: uint16 variant {|0x800->Ipv4 |0x806->Ipv6 };
+ptype: uint16 variant `0x800->Ipv4 |0x806->Ipv6 `;
 *)
 
 let arp_format =
@@ -155,7 +155,7 @@ let gre_format =
     MPS.fixed_int_field "checksum_present" 1;
     MPS.fixed_int_field "reserved" 12;
     MPS.fixed_int_field "version" 3;
-    MPS.fixed_int_field "protocol" 16; (* variant {|2048->IP |2054->ARP};*)
+    MPS.fixed_int_field "protocol" 16; (* variant 2048->IP, 2054->ARP *)
     MPS.string_field "checksum"    (MPS.size (`mul (`var "checksum_present", `int 2)));
     MPS.string_field "reserved_cs" (MPS.size (`mul (`var "checksum_present", `int 2)));
     MPS.payload ~name:"gre_payload" ();
@@ -176,10 +176,10 @@ let gre_transitions =
 
 
 (*
-    tos_delay: bit[1] variant {|0 => Normal |1 -> Low};
-    tos_throughput: bit[1] variant {|0 => Normal |1 -> Low};
-    tos_reliability: bit[1] variant {|0 => Normal |1 -> Low};
-    protocol: byte variant {|1->ICMP |2->IGMP |6->TCP |17->UDP};
+    tos_delay: bit[1] variant |0 => Normal |1 -> Low;
+    tos_throughput: bit[1] variant |0 => Normal |1 -> Low;
+    tos_reliability: bit[1] variant |0 => Normal |1 -> Low;
+    protocol: byte variant |1->ICMP |2->IGMP |6->TCP |17->UDP;
 *)
 let ipv4_format =
   MPS.packet_format [
